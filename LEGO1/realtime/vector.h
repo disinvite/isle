@@ -3,6 +3,7 @@
 
 #include <vec.h>
 
+// TODO: Find proper compilation unit to put this
 // OFFSET: LEGO1 0x1000c0f0 TEMPLATE
 // Vector2Impl::Vector2Impl
 

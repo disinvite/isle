@@ -6,7 +6,7 @@
 #include "mxcore.h"
 #include "mxdstypes.h"
 
-// TODO: Find proper compilation unit to place this
+// TODO: Find proper compilation unit to put this
 // OFFSET: LEGO1 0x10005530 TEMPLATE
 // MxDSObject::SetAtomId
 
