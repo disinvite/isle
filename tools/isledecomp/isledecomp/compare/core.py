@@ -167,8 +167,22 @@ class Compare:
         recomp_raw = self.recomp_bin.read(match.recomp_addr, match.size)
 
         # Sub in address_replacement here.
-        orig_asm = parse_asm(self.orig_bin, orig_raw)
-        recomp_asm = parse_asm(self.recomp_bin, recomp_raw)
+        def orig_lookup(addr: int) -> Optional[str]:
+            m = self._db.get_by_orig(addr)
+            if m is None:
+                return None
+
+            return m.match_name()
+
+        def recomp_lookup(addr: int) -> Optional[str]:
+            m = self._db.get_by_recomp(addr)
+            if m is None:
+                return None
+
+            return m.match_name()
+
+        orig_asm = parse_asm(self.orig_bin, orig_raw, orig_lookup)
+        recomp_asm = parse_asm(self.recomp_bin, recomp_raw, recomp_lookup)
 
         diff = difflib.SequenceMatcher(None, orig_asm, recomp_asm)
         ratio = diff.ratio()
