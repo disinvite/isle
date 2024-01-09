@@ -1,18 +1,21 @@
-# TODO: rewrite
-"""Text formatting for x86 machine code, with the end goal of comparing the assembly.
-We are using the capstone library for bytes-to-asm conversion. The actual comparison
-happens later by comparing the assembly text, using the longest common subsequence
-(LCS) provided by python difflib.
-Therefore, the goal of this module is to produce assembly text that will match
-irrespective of virtual address differences between the two code blocks."""
+"""Converts x86 machine code into text (i.e. assembly). The end goal is to
+compare the code in the original and recomp binaries, using longest common
+subsequence (LCS), i.e. difflib.SequenceMatcher.
+The capstone library takes the raw bytes and gives us the mnemnonic
+and operand(s) for each instruction. We need to "sanitize" the text further
+so that virtual addresses are replaced by symbol name or a generic
+placeholder string."""
 
 import re
 from typing import Callable, Optional
+from collections import namedtuple
 from capstone import Cs, CS_ARCH_X86, CS_MODE_32
 
 disassembler = Cs(CS_ARCH_X86, CS_MODE_32)
 
 ptr_replace_regex = re.compile(r"ptr \[(0x\w+)\]")
+
+DisasmLiteInst = namedtuple("DisasmLiteInst", "address, size, mnemonic, op_str")
 
 
 def _default_should_replace(_: int) -> bool:
@@ -23,43 +26,57 @@ def _default_replace_name(addr: int) -> str:
     return hex(addr)
 
 
-def _default_replace_value(addr: int, _) -> str:
-    return hex(addr)
+def from_hex(string: str) -> Optional[int]:
+    try:
+        return int(string, 16)
+    except ValueError:
+        pass
+
+    return None
 
 
 def sanitize(
-    mnemonic: str,
-    op_str: str,
+    inst: DisasmLiteInst,
     should_replace: Callable[[int], bool] = _default_should_replace,
     replace_with_name: Callable[[int], str] = _default_replace_name,
 ):
-    # TODO: replace_with_value: Callable[[int, int], str] = _default_replace_value,
-    if len(op_str) == 0:
-        return (mnemonic, None)
+    if len(inst.op_str) == 0:
+        # Nothing to sanitize
+        return (inst.mnemonic, "")
 
-    if mnemonic in ["call", "jmp"]:
-        # Filter out "calls" because the offsets we're not currently trying to
-        # match offsets. As long as there's a call in the right place, it's
-        # probably accurate.
-        try:
-            addr = int(op_str, 16)
-        except ValueError:
-            pass
-        else:
-            # Replace (and return) only if the op_str is a virtual address
-            op_str = replace_with_name(addr)
-            return (mnemonic, op_str)
+    # If the entire operand is a hex number, it is a relative jump or call.
+    # Otherwise (i.e. it looks like `dword ptr [address]`) it is an
+    # absolute indirect that we will handle below.
+    # Providing the starting address of the function to capstone.disasm has
+    # automatically resolved relative offsets to an absolute address.
+    # We will have to undo this for some of the jumps or they will not match.
+    op_str_address = from_hex(inst.op_str)
+
+    if op_str_address is not None:
+        if inst.mnemonic in ["call", "jmp"]:
+            # TODO: A call to should_replace() will tell us whether to
+            # replace here, if it can check symbols comprehensively.
+            # Checking the relocation table is not enough to get them all.
+            # Jumps are relative and don't need to be relocated.
+            return (inst.mnemonic, replace_with_name(op_str_address))
+
+        if inst.mnemonic.startswith("j"):
+            # i.e. if this is any other jump
+            # Show the jump offset rather than the absolute address
+            jump_displacement = op_str_address - (inst.address + inst.size)
+            return (inst.mnemonic, str(jump_displacement))
 
     def filter_out_ptr(match):
-        try:
-            offset = int(match.group(1), 16)
+        offset = from_hex(match.group(1))
+
+        if offset is not None and should_replace(offset):
             placeholder = replace_with_name(offset)
             return f"ptr [{placeholder}]"
-        except ValueError:
-            # Return the string with no changes
-            return match.group(0)
 
-    op_str = ptr_replace_regex.sub(filter_out_ptr, op_str)
+        # Return the string with no changes
+        return match.group(0)
+
+    op_str = ptr_replace_regex.sub(filter_out_ptr, inst.op_str)
 
     # Use heuristics to filter out any args that look like offsets
     words = op_str.split(" ")
@@ -72,7 +89,7 @@ def sanitize(
             pass
     op_str = " ".join(words)
 
-    return mnemonic, op_str
+    return inst.mnemonic, op_str
 
 
 class OffsetPlaceholderGenerator:
@@ -97,12 +114,14 @@ class OffsetPlaceholderGenerator:
         return replacement
 
 
-def parse_asm(file, data, name_lookup: Optional[Callable[[int], str]] = None):
+def parse_asm(
+    data: bytes,
+    start_addr: Optional[int] = 0,
+    should_replace: Callable[[int], bool] = _default_should_replace,
+    name_lookup: Optional[Callable[[int], str]] = None,
+):
     asm = []
     placeholder_generator = OffsetPlaceholderGenerator()
-
-    def should_replace(addr: int) -> bool:
-        return file.is_relocated_addr(addr)
 
     def replace_with_name(addr: int) -> str:
         # Use cached value if we have it
@@ -119,14 +138,10 @@ def parse_asm(file, data, name_lookup: Optional[Callable[[int], str]] = None):
         # Else create a new placeholder
         return placeholder_generator.create(addr)
 
-    for _, __, _mnemonic, _op_str in disassembler.disasm_lite(data, 0):
+    for inst in disassembler.disasm_lite(data, start_addr):
         # Use heuristics to disregard some differences that aren't representative
         # of the accuracy of a function (e.g. global offsets)
-        mnemonic, op_str = sanitize(
-            _mnemonic, _op_str, should_replace, replace_with_name
-        )
-        if op_str is None:
-            asm.append(mnemonic)
-        else:
-            asm.append(f"{mnemonic} {op_str}")
+        result = sanitize(DisasmLiteInst(*inst), should_replace, replace_with_name)
+        # mnemonic + " " + op_str
+        asm.append(" ".join(result))
     return asm

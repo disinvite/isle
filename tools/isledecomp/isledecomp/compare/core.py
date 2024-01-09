@@ -166,6 +166,12 @@ class Compare:
         orig_raw = self.orig_bin.read(match.orig_addr, match.size)
         recomp_raw = self.recomp_bin.read(match.recomp_addr, match.size)
 
+        def orig_should_replace(addr: int) -> bool:
+            return self.orig_bin.is_relocated_addr(addr)
+
+        def recomp_should_replace(addr: int) -> bool:
+            return self.recomp_bin.is_relocated_addr(addr)
+
         # Sub in address_replacement here.
         def orig_lookup(addr: int) -> Optional[str]:
             m = self._db.get_by_orig(addr)
@@ -181,8 +187,18 @@ class Compare:
 
             return m.match_name()
 
-        orig_asm = parse_asm(self.orig_bin, orig_raw, orig_lookup)
-        recomp_asm = parse_asm(self.recomp_bin, recomp_raw, recomp_lookup)
+        orig_asm = parse_asm(
+            orig_raw,
+            start_addr=match.orig_addr,
+            should_replace=orig_should_replace,
+            name_lookup=orig_lookup,
+        )
+        recomp_asm = parse_asm(
+            recomp_raw,
+            start_addr=match.recomp_addr,
+            should_replace=recomp_should_replace,
+            name_lookup=recomp_lookup,
+        )
 
         diff = difflib.SequenceMatcher(None, orig_asm, recomp_asm)
         ratio = diff.ratio()
