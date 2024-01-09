@@ -46,9 +46,9 @@ def sanitize(
         except ValueError:
             pass
         else:
+            # Replace (and return) only if the op_str is a virtual address
             op_str = replace_with_name(addr)
-
-        return (mnemonic, op_str)
+            return (mnemonic, op_str)
 
     def filter_out_ptr(match):
         try:
@@ -80,17 +80,20 @@ class OffsetPlaceholderGenerator:
         self.counter = 0
         self.replacements = {}
 
-    def bump(self):
-        """Tick the counter up by one if we found the name without using a placeholder.
-        This is so the OFFSET numbers will still match."""
+    def set(self, addr: int, name: str):
+        self.replacements[addr] = name
         self.counter += 1
 
-    def get(self, replace_addr):
-        if replace_addr in self.replacements:
-            return self.replacements[replace_addr]
+    def get(self, addr: int) -> Optional[str]:
+        return self.replacements.get(addr, None)
+
+    def create(self, addr: int) -> str:
+        if (cached := self.get(addr)) is not None:
+            return cached
+
         self.counter += 1
         replacement = f"<OFFSET{self.counter}>"
-        self.replacements[replace_addr] = replacement
+        self.replacements[addr] = replacement
         return replacement
 
 
@@ -102,13 +105,19 @@ def parse_asm(file, data, name_lookup: Optional[Callable[[int], str]] = None):
         return file.is_relocated_addr(addr)
 
     def replace_with_name(addr: int) -> str:
+        # Use cached value if we have it
+        if (name := placeholder_generator.get(addr)) is not None:
+            return name
+
+        # Look up symbol name if that option is available
         if name_lookup is not None:
             name = name_lookup(addr)
             if name is not None:
-                placeholder_generator.bump()
+                placeholder_generator.set(addr, name)
                 return name
 
-        return placeholder_generator.get(addr)
+        # Else create a new placeholder
+        return placeholder_generator.create(addr)
 
     for _, __, _mnemonic, _op_str in disassembler.disasm_lite(data, 0):
         # Use heuristics to disregard some differences that aren't representative
