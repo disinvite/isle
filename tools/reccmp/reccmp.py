@@ -15,7 +15,7 @@ from isledecomp.compare import Compare as IsleCompare
 from pystache import Renderer
 import colorama
 
-colorama.just_fix_windows_console()
+colorama.init()
 
 
 def gen_html(html_file, data):
