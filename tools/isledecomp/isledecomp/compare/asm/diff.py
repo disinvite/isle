@@ -22,7 +22,7 @@ def _default_should_replace(_: int) -> bool:
     return False
 
 
-def _default_replace_name(addr: int) -> str:
+def _default_replace_name(addr: int, _: bool) -> str:
     return hex(addr)
 
 
@@ -38,7 +38,7 @@ def from_hex(string: str) -> Optional[int]:
 def sanitize(
     inst: DisasmLiteInst,
     should_replace: Callable[[int], bool] = _default_should_replace,
-    replace_with_name: Callable[[int], str] = _default_replace_name,
+    replace_with_name: Callable[[int, bool], str] = _default_replace_name,
 ):
     if len(inst.op_str) == 0:
         # Nothing to sanitize
@@ -53,20 +53,26 @@ def sanitize(
     op_str_address = from_hex(inst.op_str)
 
     if op_str_address is not None:
-        if inst.mnemonic in ["call", "jmp"]:
-            # TODO: A call to should_replace() should tell us whether to
-            # replace here, if it can check symbols comprehensively.
-            # We can check the relocation table for absolute addresses,
-            # but relative addresses don't need to be relocated.
+        if inst.mnemonic == "call":
             return (inst.mnemonic, replace_with_name(op_str_address))
 
+        if inst.mnemonic == "jmp":
+            # The unwind section contains JMPs to other functions.
+            # If we have a name for this address, use it. If not,
+            # do not create a new placeholder. We will instead
+            # fall through to generic jump handling below.
+            potential_name = replace_with_name(op_str_address, False)
+            if potential_name is not None:
+                return (inst.mnemonic, potential_name)
+
         if inst.mnemonic.startswith("j"):
-            # i.e. if this is any other jump
+            # i.e. if this is any jump
             # Show the jump offset rather than the absolute address
             jump_displacement = op_str_address - (inst.address + inst.size)
             return (inst.mnemonic, hex(jump_displacement))
 
     def filter_out_ptr(match):
+        """Helper for re.sub, see below"""
         offset = from_hex(match.group(1))
 
         if offset is not None and should_replace(offset):
@@ -123,7 +129,7 @@ def parse_asm(
     asm = []
     placeholder_generator = OffsetPlaceholderGenerator()
 
-    def replace_with_name(addr: int) -> str:
+    def replace_with_name(addr: int, use_placeholder: bool = True) -> str:
         # Use cached value if we have it
         if (name := placeholder_generator.get(addr)) is not None:
             return name
@@ -134,6 +140,11 @@ def parse_asm(
             if name is not None:
                 placeholder_generator.set(addr, name)
                 return name
+
+        # Escape hatch for replacements on the JMP instruction.
+        # If we cannot find the symbol name, assume it is a "local" jump
+        if not use_placeholder:
+            return None
 
         # Else create a new placeholder
         return placeholder_generator.create(addr)
