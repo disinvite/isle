@@ -54,17 +54,17 @@ def sanitize(
 
     if op_str_address is not None:
         if inst.mnemonic in ["call", "jmp"]:
-            # TODO: A call to should_replace() will tell us whether to
+            # TODO: A call to should_replace() should tell us whether to
             # replace here, if it can check symbols comprehensively.
-            # Checking the relocation table is not enough to get them all.
-            # Jumps are relative and don't need to be relocated.
+            # We can check the relocation table for absolute addresses,
+            # but relative addresses don't need to be relocated.
             return (inst.mnemonic, replace_with_name(op_str_address))
 
         if inst.mnemonic.startswith("j"):
             # i.e. if this is any other jump
             # Show the jump offset rather than the absolute address
             jump_displacement = op_str_address - (inst.address + inst.size)
-            return (inst.mnemonic, str(jump_displacement))
+            return (inst.mnemonic, hex(jump_displacement))
 
     def filter_out_ptr(match):
         offset = from_hex(match.group(1))
