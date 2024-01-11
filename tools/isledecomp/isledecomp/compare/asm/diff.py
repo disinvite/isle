@@ -44,7 +44,8 @@ def sanitize(
         # Nothing to sanitize
         return (inst.mnemonic, "")
 
-    # If the entire operand is a hex number, it is a relative jump or call.
+    # For jumps or calls, if the entire op_str is a hex number, the value
+    # is a relative offset.
     # Otherwise (i.e. it looks like `dword ptr [address]`) it is an
     # absolute indirect that we will handle below.
     # Providing the starting address of the function to capstone.disasm has
@@ -75,7 +76,8 @@ def sanitize(
         """Helper for re.sub, see below"""
         offset = from_hex(match.group(1))
 
-        if offset is not None and should_replace(offset):
+        if offset is not None:
+            # We assume this is always an address to replace
             placeholder = replace_with_name(offset)
             return f"ptr [{placeholder}]"
 
@@ -85,15 +87,17 @@ def sanitize(
     op_str = ptr_replace_regex.sub(filter_out_ptr, inst.op_str)
 
     # Use heuristics to filter out any args that look like offsets
-    words = op_str.split(" ")
+    words = op_str.split(", ")
     for i, word in enumerate(words):
         try:
             inttest = int(word, 16)
+            # If this value is a virtual address, it is referenced absolutely,
+            # which means it must be in the relocation table.
             if should_replace(inttest):
                 words[i] = replace_with_name(inttest)
         except ValueError:
             pass
-    op_str = " ".join(words)
+    op_str = ", ".join(words)
 
     return inst.mnemonic, op_str
 
