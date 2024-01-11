@@ -86,18 +86,21 @@ def sanitize(
 
     op_str = ptr_replace_regex.sub(filter_out_ptr, inst.op_str)
 
-    # Use heuristics to filter out any args that look like offsets
-    words = op_str.split(", ")
-    for i, word in enumerate(words):
-        try:
-            inttest = int(word, 16)
-            # If this value is a virtual address, it is referenced absolutely,
-            # which means it must be in the relocation table.
-            if should_replace(inttest):
-                words[i] = replace_with_name(inttest)
-        except ValueError:
-            pass
-    op_str = ", ".join(words)
+    # Performance hack:
+    # Skip this step if there is nothing left to consider replacing.
+    if "0x" in op_str:
+        # Replace immediate values with name or placeholder (where appropriate)
+        words = op_str.split(", ")
+        for i, word in enumerate(words):
+            try:
+                inttest = int(word, 16)
+                # If this value is a virtual address, it is referenced absolutely,
+                # which means it must be in the relocation table.
+                if should_replace(inttest):
+                    words[i] = replace_with_name(inttest)
+            except ValueError:
+                pass
+        op_str = ", ".join(words)
 
     return inst.mnemonic, op_str
 

@@ -167,10 +167,15 @@ class Compare:
         recomp_raw = self.recomp_bin.read(match.recomp_addr, match.size)
 
         def orig_should_replace(addr: int) -> bool:
-            return self.orig_bin.is_relocated_addr(addr)
+            return addr > self.orig_bin.imagebase and self.orig_bin.is_relocated_addr(
+                addr
+            )
 
         def recomp_should_replace(addr: int) -> bool:
-            return self.recomp_bin.is_relocated_addr(addr)
+            return (
+                addr > self.recomp_bin.imagebase
+                and self.recomp_bin.is_relocated_addr(addr)
+            )
 
         # Sub in address_replacement here.
         def orig_lookup(addr: int) -> Optional[str]:
