@@ -1,2 +1,2 @@
-from .diff import parse_asm
+from .diff import ParseAsm
 from .swap import can_resolve_register_differences

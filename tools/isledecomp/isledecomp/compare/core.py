@@ -8,7 +8,7 @@ from isledecomp.cvdump import Cvdump, CvdumpAnalysis
 from isledecomp.parser import DecompCodebase
 from isledecomp.dir import walk_source_dir
 from isledecomp.types import SymbolType
-from isledecomp.compare.asm import parse_asm, can_resolve_register_differences
+from isledecomp.compare.asm import ParseAsm, can_resolve_register_differences
 from .db import CompareDb, MatchInfo
 from .lines import LinesDb
 
@@ -177,7 +177,6 @@ class Compare:
                 and self.recomp_bin.is_relocated_addr(addr)
             )
 
-        # Sub in address_replacement here.
         def orig_lookup(addr: int) -> Optional[str]:
             m = self._db.get_by_orig(addr)
             if m is None:
@@ -192,18 +191,15 @@ class Compare:
 
             return m.match_name()
 
-        orig_asm = parse_asm(
-            orig_raw,
-            start_addr=match.orig_addr,
-            should_replace=orig_should_replace,
-            name_lookup=orig_lookup,
+        orig_parse = ParseAsm(
+            relocate_lookup=orig_should_replace, name_lookup=orig_lookup
         )
-        recomp_asm = parse_asm(
-            recomp_raw,
-            start_addr=match.recomp_addr,
-            should_replace=recomp_should_replace,
-            name_lookup=recomp_lookup,
+        recomp_parse = ParseAsm(
+            relocate_lookup=recomp_should_replace, name_lookup=recomp_lookup
         )
+
+        orig_asm = orig_parse.parse_asm(orig_raw, match.orig_addr)
+        recomp_asm = recomp_parse.parse_asm(recomp_raw, match.recomp_addr)
 
         diff = difflib.SequenceMatcher(None, orig_asm, recomp_asm)
         ratio = diff.ratio()

@@ -7,23 +7,15 @@ so that virtual addresses are replaced by symbol name or a generic
 placeholder string."""
 
 import re
-from typing import Callable, Optional
+from typing import Callable, List, Optional, Tuple
 from collections import namedtuple
 from capstone import Cs, CS_ARCH_X86, CS_MODE_32
 
 disassembler = Cs(CS_ARCH_X86, CS_MODE_32)
 
-ptr_replace_regex = re.compile(r"ptr \[(0x\w+)\]")
+ptr_replace_regex = re.compile(r"ptr \[(0x[0-9a-fA-F]+)\]")
 
 DisasmLiteInst = namedtuple("DisasmLiteInst", "address, size, mnemonic, op_str")
-
-
-def _default_should_replace(_: int) -> bool:
-    return False
-
-
-def _default_replace_name(addr: int, _: bool) -> str:
-    return hex(addr)
 
 
 def from_hex(string: str) -> Optional[int]:
@@ -35,131 +27,126 @@ def from_hex(string: str) -> Optional[int]:
     return None
 
 
-def sanitize(
-    inst: DisasmLiteInst,
-    should_replace: Callable[[int], bool] = _default_should_replace,
-    replace_with_name: Callable[[int, bool], str] = _default_replace_name,
-):
-    if len(inst.op_str) == 0:
-        # Nothing to sanitize
-        return (inst.mnemonic, "")
+class ParseAsm:
+    def __init__(
+        self,
+        relocate_lookup: Optional[Callable[[int], bool]] = None,
+        name_lookup: Optional[Callable[[int], str]] = None,
+    ) -> None:
+        self.relocate_lookup = relocate_lookup
+        self.name_lookup = name_lookup
+        self.replacements = {}
+        self.number_placeholders = True
 
-    # For jumps or calls, if the entire op_str is a hex number, the value
-    # is a relative offset.
-    # Otherwise (i.e. it looks like `dword ptr [address]`) it is an
-    # absolute indirect that we will handle below.
-    # Providing the starting address of the function to capstone.disasm has
-    # automatically resolved relative offsets to an absolute address.
-    # We will have to undo this for some of the jumps or they will not match.
-    op_str_address = from_hex(inst.op_str)
-
-    if op_str_address is not None:
-        if inst.mnemonic == "call":
-            return (inst.mnemonic, replace_with_name(op_str_address))
-
-        if inst.mnemonic == "jmp":
-            # The unwind section contains JMPs to other functions.
-            # If we have a name for this address, use it. If not,
-            # do not create a new placeholder. We will instead
-            # fall through to generic jump handling below.
-            potential_name = replace_with_name(op_str_address, False)
-            if potential_name is not None:
-                return (inst.mnemonic, potential_name)
-
-        if inst.mnemonic.startswith("j"):
-            # i.e. if this is any jump
-            # Show the jump offset rather than the absolute address
-            jump_displacement = op_str_address - (inst.address + inst.size)
-            return (inst.mnemonic, hex(jump_displacement))
-
-    def filter_out_ptr(match):
-        """Helper for re.sub, see below"""
-        offset = from_hex(match.group(1))
-
-        if offset is not None:
-            # We assume this is always an address to replace
-            placeholder = replace_with_name(offset)
-            return f"ptr [{placeholder}]"
-
-        # Return the string with no changes
-        return match.group(0)
-
-    op_str = ptr_replace_regex.sub(filter_out_ptr, inst.op_str)
-
-    # Performance hack:
-    # Skip this step if there is nothing left to consider replacing.
-    if "0x" in op_str:
-        # Replace immediate values with name or placeholder (where appropriate)
-        words = op_str.split(", ")
-        for i, word in enumerate(words):
-            try:
-                inttest = int(word, 16)
-                # If this value is a virtual address, it is referenced absolutely,
-                # which means it must be in the relocation table.
-                if should_replace(inttest):
-                    words[i] = replace_with_name(inttest)
-            except ValueError:
-                pass
-        op_str = ", ".join(words)
-
-    return inst.mnemonic, op_str
-
-
-class OffsetPlaceholderGenerator:
-    def __init__(self):
-        self.counter = 0
+    def reset(self):
         self.replacements = {}
 
-    def set(self, addr: int, name: str):
-        self.replacements[addr] = name
-        self.counter += 1
+    def is_relocated(self, addr: int) -> bool:
+        if callable(self.relocate_lookup):
+            return self.relocate_lookup(addr)
 
-    def get(self, addr: int) -> Optional[str]:
-        return self.replacements.get(addr, None)
+        return False
 
-    def create(self, addr: int) -> str:
-        if (cached := self.get(addr)) is not None:
+    def lookup(self, addr: int) -> Optional[str]:
+        """Return a replacement name for this address if we find one."""
+        if (cached := self.replacements.get(addr, None)) is not None:
             return cached
 
-        self.counter += 1
-        replacement = f"<OFFSET{self.counter}>"
-        self.replacements[addr] = replacement
-        return replacement
-
-
-def parse_asm(
-    data: bytes,
-    start_addr: Optional[int] = 0,
-    should_replace: Callable[[int], bool] = _default_should_replace,
-    name_lookup: Optional[Callable[[int], str]] = None,
-):
-    asm = []
-    placeholder_generator = OffsetPlaceholderGenerator()
-
-    def replace_with_name(addr: int, use_placeholder: bool = True) -> str:
-        # Use cached value if we have it
-        if (name := placeholder_generator.get(addr)) is not None:
-            return name
-
-        # Look up symbol name if that option is available
-        if name_lookup is not None:
-            name = name_lookup(addr)
-            if name is not None:
-                placeholder_generator.set(addr, name)
+        if callable(self.name_lookup):
+            if (name := self.name_lookup(addr)) is not None:
+                self.replacements[addr] = name
                 return name
 
-        # Escape hatch for replacements on the JMP instruction.
-        # If we cannot find the symbol name, assume it is a "local" jump
-        if not use_placeholder:
-            return None
+        return None
 
-        # Else create a new placeholder
-        return placeholder_generator.create(addr)
+    def replace(self, addr: int) -> str:
+        """Same function as lookup above, but here we return a placeholder
+        if there is no better name to use."""
+        if (name := self.lookup(addr)) is not None:
+            return name
 
-    for inst in disassembler.disasm_lite(data, start_addr):
-        # Use heuristics to disregard some differences that aren't representative
-        # of the accuracy of a function (e.g. global offsets)
-        result = sanitize(DisasmLiteInst(*inst), should_replace, replace_with_name)
-        # mnemonic + " " + op_str
-        asm.append(" ".join(result))
-    return asm
+        # The placeholder number corresponds to the number of addresses we have
+        # already replaced. This is so the number will be consistent across the diff
+        # if we can replace some symbols with actual names in recomp but not orig.
+        idx = len(self.replacements) + 1
+        placeholder = f"<OFFSET{idx}>" if self.number_placeholders else "<OFFSET>"
+        self.replacements[addr] = placeholder
+        return placeholder
+
+    def sanitize(self, inst: DisasmLiteInst) -> Tuple[str, str]:
+        if len(inst.op_str) == 0:
+            # Nothing to sanitize
+            return (inst.mnemonic, "")
+
+        # For jumps or calls, if the entire op_str is a hex number, the value
+        # is a relative offset.
+        # Otherwise (i.e. it looks like `dword ptr [address]`) it is an
+        # absolute indirect that we will handle below.
+        # Providing the starting address of the function to capstone.disasm has
+        # automatically resolved relative offsets to an absolute address.
+        # We will have to undo this for some of the jumps or they will not match.
+        op_str_address = from_hex(inst.op_str)
+
+        if op_str_address is not None:
+            if inst.mnemonic == "call":
+                return (inst.mnemonic, self.replace(op_str_address))
+
+            if inst.mnemonic == "jmp":
+                # The unwind section contains JMPs to other functions.
+                # If we have a name for this address, use it. If not,
+                # do not create a new placeholder. We will instead
+                # fall through to generic jump handling below.
+                potential_name = self.lookup(op_str_address)
+                if potential_name is not None:
+                    return (inst.mnemonic, potential_name)
+
+            if inst.mnemonic.startswith("j"):
+                # i.e. if this is any jump
+                # Show the jump offset rather than the absolute address
+                jump_displacement = op_str_address - (inst.address + inst.size)
+                return (inst.mnemonic, hex(jump_displacement))
+
+        def filter_out_ptr(match):
+            """Helper for re.sub, see below"""
+            offset = from_hex(match.group(1))
+
+            if offset is not None:
+                # We assume this is always an address to replace
+                placeholder = self.replace(offset)
+                return f"ptr [{placeholder}]"
+
+            # Strict regex should ensure we can read the hex number.
+            # But just in case: return the string with no changes
+            return match.group(0)
+
+        op_str = ptr_replace_regex.sub(filter_out_ptr, inst.op_str)
+
+        # Performance hack:
+        # Skip this step if there is nothing left to consider replacing.
+        if "0x" in op_str:
+            # Replace immediate values with name or placeholder (where appropriate)
+            words = op_str.split(", ")
+            for i, word in enumerate(words):
+                try:
+                    inttest = int(word, 16)
+                    # If this value is a virtual address, it is referenced absolutely,
+                    # which means it must be in the relocation table.
+                    if self.is_relocated(inttest):
+                        words[i] = self.replace(inttest)
+                except ValueError:
+                    pass
+            op_str = ", ".join(words)
+
+        return inst.mnemonic, op_str
+
+    def parse_asm(self, data: bytes, start_addr: Optional[int] = 0) -> List[str]:
+        asm = []
+
+        for inst in disassembler.disasm_lite(data, start_addr):
+            # Use heuristics to disregard some differences that aren't representative
+            # of the accuracy of a function (e.g. global offsets)
+            result = self.sanitize(DisasmLiteInst(*inst))
+            # mnemonic + " " + op_str
+            asm.append(" ".join(result))
+
+        return asm
