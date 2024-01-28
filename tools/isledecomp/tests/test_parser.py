@@ -592,8 +592,8 @@ def test_global_prefix_namespace(parser):
     )
 
     assert len(parser.variables) == 2
-    assert parser.vtables[0].name == "Test::g_count"
-    assert parser.vtables[1].name == "Test::count"
+    assert parser.variables[0].name == "Test::g_count"
+    assert parser.variables[1].name == "Test::count"
 
     assert len(parser.alerts) == 1
     assert parser.alerts[0].code == ParserError.GLOBAL_MISSING_PREFIX
@@ -612,4 +612,4 @@ def test_nested_namespace(parser):
     )
 
     assert len(parser.variables) == 1
-    assert parser.vtables[0].name == "Tgl::Renderer::g_count"
+    assert parser.variables[0].name == "Tgl::Renderer::g_count"
