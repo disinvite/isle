@@ -82,6 +82,26 @@ RoadmapRow = namedtuple(
 )
 
 
+class DeltaCollector:
+    def __init__(self):
+        self.disp_map = {}
+        self.earliest = {}
+
+    def read_row(self, row: RoadmapRow):
+        if row.sym_type != "fun":
+            return
+
+        if row.orig_addr is not None:
+            if row.orig_addr < self.earliest.get(row.module, 0xfffffffff):
+                self.earliest[row.module] = row.orig_addr
+
+        if row.displacement is not None:
+            if row.module not in self.disp_map:
+                self.disp_map[row.module] = []
+
+            self.disp_map[row.module].append(row.displacement)
+
+
 def print_text_report(results: List[RoadmapRow]):
     """Print the result with original and recomp addresses."""
     for row in results:
@@ -150,6 +170,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Show recomp addresses in output"
     )
+    parser.add_argument(
+        "--order", "-o", action="store_true", help="Show suggested order of modules"
+    )
+
 
     (args, _) = parser.parse_known_args()
 
@@ -244,6 +268,16 @@ def main():
             )
 
         results = list(map(to_roadmap_row, engine.get_all()))
+
+        if args.order:
+            dc = DeltaCollector()
+            for row in results:
+                dc.read_row(row)
+
+            for (module, displacements) in dc.disp_map.items():
+                print(f"{sum(displacements)/len(displacements):10.1f}  {dc.earliest.get(module, -1):08x}    {module}")
+
+            return
 
         if args.csv is None:
             if args.verbose:
