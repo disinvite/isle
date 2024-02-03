@@ -2,6 +2,7 @@
 between FUNCTION markers and PDB analysis."""
 import sqlite3
 import logging
+from functools import cache
 from typing import Optional
 from pathlib import Path
 from isledecomp.dir import PathResolver
@@ -20,6 +21,11 @@ _SETUP_SQL = """
 
 
 logger = logging.getLogger(__name__)
+
+
+@cache
+def my_samefile(path: str, source_path: str) -> bool:
+    return Path(path).samefile(source_path)
 
 
 class LinesDb:
@@ -47,7 +53,7 @@ class LinesDb:
             (filename, line_no),
         )
         for source_path, addr in cur.fetchall():
-            if Path(path).samefile(source_path):
+            if my_samefile(path, source_path):
                 return addr
 
         logger.error(
