@@ -209,8 +209,8 @@ class Bin:
         def is_ascii(b):
             return b" " <= b < b"\x7f"
 
-        sect_data = self._get_section_by_name(".data")
-        sect_rdata = self._get_section_by_name(".rdata")
+        sect_data = self.get_section_by_name(".data")
+        sect_rdata = self.get_section_by_name(".rdata")
         potentials = filter(
             lambda a: sect_data.contains_vaddr(a) or sect_rdata.contains_vaddr(a),
             self.get_relocated_addresses(),
@@ -235,7 +235,7 @@ class Bin:
         One use case is to tell whether an immediate value in an operand represents
         a virtual address or just a big number."""
 
-        reloc = self._get_section_by_name(".reloc").view
+        reloc = self.get_section_by_name(".reloc").view
         ofs = 0
         reloc_addrs = []
 
@@ -263,7 +263,7 @@ class Bin:
         # address where there is a relocation, then read the four bytes into our set.
         reloc_addrs.sort()
         for section_id, offset in map(self.get_relative_addr, reloc_addrs):
-            section = self.sections[section_id - 1]
+            section = self.get_section_by_index(section_id)
             (relocated_addr,) = struct.unpack("<I", section.view[offset : offset + 4])
             self._relocated_addrs.add(relocated_addr)
 
@@ -321,8 +321,8 @@ class Bin:
         instruction in the function is a jmp to the address in .idata.
         Search .text to find these functions."""
 
-        text_sect = self._get_section_by_name(".text")
-        idata_sect = self._get_section_by_name(".idata")
+        text_sect = self.get_section_by_name(".text")
+        idata_sect = self.get_section_by_name(".idata")
         start = text_sect.virtual_address
         ofs = start
 
@@ -337,7 +337,7 @@ class Bin:
                     thunk_ofs = ofs + shift + i * 6
                     self.thunks.append((thunk_ofs, jmp_ofs))
 
-    def _get_section_by_name(self, name: str):
+    def get_section_by_name(self, name: str) -> Section:
         section = next(
             filter(lambda section: section.match_name(name), self.sections),
             None,
@@ -348,8 +348,12 @@ class Bin:
 
         return section
 
+    def get_section_by_index(self, index: int) -> Section:
+        """Convert 1-based index into 0-based."""
+        return self.sections[index - 1]
+
     def get_section_extent_by_index(self, index: int) -> int:
-        return self.sections[index - 1].extent
+        return self.get_section_by_index(index).extent
 
     def get_section_offset_by_index(self, index: int) -> int:
         """The symbols output from cvdump gives addresses in this format: AAAA.BBBBBBBB
@@ -357,14 +361,12 @@ class Bin:
         This will return the virtual address for the start of the section at the given index
         so you can get the virtual address for whatever symbol you are looking at.
         """
-
-        section = self.sections[index - 1]
-        return section.virtual_address
+        return self.get_section_by_index(index).virtual_address
 
     def get_section_offset_by_name(self, name: str) -> int:
         """Same as above, but use the section name as the lookup"""
 
-        section = self._get_section_by_name(name)
+        section = self.get_section_by_name(name)
         return section.virtual_address
 
     def get_abs_addr(self, section: int, offset: int) -> int:
@@ -383,26 +385,23 @@ class Bin:
 
         raise InvalidVirtualAddressError(hex(addr))
 
-    def is_valid_section(self, section: int) -> bool:
+    def is_valid_section(self, section_id: int) -> bool:
         """The PDB will refer to sections that are not listed in the headers
         and so should ignore these references."""
         try:
-            _ = self.sections[section - 1]
+            _ = self.get_section_by_index(section_id)
             return True
         except IndexError:
             return False
 
     def is_valid_vaddr(self, vaddr: int) -> bool:
         """Does this virtual address point to anything in the exe?"""
-        section = next(
-            filter(
-                lambda section: section.contains_vaddr(vaddr),
-                self.sections,
-            ),
-            None,
-        )
+        try:
+            (_, __) = self.get_relative_addr(vaddr)
+        except InvalidVirtualAddressError:
+            return False
 
-        return section is not None
+        return True
 
     def read_string(self, offset: int, chunk_size: int = 1000) -> Optional[bytes]:
         """Read until we find a zero byte."""
@@ -422,7 +421,7 @@ class Bin:
         (section_id, offset) = self.get_relative_addr(vaddr)
         section = self.sections[section_id - 1]
 
-        if section.addr_is_uninitialized(offset):
+        if section.addr_is_uninitialized(vaddr):
             return None
 
         # Clamp the read within the extent of the current section.
