@@ -176,6 +176,7 @@ class Bin:
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         logger.debug("Bin %s Exit", self.filename)
+        self.view.release()
 
     def get_relocated_addresses(self) -> List[int]:
         return sorted(self._relocated_addrs)

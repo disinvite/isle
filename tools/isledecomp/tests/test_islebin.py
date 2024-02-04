@@ -1,7 +1,7 @@
 """Tests for the Bin (or IsleBin) module that:
 1. Parses relevant data from the PE header and other structures.
 2. Provides an interface to read from the DLL or EXE using a virtual address.
-This is kind of an important module so provide some smoke tests"""
+These are some basic smoke tests."""
 
 import hashlib
 from typing import Tuple
@@ -21,8 +21,7 @@ LEGO1_SHA256 = "14645225bbe81212e9bc1919cd8a692b81b8622abb6561280d99b0fc4151ce17
 def fixture_binfile(pytestconfig) -> IsleBin:
     filename = pytestconfig.getoption("--lego1")
 
-    # Skip this when we run pytest on the entire tests directory.
-    # This will have to be a targeted test because it depends on the path to LEGO1
+    # Skip this if we have not provided the path to LEGO1.dll.
     if filename is None:
         pytest.skip(allow_module_level=True, reason="No path to LEGO1")
 
@@ -133,3 +132,15 @@ IMPORT_REFS = (
 @pytest.mark.parametrize("import_ref", IMPORT_REFS)
 def test_imports(import_ref: Tuple[str, str, int], binfile: IsleBin):
     assert import_ref in binfile.imports
+
+
+# Location of the JMP instruction and the import address.
+THUNKS = (
+    (0x100D3728, 0x1010B32C),  # DirectDrawCreate
+    (0x10098F9E, 0x1010B3D4),  # RtlUnwind
+)
+
+
+@pytest.mark.parametrize("thunk_ref", THUNKS)
+def test_thunks(thunk_ref: Tuple[int, int], binfile: IsleBin):
+    assert thunk_ref in binfile.thunks
