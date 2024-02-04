@@ -61,8 +61,16 @@ public:
 		c_nickSelected = 33,
 		c_lauraSelected = 34,
 
+		c_mamaMovie = 40,
+		c_papaMovie = 41,
+		c_pepperMovie = 42,
+		c_nickMovie = 43,
+		c_lauraMovie = 44,
+
 		c_goToRegBook = 70,
 		c_goToRegBookRed = 71,
+
+		c_unk499 = 499,
 
 		c_welcomeDialogue = 500,
 		c_goodJobDialogue = 501,
@@ -127,6 +135,7 @@ public:
 
 		c_gasCtlDescription = 555,
 		c_medCtlDescription = 556,
+		c_unk557 = 557,
 		c_boatCtlDescription = 558,
 		c_copCtlDescription = 559,
 		c_pizzaCtlDescription = 560,
@@ -136,6 +145,15 @@ public:
 		c_leaveInfoCenterDialogue2 = 563,
 		c_leaveInfoCenterDialogue3 = 564,
 		c_leaveInfoCenterDialogue4 = 565,
+
+		c_unk566 = 566,
+		c_unk567 = 567,
+		c_unk568 = 568,
+
+		c_unk569 = 569,
+		c_unk570 = 570,
+		c_unk571 = 571,
+		c_unk572 = 572,
 
 		c_registerToContinueDialogue = 573,
 
@@ -148,29 +166,29 @@ public:
 	};
 
 	Infocenter();
-	virtual ~Infocenter() override;
+	~Infocenter() override;
 
-	virtual MxLong Notify(MxParam& p_param) override; // vtable+0x04
-	virtual MxResult Tickle() override;               // vtable+0x08
+	MxLong Notify(MxParam& p_param) override; // vtable+0x04
+	MxResult Tickle() override;               // vtable+0x08
 
 	// FUNCTION: LEGO1 0x1006eb40
-	inline virtual const char* ClassName() const override // vtable+0x0c
+	inline const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x100f04ec
 		return "Infocenter";
 	}
 
 	// FUNCTION: LEGO1 0x1006eb50
-	inline virtual MxBool IsA(const char* p_name) const override // vtable+0x10
+	inline MxBool IsA(const char* p_name) const override // vtable+0x10
 	{
 		return !strcmp(p_name, Infocenter::ClassName()) || LegoWorld::IsA(p_name);
 	}
 
-	virtual MxResult Create(MxDSAction& p_dsAction) override; // vtable+0x18
-	virtual void ReadyWorld() override;                       // vtable+0x50
-	virtual MxBool VTable0x5c() override;                     // vtable+0x5c
-	virtual MxBool VTable0x64() override;                     // vtable+0x64
-	virtual void VTable0x68(MxBool p_add) override;           // vtable+0x68
+	MxResult Create(MxDSAction& p_dsAction) override; // vtable+0x18
+	void ReadyWorld() override;                       // vtable+0x50
+	MxBool VTable0x5c() override;                     // vtable+0x5c
+	MxBool VTable0x64() override;                     // vtable+0x64
+	void Enable(MxBool p_enable) override;            // vtable+0x68
 
 	// SYNTHETIC: LEGO1 0x1006ec60
 	// Infocenter::`scalar deleting destructor'
@@ -182,8 +200,8 @@ private:
 	MxU8 HandleMouseMove(MxS32 p_x, MxS32 p_y);
 	MxU8 HandleButtonUp(MxS32 p_x, MxS32 p_y);
 	MxU8 HandleClick(LegoControlManagerEvent& p_param);
-	MxLong HandleEndAction(MxParam& p_param);
-	MxLong HandleNotification0(MxParam&);
+	MxLong HandleEndAction(MxEndActionNotificationParam& p_param);
+	MxLong HandleNotification0(MxNotificationParam& p_param);
 
 	void UpdateFrameHot(MxBool p_display);
 	void FUN_10070e90();

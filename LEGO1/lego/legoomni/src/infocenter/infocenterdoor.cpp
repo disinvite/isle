@@ -120,6 +120,7 @@ MxLong InfocenterDoor::HandleClick(LegoControlManagerEvent& p_param)
 					action.SetAtomId(*g_infodoorScript);
 					BackgroundAudioManager()->LowerVolume();
 					Start(&action);
+					goto done;
 				}
 			}
 			else {
@@ -128,9 +129,12 @@ MxLong InfocenterDoor::HandleClick(LegoControlManagerEvent& p_param)
 				action.SetAtomId(*g_infodoorScript);
 				BackgroundAudioManager()->LowerVolume();
 				Start(&action);
+				goto done;
 			}
 
 			TransitionManager()->StartTransition(MxTransitionManager::e_pixelation, 50, FALSE, FALSE);
+
+		done:
 			result = 1;
 			break;
 		}
@@ -140,11 +144,11 @@ MxLong InfocenterDoor::HandleClick(LegoControlManagerEvent& p_param)
 }
 
 // FUNCTION: LEGO1 0x10037c80
-void InfocenterDoor::VTable0x68(MxBool p_add)
+void InfocenterDoor::Enable(MxBool p_enable)
 {
-	LegoWorld::VTable0x68(p_add);
+	LegoWorld::Enable(p_enable);
 
-	if (p_add) {
+	if (p_enable) {
 		InputManager()->SetWorld(this);
 		SetIsWorldActive(FALSE);
 	}

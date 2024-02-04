@@ -6,6 +6,7 @@
 #include "legostate.h"
 #include "legoutil.h"
 #include "legovideomanager.h"
+#include "legoworld.h"
 #include "mxbackgroundaudiomanager.h"
 #include "mxobjectfactory.h"
 #include "mxstring.h"
@@ -96,8 +97,9 @@ LegoGameState::~LegoGameState()
 	if (m_stateCount) {
 		for (MxS16 i = 0; i < m_stateCount; i++) {
 			LegoState* state = m_stateArray[i];
-			if (state)
+			if (state) {
 				delete state;
+			}
 		}
 
 		delete[] m_stateArray;
@@ -112,14 +114,21 @@ void LegoGameState::FUN_10039780(MxU8)
 	// TODO
 }
 
+// STUB: LEGO1 0x10039940
+void LegoGameState::FUN_10039940()
+{
+	// TODO
+}
+
 // FUNCTION: LEGO1 0x10039980
 MxResult LegoGameState::Save(MxULong p_slot)
 {
 	MxResult result;
 	InfocenterState* infocenterState = (InfocenterState*) GameState()->GetState("InfocenterState");
 
-	if (!infocenterState || infocenterState->GetInfocenterBufferElement(0) == NULL)
+	if (!infocenterState || infocenterState->GetInfocenterBufferElement(0) == NULL) {
 		result = SUCCESS;
+	}
 	else {
 		result = FAILURE;
 		MxVariableTable* variableTable = VariableTable();
@@ -134,8 +143,9 @@ MxResult LegoGameState::Save(MxULong p_slot)
 			fileStream.Write(&m_unk0x0c, 1);
 
 			for (MxS32 i = 0; i < sizeof(g_colorSaveData) / sizeof(g_colorSaveData[0]); ++i) {
-				if (WriteVariable(&fileStream, variableTable, g_colorSaveData[i].m_targetName) == FAILURE)
+				if (WriteVariable(&fileStream, variableTable, g_colorSaveData[i].m_targetName) == FAILURE) {
 					return result;
+				}
 			}
 
 			if (WriteVariable(&fileStream, variableTable, "backgroundcolor") != FAILURE) {
@@ -161,15 +171,17 @@ MxResult LegoGameState::Load(MxULong)
 // FUNCTION: LEGO1 0x10039f00
 void LegoGameState::SetSavePath(char* p_savePath)
 {
-	if (m_savePath != NULL)
+	if (m_savePath != NULL) {
 		delete[] m_savePath;
+	}
 
 	if (p_savePath) {
 		m_savePath = new char[strlen(p_savePath) + 1];
 		strcpy(m_savePath, p_savePath);
 	}
-	else
+	else {
 		m_savePath = NULL;
+	}
 }
 
 // FUNCTION: LEGO1 0x10039f70
@@ -183,8 +195,9 @@ MxResult LegoGameState::WriteVariable(LegoStorage* p_stream, MxVariableTable* p_
 		if (p_stream->Write((char*) &length, 1) == SUCCESS) {
 			if (p_stream->Write(p_variableName, length) == SUCCESS) {
 				length = strlen(variableValue);
-				if (p_stream->Write((char*) &length, 1) == SUCCESS)
+				if (p_stream->Write((char*) &length, 1) == SUCCESS) {
 					result = p_stream->Write((char*) variableValue, length);
+				}
 			}
 		}
 	}
@@ -195,8 +208,9 @@ MxResult LegoGameState::WriteVariable(LegoStorage* p_stream, MxVariableTable* p_
 MxResult LegoGameState::WriteEndOfVariables(LegoStorage* p_stream)
 {
 	MxU8 len = strlen(g_endOfVariables);
-	if (p_stream->Write(&len, 1) == SUCCESS)
+	if (p_stream->Write(&len, 1) == SUCCESS) {
 		return p_stream->Write(g_endOfVariables, len);
+	}
 	return FAILURE;
 }
 
@@ -212,9 +226,10 @@ MxS32 LegoGameState::ReadVariable(LegoStorage* p_stream, MxVariableTable* p_to)
 		char nameBuffer[256];
 		if (p_stream->Read(nameBuffer, length) == SUCCESS) {
 			nameBuffer[length] = '\0';
-			if (strcmp(nameBuffer, g_endOfVariables) == 0)
+			if (strcmp(nameBuffer, g_endOfVariables) == 0) {
 				// 2 -> "This was the last entry, done reading."
 				result = 2;
+			}
 			else {
 				if (p_stream->Read((char*) &length, 1) == SUCCESS) {
 					char valueBuffer[256];
@@ -237,8 +252,9 @@ void LegoGameState::GetFileSavePath(MxString* p_outPath, MxULong p_slotn)
 	char path[1024] = "";
 
 	// Save path base
-	if (m_savePath != NULL)
+	if (m_savePath != NULL) {
 		strcpy(path, m_savePath);
+	}
 
 	// Slot: "G0", "G1", ...
 	strcat(path, "\\G");
@@ -431,6 +447,8 @@ void LegoGameState::SwitchArea(MxU32 p_area)
 	VideoManager()->SetUnk0x554(FALSE);
 
 	MxAtomId* script = g_isleScript;
+	LegoWorld* world;
+
 	switch (p_area) {
 	case 1:
 		break;
@@ -445,6 +463,24 @@ void LegoGameState::SwitchArea(MxU32 p_area)
 		// TODO
 	case 5:
 		script = g_elevbottScript;
+		break;
+	case 6:
+	case 7:
+		world = FindWorld(*g_isleScript, 0);
+
+		if (world == NULL) {
+			InvokeAction(Extra::ActionType::e_opendisk, *g_isleScript, 0, NULL);
+		}
+		else {
+#ifdef COMPAT_MODE
+			{
+				MxNotificationParam param(c_notificationType20, NULL);
+				NotificationManager()->Send(world, &param);
+			}
+#else
+			NotificationManager()->Send(world, &MxNotificationParam(c_notificationType20, NULL));
+#endif
+		}
 		break;
 	case 12:
 		VideoManager()->SetUnk0x554(TRUE);
@@ -491,9 +527,11 @@ MxBool ROIHandlerFunction(char* p_input, char* p_output, MxU32 p_copyLen)
 // FUNCTION: LEGO1 0x1003bbb0
 LegoState* LegoGameState::GetState(const char* p_stateName)
 {
-	for (MxS32 i = 0; i < m_stateCount; ++i)
-		if (m_stateArray[i]->IsA(p_stateName))
+	for (MxS32 i = 0; i < m_stateCount; ++i) {
+		if (m_stateArray[i]->IsA(p_stateName)) {
 			return m_stateArray[i];
+		}
+	}
 	return NULL;
 }
 
@@ -510,9 +548,11 @@ LegoState* LegoGameState::CreateState(const char* p_stateName)
 void LegoGameState::RegisterState(LegoState* p_state)
 {
 	MxS32 targetIndex;
-	for (targetIndex = 0; targetIndex < m_stateCount; ++targetIndex)
-		if (m_stateArray[targetIndex]->IsA(p_state->ClassName()))
+	for (targetIndex = 0; targetIndex < m_stateCount; ++targetIndex) {
+		if (m_stateArray[targetIndex]->IsA(p_state->ClassName())) {
 			break;
+		}
+	}
 
 	if (targetIndex == m_stateCount) {
 		LegoState** newBuffer = new LegoState*[m_stateCount + 1];
@@ -527,8 +567,9 @@ void LegoGameState::RegisterState(LegoState* p_state)
 		return;
 	}
 
-	if (m_stateArray[targetIndex])
+	if (m_stateArray[targetIndex]) {
 		delete m_stateArray[targetIndex];
+	}
 	m_stateArray[targetIndex] = p_state;
 }
 

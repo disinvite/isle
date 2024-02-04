@@ -14,7 +14,7 @@ DECOMP_SIZE_ASSERT(ElevatorBottom, 0xfc)
 
 // STRING: LEGO1 0x100f0d34
 // GLOBAL: LEGO1 0x100f3a44
-char* g_cameraLoc = "CAMERA_LOCATION";
+const char* g_cameraLoc = "CAMERA_LOCATION";
 
 // FUNCTION: LEGO1 0x10017e90
 ElevatorBottom::ElevatorBottom()
@@ -116,11 +116,11 @@ MxLong ElevatorBottom::HandleClick(LegoControlManagerEvent& p_param)
 }
 
 // FUNCTION: LEGO1 0x100182c0
-void ElevatorBottom::VTable0x68(MxBool p_add)
+void ElevatorBottom::Enable(MxBool p_enable)
 {
-	LegoWorld::VTable0x68(p_add);
+	LegoWorld::Enable(p_enable);
 
-	if (p_add) {
+	if (p_enable) {
 		InputManager()->SetWorld(this);
 		SetIsWorldActive(FALSE);
 	}

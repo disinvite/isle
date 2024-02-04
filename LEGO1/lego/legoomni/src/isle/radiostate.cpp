@@ -53,32 +53,14 @@ RadioState::RadioState()
 	MxS32 random = rand();
 	m_unk0x2c = random % 3;
 
-	// TODO: Most likely inline function
+	m_unk0x08[0] = LegoState::Playlist((MxU32*) g_unk0x100f3218, sizeof(g_unk0x100f3218) / sizeof(g_unk0x100f3218[0]));
+	m_unk0x08[0].SetUnknown0x08(rand() % (sizeof(g_unk0x100f3218) / sizeof(g_unk0x100f3218[0])));
 
-	m_unk0x08[0].m_unk0x04 = sizeof(g_unk0x100f3218) / sizeof(g_unk0x100f3218[0]);
-	m_unk0x08[0].m_unk0x00 = g_unk0x100f3218;
-	m_unk0x08[0].m_unk0x08 = 0;
-	m_unk0x08[0].m_unk0x06 = 0;
+	m_unk0x08[1] = LegoState::Playlist((MxU32*) g_unk0x100f3230, sizeof(g_unk0x100f3230) / sizeof(g_unk0x100f3230[0]));
+	m_unk0x08[1].SetUnknown0x08(rand() % (sizeof(g_unk0x100f3230) / sizeof(g_unk0x100f3230[0])));
 
-	random = rand();
-
-	m_unk0x08[1].m_unk0x08 = 0;
-	m_unk0x08[1].m_unk0x06 = 0;
-	m_unk0x08[1].m_unk0x04 = sizeof(g_unk0x100f3230) / sizeof(g_unk0x100f3230[0]);
-	m_unk0x08[1].m_unk0x00 = g_unk0x100f3230;
-
-	m_unk0x08[0].m_unk0x08 = (MxU32) random % (sizeof(g_unk0x100f3218) / sizeof(g_unk0x100f3218[0]));
-	random = rand();
-
-	m_unk0x08[2].m_unk0x08 = 0;
-	m_unk0x08[2].m_unk0x06 = 0;
-	m_unk0x08[2].m_unk0x04 = sizeof(g_unk0x100f3268) / sizeof(g_unk0x100f3268[0]);
-	m_unk0x08[2].m_unk0x00 = g_unk0x100f3268;
-
-	m_unk0x08[1].m_unk0x08 = (MxU32) random % (sizeof(g_unk0x100f3230) / sizeof(g_unk0x100f3230[0]));
-	random = rand();
-
-	m_unk0x08[2].m_unk0x08 = (MxU32) random % (sizeof(g_unk0x100f3268) / sizeof(g_unk0x100f3268[0]));
+	m_unk0x08[2] = LegoState::Playlist((MxU32*) g_unk0x100f3268, sizeof(g_unk0x100f3268) / sizeof(g_unk0x100f3268[0]));
+	m_unk0x08[2].SetUnknown0x08(rand() % (sizeof(g_unk0x100f3268) / sizeof(g_unk0x100f3268[0])));
 
 	m_active = FALSE;
 }
@@ -99,16 +81,18 @@ MxU32 RadioState::FUN_1002d090()
 		m_unk0x2c++;
 	}
 
-	return m_unk0x08[m_unk0x2c].FUN_10014d00();
+	return m_unk0x08[m_unk0x2c].Next();
 }
 
 // FUNCTION: LEGO1 0x1002d0c0
 MxBool RadioState::FUN_1002d0c0(const MxAtomId& p_atom, MxU32 p_objectId)
 {
 	if (*g_jukeboxScript == p_atom) {
-		for (MxS16 i = 0; i < 3; i++)
-			if (m_unk0x08[i].FUN_10014de0(p_objectId))
+		for (MxS16 i = 0; i < 3; i++) {
+			if (m_unk0x08[i].Contains(p_objectId)) {
 				return TRUE;
+			}
+		}
 	}
 
 	return FALSE;

@@ -10,6 +10,7 @@ import re
 from functools import cache
 from typing import Callable, List, Optional, Tuple
 from collections import namedtuple
+from isledecomp.bin import InvalidVirtualAddressError
 from capstone import Cs, CS_ARCH_X86, CS_MODE_32
 
 disassembler = Cs(CS_ARCH_X86, CS_MODE_32)
@@ -57,7 +58,11 @@ class ParseAsm:
 
     def float_replace(self, addr: int, data_size: int) -> Optional[str]:
         if callable(self.float_lookup):
-            float_str = self.float_lookup(addr, data_size)
+            try:
+                float_str = self.float_lookup(addr, data_size)
+            except InvalidVirtualAddressError:
+                # probably caused by reading an invalid instruction
+                return None
             if float_str is not None:
                 return f"{float_str} (FLOAT)"
 

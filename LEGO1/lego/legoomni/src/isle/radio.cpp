@@ -54,7 +54,7 @@ MxLong Radio::Notify(MxParam& p_param)
 void Radio::Play()
 {
 	if (!m_state->IsActive()) {
-		GetCurrentWorld();
+		CurrentWorld();
 
 		MxDSAction action;
 		action.SetObjectId(m_state->FUN_1002d090());
@@ -75,12 +75,13 @@ void Radio::Play()
 void Radio::Stop()
 {
 	if (m_state->IsActive()) {
-		LegoWorld* world = GetCurrentWorld();
+		LegoWorld* world = CurrentWorld();
 
 		MxControlPresenter* presenter = (MxControlPresenter*) world->Find(world->GetAtom(), 18);
 
-		if (presenter)
+		if (presenter) {
 			presenter->VTable0x6c(0);
+		}
 
 		BackgroundAudioManager()->Stop();
 		BackgroundAudioManager()->Enable(m_bgAudioPreviouslyEnabled);
@@ -102,12 +103,12 @@ MxLong Radio::HandleClick(LegoControlManagerEvent& p_param)
 			Play();
 		}
 
-		if (GetCurrentWorld()) {
+		if (CurrentWorld()) {
 #ifdef COMPAT_MODE
 			MxNotificationParam param(c_notificationEndAction, this);
-			GetCurrentWorld()->Notify(param);
+			CurrentWorld()->Notify(param);
 #else
-			GetCurrentWorld()->Notify(MxNotificationParam(c_notificationType0, this));
+			CurrentWorld()->Notify(MxNotificationParam(c_notificationType0, this));
 #endif
 		}
 

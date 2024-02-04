@@ -11,17 +11,17 @@
 class LegoState : public MxCore {
 public:
 	// FUNCTION: LEGO1 0x10005f40
-	virtual ~LegoState() override {}
+	~LegoState() override {}
 
 	// FUNCTION: LEGO1 0x100060d0
-	inline virtual const char* ClassName() const override // vtable+0x0c
+	inline const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x100f01b8
 		return "LegoState";
 	}
 
 	// FUNCTION: LEGO1 0x100060e0
-	inline virtual MxBool IsA(const char* p_name) const override // vtable+0x10
+	inline MxBool IsA(const char* p_name) const override // vtable+0x10
 	{
 		return !strcmp(p_name, LegoState::ClassName()) || MxCore::IsA(p_name);
 	}
@@ -45,23 +45,52 @@ public:
 	// LegoState::`scalar deleting destructor'
 
 	// SIZE 0x0c
-	struct StateStruct {
-		void* m_unk0x00;      // 0x00
-		undefined2 m_unk0x04; // 0x04
-		undefined2 m_unk0x06; // 0x06
-		MxU16 m_unk0x08;      // 0x08
+	class Playlist {
+	public:
+		enum Mode {
+			e_loop,
+			e_once,
+			e_random,
+			e_loopSkipFirst
+		};
 
 		// FUNCTION: LEGO1 0x10017c00
-		StateStruct()
+		Playlist()
 		{
-			m_unk0x04 = 0;
-			m_unk0x00 = NULL;
-			m_unk0x06 = 0;
-			m_unk0x08 = 0;
+			m_objectIds = NULL;
+			m_length = 0;
+			m_mode = e_loop;
+			m_nextIndex = 0;
 		}
 
-		MxU32 FUN_10014d00();
-		MxBool FUN_10014de0(MxU32 p_objectId);
+		Playlist(MxU32* p_objectIds, MxS16 p_length)
+		{
+			m_objectIds = p_objectIds;
+			m_length = p_length;
+			m_mode = e_loop;
+			m_nextIndex = 0;
+		}
+
+		// FUNCTION: LEGO1 0x10071800
+		Playlist& operator=(const Playlist& p_shuffle)
+		{
+			m_objectIds = p_shuffle.m_objectIds;
+			m_length = p_shuffle.m_length;
+			m_nextIndex = p_shuffle.m_nextIndex;
+			m_mode = p_shuffle.m_mode;
+			return *this;
+		}
+
+		MxU32 Next();
+		MxBool Contains(MxU32 p_objectId);
+
+		inline void SetUnknown0x08(MxS16 p_unk0x08) { m_nextIndex = p_unk0x08; }
+
+	private:
+		MxU32* m_objectIds; // 0x00
+		MxS16 m_length;     // 0x04
+		MxS16 m_mode;       // 0x06
+		MxS16 m_nextIndex;  // 0x08
 	};
 };
 
