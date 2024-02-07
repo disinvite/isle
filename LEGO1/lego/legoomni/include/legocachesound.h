@@ -26,6 +26,7 @@ public:
 		return !strcmp(p_name, LegoCacheSound::ClassName()) || MxCore::IsA(p_name);
 	}
 
+	inline const MxString& GetString0x48() const { return m_string0x48; }
 	inline const undefined GetUnk0x58() { return m_unk0x58; }
 
 	void FUN_10006b80();
