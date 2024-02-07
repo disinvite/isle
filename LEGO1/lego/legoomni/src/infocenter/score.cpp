@@ -236,11 +236,11 @@ void Score::Paint()
 	GifData* gd = GetGifManager()->Get("bigcube.gif");
 
 	if (gd) {
-		RaceState* l78 = (RaceState*) GameState()->GetState("JetskiRaceState");
-		RaceState* l70 = (RaceState*) GameState()->GetState("CarRaceState");
-		TowTrackMissionState* lesi = (TowTrackMissionState*) GameState()->GetState("TowTrackMissionState");
-		PizzaMissionState* l74 = (PizzaMissionState*) GameState()->GetState("PizzaMissionState");
-		AmbulanceMissionState* lebp = (AmbulanceMissionState*) GameState()->GetState("AmbulanceMissionState");
+		RaceState* jetski = (RaceState*) GameState()->GetState("JetskiRaceState");
+		RaceState* carrace = (RaceState*) GameState()->GetState("CarRaceState");
+		TowTrackMissionState* towtrack = (TowTrackMissionState*) GameState()->GetState("TowTrackMissionState");
+		PizzaMissionState* pizza = (PizzaMissionState*) GameState()->GetState("PizzaMissionState");
+		AmbulanceMissionState* ambulance = (AmbulanceMissionState*) GameState()->GetState("AmbulanceMissionState");
 
 		DDSURFACEDESC desc;
 		memset(&desc, 0, sizeof(desc));
@@ -251,34 +251,24 @@ void Score::Paint()
 				return;
 			}
 
+			m_surface = (MxU8*) desc.lpSurface;
+
+			// For each of the 5 characters, check the activity state
 			for (MxU8 id = 1; id <= 5; id++) {
-				m_surface = (MxU8*) desc.lpSurface;
-				MxU16 color = 0;
-				if (l70) {
-					color = l70->GetColor(id);
-				}
-				MxU32 row = id - 1;
-				FillArea(0, row, color);
-				color = 0;
-				if (l78) {
-					color = l78->GetColor(id);
-				}
-				FillArea(1, row, color);
-				color = 0;
-				if (l74) {
-					color = l74->GetColor(id);
-				}
-				FillArea(2, row, color);
-				color = 0;
-				if (lesi) {
-					color = lesi->GetColor(id);
-				}
-				FillArea(3, row, color);
-				color = 0;
-				if (lebp) {
-					color = lebp->GetColor(id);
-				}
-				FillArea(4, row, color);
+				MxU16 color = carrace ? carrace->GetColor(id) : 0;
+				FillArea(0, id - 1, color);
+
+				color = jetski ? jetski->GetColor(id) : 0;
+				FillArea(1, id - 1, color);
+
+				color = pizza ? pizza->GetColor(id) : 0;
+				FillArea(2, id - 1, color);
+
+				color = towtrack ? towtrack->GetColor(id) : 0;
+				FillArea(3, id - 1, color);
+
+				color = ambulance ? ambulance->GetColor(id) : 0;
+				FillArea(4, id - 1, color);
 			}
 
 			gd->m_surface->Unlock(desc.lpSurface);

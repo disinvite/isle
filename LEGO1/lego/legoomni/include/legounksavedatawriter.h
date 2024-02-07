@@ -39,6 +39,7 @@ public:
 	AutoROI* FUN_10083500(undefined4, undefined4);
 	void FUN_100832a0();
 	void FUN_10083db0(LegoROI* p_roi);
+	void FUN_10083f10(LegoROI* p_roi);
 };
 
 #endif // LEGOUNKSAVEDATAWRITER_H

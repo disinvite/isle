@@ -14,8 +14,28 @@ LegoCacheSound::~LegoCacheSound()
 	// TODO
 }
 
-// STUB: LEGO1 0x100066d0
+// FUNCTION: LEGO1 0x100066d0
 void LegoCacheSound::Init()
+{
+	m_unk0x8 = 0;
+	m_unk0x40 = 0;
+	m_unk0x58 = 0;
+	// m_unk0x59; // TODO
+	m_unk0x6a = 0;
+	m_unk0x70 = 0;
+	m_unk0x69 = 1;
+	m_unk0x6c = 79;
+	m_unk0x84 = 0;
+}
+
+// STUB: LEGO1 0x10006b80
+void LegoCacheSound::FUN_10006b80()
+{
+	// TODO
+}
+
+// STUB: LEGO1 0x10006be0
+void LegoCacheSound::FUN_10006be0()
 {
 	// TODO
 }
