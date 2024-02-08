@@ -23,20 +23,28 @@ LegoUnknown100d6b4c::~LegoUnknown100d6b4c()
 // FUNCTION: LEGO1 0x1003d050
 MxResult LegoUnknown100d6b4c::Tickle()
 {
-	// Map100d6b4c::iterator it;
-	for (Map100d6b4c::iterator it = m_map.begin(); it != m_map.end(); it++) {
-		LegoCacheSound*& sound = (*it).second;
+	for (Map100d6b4c::iterator map_it = m_map.begin(); map_it != m_map.end(); map_it++) {
+		LegoCacheSound* sound = (*map_it).m_sound;
 		if (sound->GetUnk0x58()) {
 			sound->FUN_10006be0();
 		}
 	}
 
-	for (it = m_map.begin(); it != m_map.end(); it++) {
-		LegoCacheSound*& sound = (*it).second;
+	List100d6b4c::iterator list_it = m_list.begin();
+	while (list_it != m_list.end()) {
+		LegoCacheSound* sound = (*list_it).m_sound;
 		if (sound->GetUnk0x58()) {
 			sound->FUN_10006be0();
+			list_it++;
+			continue;
 		}
 		sound->FUN_10006b80();
+
+		List100d6b4c::iterator temp = list_it;
+		list_it++;
+
+		m_list.erase(temp);
+		delete sound;
 	}
 
 	return SUCCESS;
@@ -52,7 +60,7 @@ void LegoUnknown100d6b4c::FUN_1003d170(const char* p_key)
 // FUNCTION: LEGO1 0x1003d290
 LegoCacheSound* LegoUnknown100d6b4c::FUN_1003d290(LegoCacheSound* p_sound)
 {
-	Map100d6b4c::iterator it = m_map.find(p_sound->GetString0x48().GetData());
+	Map100d6b4c::iterator it = m_map.find(Element1006b4c(p_sound));
 
 	// TODO
 

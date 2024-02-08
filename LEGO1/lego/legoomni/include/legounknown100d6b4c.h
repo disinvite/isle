@@ -6,41 +6,31 @@
 #include "mxstl/stlcompat.h"
 #include "mxtypes.h"
 
-struct Map100d6b4cComparator {
-	bool operator()(const char* const& p_key0, const char* const& p_key1) const { return strcmpi(p_key0, p_key1) > 0; }
-};
-
-// set of pair?
-typedef map<const char*, LegoCacheSound*, Map100d6b4cComparator> Map100d6b4c;
-
-// typedef pair<LegoCacheSound*, const char*> Element1006b4c;
-
-/*
 struct Element1006b4c {
-  Element1006b4c() : m_sound(NULL), m_name(NULL) {};
-  Element1006b4c(LegoCacheSound* p_sound, const char *p_name) : m_sound(p_sound), m_name(p_name) {};
-  ~Element1006b4c() {
-	if (m_sound == NULL && m_name != NULL) {
-	  delete[] const_cast<char*>(m_name);
-	}
-  }
-  int operator==(Element1006b4c) const { return 0; }
-  int operator<(Element1006b4c) const { return 0; }
-
-  LegoCacheSound* m_sound;
-  const char* m_name;
-};
-*/
-struct Element1006b4c : public pair<LegoCacheSound*, const char*> {
-	Element1006b4c() : pair<LegoCacheSound*, const char*>(NULL, NULL){};
-	Element1006b4c(LegoCacheSound* p_sound, const char* p_name) : pair<LegoCacheSound*, const char*>(p_sound, p_name){};
+	Element1006b4c() : m_sound(NULL), m_name(NULL){};
+	Element1006b4c(LegoCacheSound* p_sound, const char* p_name) : m_sound(p_sound), m_name(p_name){};
+	Element1006b4c(LegoCacheSound* p_sound) : m_sound(p_sound), m_name(p_sound->GetString0x48().GetData()){};
 	~Element1006b4c()
 	{
-		if (first == NULL && second != NULL) {
-			delete[] const_cast<char*>(second);
+		if (m_sound == NULL && m_name != NULL) {
+			delete[] const_cast<char*>(m_name);
 		}
 	}
+	bool operator==(Element1006b4c) const { return 0; }
+	bool operator<(Element1006b4c) const { return 0; }
+
+	LegoCacheSound* m_sound;
+	const char* m_name;
 };
+
+struct Map100d6b4cComparator {
+	bool operator()(const Element1006b4c& p_a, const Element1006b4c& p_b) const
+	{
+		return strcmpi(p_a.m_name, p_b.m_name) > 0;
+	}
+};
+
+typedef set<Element1006b4c, Map100d6b4cComparator> Map100d6b4c;
 
 typedef list<Element1006b4c> List100d6b4c;
 
@@ -67,16 +57,16 @@ private:
 // clang-format off
 
 // TEMPLATE: LEGO1 0x10029c30
-// _Tree<char const *,pair<char const * const,LegoCacheSound *>,map<char const *,LegoCacheSound *,Map100d6b4cComparator,allocator<LegoCacheSound *> >::_Kfn,Map100d6b4cComparator,allocator<LegoCacheSound *> >::~_Tree<char const *,pair<char const * const,LegoCacheSound *>,map<char const *,LegoCacheSound *,Map100d6b4cComparator,allocator<LegoCacheSound *> >::_Kfn,Map100d6b4cComparator,allocator<LegoCacheSound *> >
+// _Tree<Element1006b4c,Element1006b4c,set<Element1006b4c,Map100d6b4cComparator,allocator<Element1006b4c> >::_Kfn,Map100d6b4cComparator,allocator<Element1006b4c> >::~_Tree<Element1006b4c,Element1006b4c,set<Element1006b4c,Map100d6b4cComparator,allocator<Element1006b4c> >::_Kfn,Map100d6b4cComparator,allocator<Element1006b4c> >
 
 // TEMPLATE: LEGO1 0x10029d10
-// _Tree<char const *,pair<char const * const,LegoCacheSound *>,map<char const *,LegoCacheSound *,Map100d6b4cComparator,allocator<LegoCacheSound *> >::_Kfn,Map100d6b4cComparator,allocator<LegoCacheSound *> >::iterator::_Inc
+// _Tree<Element1006b4c,Element1006b4c,set<Element1006b4c,Map100d6b4cComparator,allocator<Element1006b4c> >::_Kfn,Map100d6b4cComparator,allocator<Element1006b4c> >::iterator::_Inc
 
 // TEMPLATE: LEGO1 0x10029d50
-// _Tree<char const *,pair<char const * const,LegoCacheSound *>,map<char const *,LegoCacheSound *,Map100d6b4cComparator,allocator<LegoCacheSound *> >::_Kfn,Map100d6b4cComparator,allocator<LegoCacheSound *> >::erase
+// _Tree<Element1006b4c,Element1006b4c,set<Element1006b4c,Map100d6b4cComparator,allocator<Element1006b4c> >::_Kfn,Map100d6b4cComparator,allocator<Element1006b4c> >::erase
 
 // TEMPLATE: LEGO1 0x1002a1b0
-// _Tree<char const *,pair<char const * const,LegoCacheSound *>,map<char const *,LegoCacheSound *,Map100d6b4cComparator,allocator<LegoCacheSound *> >::_Kfn,Map100d6b4cComparator,allocator<LegoCacheSound *> >::_Erase
+// _Tree<Element1006b4c,Element1006b4c,set<Element1006b4c,Map100d6b4cComparator,allocator<Element1006b4c> >::_Kfn,Map100d6b4cComparator,allocator<Element1006b4c> >::_Erase
 
 // TEMPLATE: LEGO1 0x1002a210
 // list<Element1006b4c,allocator<Element1006b4c> >::~list<Element1006b4c,allocator<Element1006b4c> >
@@ -103,7 +93,7 @@ private:
 // LegoUnknown100d6b4c::Tree::_Insert
 
 // GLOBAL: LEGO1 0x100f31cc
-// _Tree<char const *,pair<char const * const,LegoCacheSound *>,map<char const *,LegoCacheSound *,Map100d6b4cComparator,allocator<LegoCacheSound *> >::_Kfn,Map100d6b4cComparator,allocator<LegoCacheSound *> >::_Nil
+// _Tree<Element1006b4c,Element1006b4c,set<Element1006b4c,Map100d6b4cComparator,allocator<Element1006b4c> >::_Kfn,Map100d6b4cComparator,allocator<Element1006b4c> >::_Nil
 
 // clang-format on
 
