@@ -130,7 +130,23 @@ class Compare:
 
                 raw = self.recomp_bin.read(addr, sym.size())
                 try:
-                    sym.friendly_name = raw.decode("latin1").rstrip("\x00")
+                    # We use the string length reported in the mangled symbol as the
+                    # data size, but this is not always accurate with respect to the
+                    # null terminator.
+                    # e.g. ??_C@_0BA@EFDM@MxObjectFactory?$AA@
+                    # reported length: 16 (includes null terminator)
+                    # c.f. ??_C@_03DPKJ@enz?$AA@
+                    # reported length: 3 (does NOT include terminator)
+                    # This will handle the case where the entire string contains "\x00"
+                    # because those are distinct from the empty string of length 0.
+                    decoded_string = raw.decode("latin1")
+                    rstrip_string = decoded_string.rstrip("\x00")
+
+                    if decoded_string != "" and rstrip_string != "":
+                        sym.friendly_name = rstrip_string
+                    else:
+                        sym.friendly_name = decoded_string
+
                 except UnicodeDecodeError:
                     pass
 

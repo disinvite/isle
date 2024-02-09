@@ -1,6 +1,7 @@
 """Wrapper for database (here an in-memory sqlite database) that collects the
 addresses/symbols that we want to compare between the original and recompiled binaries."""
 import sqlite3
+from sqlite3 import IntegrityError
 import logging
 from typing import List, Optional
 from isledecomp.types import SymbolType
@@ -9,15 +10,15 @@ _SETUP_SQL = """
     DROP TABLE IF EXISTS `symbols`;
     CREATE TABLE `symbols` (
         compare_type int,
-        orig_addr int,
-        recomp_addr int,
+        orig_addr int unique,
+        recomp_addr int unique,
         name text,
         decorated_name text,
         size int,
         should_skip int default(FALSE)
     );
-    CREATE INDEX `symbols_or` ON `symbols` (orig_addr);
-    CREATE INDEX `symbols_re` ON `symbols` (recomp_addr);
+    CREATE UNIQUE INDEX `symbols_or` ON `symbols` (orig_addr);
+    CREATE UNIQUE INDEX `symbols_re` ON `symbols` (recomp_addr);
     CREATE INDEX `symbols_na` ON `symbols` (name);
 """
 
@@ -70,8 +71,12 @@ class CompareDb:
         size: Optional[int],
     ):
         compare_value = compare_type.value if compare_type is not None else None
+        # Should be OK to ignore collisions here. We don't really care if the
+        # same recomp address has multiple names (e.g. _strlwr and __strlwr)
         self._db.execute(
-            "INSERT INTO `symbols` (recomp_addr, compare_type, name, decorated_name, size) VALUES (?,?,?,?,?)",
+            """INSERT OR IGNORE INTO `symbols`
+            (recomp_addr, compare_type, name, decorated_name, size)
+            VALUES (?,?,?,?,?)""",
             (addr, compare_value, name, decorated_name, size),
         )
 
@@ -191,14 +196,45 @@ class CompareDb:
         name = name[:255]
 
         logger.debug("Looking for %s %s", compare_type.name.lower(), name)
-        cur = self._db.execute(
-            """UPDATE `symbols`
-            SET orig_addr = ?, compare_type = ?
-            WHERE name = ?
-            AND orig_addr IS NULL
-            AND (compare_type = ? OR compare_type IS NULL)""",
-            (addr, compare_type.value, name, compare_type.value),
-        )
+
+        try:
+            # Match on the decorated name if it's obvious that's what we have.
+            # This is useful in a case where we have a non-unique friendly name
+            # e.g. "_Construct"
+            if compare_type != SymbolType.STRING and name.startswith("?"):
+                cur = self._db.execute(
+                    """UPDATE `symbols`
+                    SET orig_addr = ?, compare_type = ?
+                    WHERE decorated_name = ?
+                    AND orig_addr IS NULL
+                    AND (compare_type = ? OR compare_type IS NULL)""",
+                    (addr, compare_type.value, name, compare_type.value),
+                )
+            else:
+                cur = self._db.execute(
+                    """UPDATE `symbols`
+                    SET orig_addr = ?, compare_type = ?
+                    WHERE name = ?
+                    AND orig_addr IS NULL
+                    AND (compare_type = ? OR compare_type IS NULL)""",
+                    (addr, compare_type.value, name, compare_type.value),
+                )
+        except IntegrityError:
+            collision = self._db.execute(
+                "SELECT * FROM `symbols` WHERE orig_addr = ?", (addr,)
+            )
+            logger.error(
+                "Orig %s not unique! (%s, Name: %s)",
+                hex(addr),
+                compare_type.name.lower(),
+                repr(name),
+            )
+
+            # Show which row we collided with.
+            for row in collision.fetchall():
+                logger.error("* %s", repr(row))
+
+            return False
 
         return cur.rowcount > 0
 
@@ -241,9 +277,9 @@ class CompareDb:
         # has symbol: "?g_startupDelay@?1??Tick@IsleApp@@QAEXH@Z@4HA"
         # The function's decorated name is: "?Tick@IsleApp@@QAEXH@Z"
         cur = self._db.execute(
-            """UPDATE `symbols`
+            """UPDATE OR IGNORE `symbols`
             SET orig_addr = ?
-            WHERE name LIKE '%' || ? || '%' || ? || '%'
+            WHERE decorated_name LIKE '%' || ? || '%' || ? || '%'
             AND orig_addr IS NULL
             AND (compare_type = ? OR compare_type = ? OR compare_type IS NULL)""",
             (
