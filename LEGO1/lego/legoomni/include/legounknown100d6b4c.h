@@ -10,6 +10,8 @@ struct Element1006b4c {
 	Element1006b4c() : m_sound(NULL), m_name(NULL){};
 	Element1006b4c(LegoCacheSound* p_sound, const char* p_name) : m_sound(p_sound), m_name(p_name){};
 	Element1006b4c(LegoCacheSound* p_sound) : m_sound(p_sound), m_name(p_sound->GetString0x48().GetData()){};
+
+	// FUNCTION: LEGO1 0x1003d030
 	~Element1006b4c()
 	{
 		if (m_sound == NULL && m_name != NULL) {
@@ -43,7 +45,7 @@ public:
 
 	virtual MxResult Tickle(); // vtable+0x00
 
-	void FUN_1003d170(const char* p_key);
+	LegoCacheSound* FUN_1003d170(const char* p_key);
 	LegoCacheSound* FUN_1003d290(LegoCacheSound* p_sound);
 	void FUN_1003dc40(LegoCacheSound** p_und);
 
