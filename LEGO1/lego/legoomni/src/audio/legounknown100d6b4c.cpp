@@ -77,8 +77,36 @@ LegoCacheSound* LegoUnknown100d6b4c::FUN_1003d290(LegoCacheSound* p_sound)
 	return p_sound;
 }
 
-// STUB: LEGO1 0x1003dc40
+// FUNCTION: LEGO1 0x1003dc40
 void LegoUnknown100d6b4c::FUN_1003dc40(LegoCacheSound** p_und)
 {
-	// TODO
+	// Called during LegoWorld::Destroy like this:
+	// SoundManager()->GetUnknown0x40()->FUN_1003dc40(&sound);
+	// LegoCacheSound*& p_sound?
+
+	for (Map100d6b4c::iterator map_it = m_map.begin(); map_it != m_map.end(); map_it++) {
+
+		if ((*map_it).m_sound == *p_und) {
+			(*p_und)->FUN_10006b80();
+
+			delete *p_und;
+			m_map.erase(map_it);
+			return;
+		}
+	}
+
+	for (List100d6b4c::iterator list_it = m_list.begin();; list_it++) {
+		if (list_it == m_list.end()) {
+			return;
+		}
+
+		LegoCacheSound* sound = (*list_it).m_sound;
+		if (sound == *p_und) {
+			(*p_und)->FUN_10006b80();
+
+			delete sound;
+			m_list.erase(list_it);
+			return;
+		}
+	}
 }
