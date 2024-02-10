@@ -20,8 +20,75 @@ struct ColorStringStruct {
 // SIZE 0x430
 class LegoGameState {
 public:
+	enum Act {
+		e_actNotFound = -1,
+		e_act1,
+		e_act2,
+		e_act3
+	};
+
+	enum Area {
+		e_noArea = 0,
+		e_previousArea = 0,
+		e_isle,
+		e_infomain,
+		e_infodoor,
+		e_unk4,
+		e_elevbott,
+		e_unk6,
+		e_unk7,
+		e_unk8,
+		e_unk9,
+		e_unk10,
+		e_unk11,
+		e_regbook,
+		e_infoscor,
+		e_jetrace,
+		e_unk15,
+		e_unk16,
+		e_unk17,
+		e_carrace,
+		e_unk19,
+		e_unk20,
+		e_unk21,
+		e_unk22,
+
+		e_unk25 = 25,
+		e_garage,
+		e_unk27,
+
+		e_unk29 = 29,
+		e_hospital,
+		e_unk31,
+		e_unk32,
+
+		e_police = 34,
+		e_unk35,
+		e_copter,
+		e_dunecar,
+		e_jetski,
+		e_racecar,
+
+		e_act2main = 46,
+		e_act3script,
+
+		e_jukeboxw = 53,
+
+		e_histbook = 56,
+		e_unk57,
+		e_unk58,
+		e_unk59,
+		e_unk60,
+		e_unk61,
+
+		e_unk64 = 64,
+
+		e_unk66 = 66
+	};
+
 	LegoGameState();
 	~LegoGameState();
+
 	MxResult Load(MxULong);
 	MxResult Save(MxULong);
 	void SerializePlayersInfo(MxS16);
@@ -32,24 +99,24 @@ public:
 	LegoState* CreateState(const char* p_stateName);
 
 	void GetFileSavePath(MxString* p_outPath, MxULong p_slotn);
-	void StopArea(MxU32 p_area = 0);
-	void SwitchArea(MxU32 p_area);
+	void StopArea(Area p_area);
+	void SwitchArea(Area p_area);
 
 	inline MxU8 GetUnknownC() { return m_unk0x0c; }
-	inline MxU32 GetUnknown10() { return m_unk0x10; }
-	inline MxS32 GetCurrentAct() { return m_currentAct; }
-	inline MxU32 GetCurrentArea() { return m_currentArea; }
-	inline MxU32 GetPreviousArea() { return m_previousArea; }
-	inline MxU32 GetUnknown0x42c() { return m_unk0x42c; }
+	inline Act GetCurrentAct() { return m_currentAct; }
+	inline Act GetLoadedAct() { return m_loadedAct; }
+	inline Area GetCurrentArea() { return m_currentArea; }
+	inline Area GetPreviousArea() { return m_previousArea; }
+	inline Area GetUnknown0x42c() { return m_unk0x42c; }
 
 	inline void SetDirty(MxBool p_dirty) { m_isDirty = p_dirty; }
-	inline void SetCurrentArea(MxU32 p_currentArea) { m_currentArea = p_currentArea; }
-	inline void SetPreviousArea(MxU32 p_previousArea) { m_previousArea = p_previousArea; }
+	inline void SetCurrentArea(Area p_currentArea) { m_currentArea = p_currentArea; }
+	inline void SetPreviousArea(Area p_previousArea) { m_previousArea = p_previousArea; }
 	inline void SetUnknown0x0c(MxU8 p_unk0x0c) { m_unk0x0c = p_unk0x0c; }
-	inline void SetUnknown0x42c(undefined4 p_unk0x42c) { m_unk0x42c = p_unk0x42c; }
+	inline void SetUnknown0x42c(Area p_unk0x42c) { m_unk0x42c = p_unk0x42c; }
 
-	void FUN_1003cea0(undefined4 p_state);
-	void FUN_1003ceb0();
+	void SetCurrentAct(Act p_currentAct);
+	void FindLoadedAct();
 	void FUN_10039780(MxU8);
 	void FUN_10039940();
 
@@ -72,8 +139,8 @@ private:
 	MxS16 m_stateCount;                         // 0x04
 	LegoState** m_stateArray;                   // 0x08
 	MxU8 m_unk0x0c;                             // 0x0c
-	MxU32 m_unk0x10;                            // 0x10
-	MxS32 m_currentAct;                         // 0x14
+	Act m_currentAct;                           // 0x10
+	Act m_loadedAct;                            // 0x14
 	LegoBackgroundColor* m_backgroundColor;     // 0x18
 	LegoBackgroundColor* m_tempBackgroundColor; // 0x1c
 	LegoFullScreenMovie* m_fullScreenMovie;     // 0x20
@@ -82,9 +149,9 @@ private:
 	ScoreStruct m_unk0xa6;                      // 0xa6
 	undefined m_unk0x41a[8];                    // 0x41a - might be part of the structure at 0xa6
 	MxBool m_isDirty;                           // 0x420
-	MxU32 m_currentArea;                        // 0x424
-	MxU32 m_previousArea;                       // 0x428
-	undefined4 m_unk0x42c;                      // 0x42c
+	Area m_currentArea;                         // 0x424
+	Area m_previousArea;                        // 0x428
+	Area m_unk0x42c;                            // 0x42c
 };
 
 MxBool ROIHandlerFunction(char* p_input, char* p_output, MxU32 p_copyLen);

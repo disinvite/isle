@@ -104,6 +104,7 @@ public:
 	void FUN_1005b4f0(MxBool p_disable, MxU16 p_flags);
 	void CreateBackgroundAudio();
 	void RemoveWorld(const MxAtomId&, MxLong);
+	undefined4 FUN_1005b490(char* p_worldName);
 
 	static MxS32 GetCurrPathInfo(LegoPathBoundary**, MxS32&);
 	static void CreateInstance();
@@ -124,6 +125,7 @@ public:
 	MxTransitionManager* GetTransitionManager() { return m_transitionManager; }
 	MxDSAction& GetCurrentAction() { return m_action; }
 	LegoUnkSaveDataWriter* GetUnkSaveDataWriter() { return m_saveDataWriter; }
+	LegoWorldList* GetWorldList() { return m_worldList; }
 
 	inline void SetNavController(LegoNavController* p_navController) { m_navController = p_navController; }
 	inline void SetCurrentWorld(LegoWorld* p_currentWorld) { m_currentWorld = p_currentWorld; }

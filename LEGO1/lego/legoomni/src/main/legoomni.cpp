@@ -588,7 +588,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 				if (m_transitionManager->GetDDrawSurfaceFromVideoManager() == SUCCESS) {
 					m_notificationManager->Register(this);
 					SetAppCursor(1);
-					m_gameState->FUN_1003cea0(0);
+					m_gameState->SetCurrentAct(LegoGameState::e_act1);
 					return SUCCESS;
 				}
 			}
@@ -752,6 +752,12 @@ MxS32 LegoOmni::GetCurrPathInfo(LegoPathBoundary** p_path, MxS32& p_value)
 	}
 
 	return ::CurrentWorld()->GetCurrPathInfo(p_path, p_value);
+}
+
+// STUB: LEGO1 0x1005b490
+undefined4 LegoOmni::FUN_1005b490(char* p_worldName)
+{
+	return -1;
 }
 
 // FUNCTION: LEGO1 0x1005b4f0

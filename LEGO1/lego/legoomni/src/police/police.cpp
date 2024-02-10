@@ -13,7 +13,7 @@ DECOMP_SIZE_ASSERT(Police, 0x110)
 Police::Police()
 {
 	m_policeState = NULL;
-	m_transitionDestination = 0;
+	m_transitionDestination = LegoGameState::e_noArea;
 	NotificationManager()->Register(this);
 }
 
@@ -54,8 +54,8 @@ MxResult Police::Create(MxDSAction& p_dsAction)
 	}
 
 	m_policeState = policeState;
-	GameState()->SetCurrentArea(0x22);
-	GameState()->StopArea();
+	GameState()->SetCurrentArea(LegoGameState::e_police);
+	GameState()->StopArea(LegoGameState::e_previousArea);
 	return ret;
 }
 
@@ -100,10 +100,20 @@ MxLong Police::HandleNotification11(MxNotificationParam& p_param)
 	return 0;
 }
 
-// STUB: LEGO1 0x1005e6a0
+// FUNCTION: LEGO1 0x1005e6a0
 MxLong Police::HandleEndAction(MxEndActionNotificationParam& p_param)
 {
-	// TODO
+	MxDSAction* action = p_param.GetAction();
+
+	if (m_radio.Notify(p_param) == 0 && m_atom == action->GetAtomId()) {
+		if (m_policeState->GetUnknown0x0c() == 1) {
+			m_policeState->SetUnknown0x0c(0);
+			return 1;
+		}
+
+		return 0;
+	}
+
 	return 0;
 }
 
@@ -141,6 +151,6 @@ void Police::Enable(MxBool p_enable)
 MxBool Police::VTable0x64()
 {
 	DeleteObjects(&m_atom, 500, 510);
-	m_transitionDestination = 2;
+	m_transitionDestination = LegoGameState::e_infomain;
 	return TRUE;
 }
