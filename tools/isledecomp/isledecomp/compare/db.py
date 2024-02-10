@@ -7,16 +7,24 @@ from isledecomp.types import SymbolType
 
 _SETUP_SQL = """
     DROP TABLE IF EXISTS `symbols`;
+    DROP TABLE IF EXISTS `match_options`;
+
     CREATE TABLE `symbols` (
         compare_type int,
         orig_addr int,
         recomp_addr int,
         name text,
         decorated_name text,
-        size int,
-        is_stub int default(FALSE),
-        should_skip int default(FALSE)
+        size int
     );
+
+    CREATE TABLE `match_options` (
+        addr int not null,
+        name text not null,
+        value text,
+        primary key (addr, name)
+    ) without rowid;
+
     CREATE INDEX `symbols_or` ON `symbols` (orig_addr);
     CREATE INDEX `symbols_re` ON `symbols` (recomp_addr);
     CREATE INDEX `symbols_na` ON `symbols` (name);
@@ -24,8 +32,6 @@ _SETUP_SQL = """
 
 
 class MatchInfo:
-    # TODO
-    # pylint: disable=too-many-arguments
     def __init__(
         self,
         ctype: Optional[int],
@@ -33,14 +39,12 @@ class MatchInfo:
         recomp: Optional[int],
         name: Optional[str],
         size: Optional[int],
-        is_stub: bool,
     ) -> None:
         self.compare_type = SymbolType(ctype) if ctype is not None else None
         self.orig_addr = orig
         self.recomp_addr = recomp
         self.name = name
         self.size = size
-        self.is_stub = is_stub
 
     def match_name(self) -> str:
         """Combination of the name and compare type.
@@ -99,7 +103,7 @@ class CompareDb:
 
     def get_all(self) -> List[MatchInfo]:
         cur = self._db.execute(
-            """SELECT compare_type, orig_addr, recomp_addr, name, size, is_stub
+            """SELECT compare_type, orig_addr, recomp_addr, name, size
             FROM `symbols`
             ORDER BY orig_addr NULLS LAST
             """,
@@ -110,11 +114,10 @@ class CompareDb:
 
     def get_matches(self) -> Optional[MatchInfo]:
         cur = self._db.execute(
-            """SELECT compare_type, orig_addr, recomp_addr, name, size, is_stub
+            """SELECT compare_type, orig_addr, recomp_addr, name, size
             FROM `symbols`
             WHERE orig_addr IS NOT NULL
             AND recomp_addr IS NOT NULL
-            AND should_skip IS FALSE
             ORDER BY orig_addr
             """,
         )
@@ -124,11 +127,10 @@ class CompareDb:
 
     def get_one_match(self, addr: int) -> Optional[MatchInfo]:
         cur = self._db.execute(
-            """SELECT compare_type, orig_addr, recomp_addr, name, size, is_stub
+            """SELECT compare_type, orig_addr, recomp_addr, name, size
             FROM `symbols`
             WHERE orig_addr = ?
             AND recomp_addr IS NOT NULL
-            AND should_skip IS FALSE
             """,
             (addr,),
         )
@@ -137,7 +139,7 @@ class CompareDb:
 
     def get_by_orig(self, addr: int) -> Optional[MatchInfo]:
         cur = self._db.execute(
-            """SELECT compare_type, orig_addr, recomp_addr, name, size, is_stub
+            """SELECT compare_type, orig_addr, recomp_addr, name, size
             FROM `symbols`
             WHERE orig_addr = ?
             """,
@@ -148,7 +150,7 @@ class CompareDb:
 
     def get_by_recomp(self, addr: int) -> Optional[MatchInfo]:
         cur = self._db.execute(
-            """SELECT compare_type, orig_addr, recomp_addr, name, size, is_stub
+            """SELECT compare_type, orig_addr, recomp_addr, name, size
             FROM `symbols`
             WHERE recomp_addr = ?
             """,
@@ -159,12 +161,11 @@ class CompareDb:
 
     def get_matches_by_type(self, compare_type: SymbolType) -> List[MatchInfo]:
         cur = self._db.execute(
-            """SELECT compare_type, orig_addr, recomp_addr, name, size, is_stub
+            """SELECT compare_type, orig_addr, recomp_addr, name, size
             FROM `symbols`
             WHERE compare_type = ?
             AND orig_addr IS NOT NULL
             AND recomp_addr IS NOT NULL
-            AND should_skip IS FALSE
             ORDER BY orig_addr
             """,
             (compare_type.value,),
@@ -200,15 +201,35 @@ class CompareDb:
         """For lineref match or _entry"""
         return self.set_pair(orig, recomp, SymbolType.FUNCTION)
 
+    def _set_opt_bool(self, addr: int, option: str, enabled: bool = True):
+        if enabled:
+            self._db.execute(
+                """INSERT OR IGNORE INTO `match_options`
+                (addr, name)
+                VALUES (?, ?)""",
+                (addr, option),
+            )
+        else:
+            self._db.execute(
+                """DELETE FROM `match_options` WHERE addr = ? AND name = ?""",
+                (addr, option),
+            )
+
     def mark_stub(self, orig: int):
-        self._db.execute(
-            "UPDATE `symbols` SET is_stub = TRUE WHERE orig_addr = ?", (orig,)
-        )
+        self._set_opt_bool(orig, "stub")
 
     def skip_compare(self, orig: int):
-        self._db.execute(
-            "UPDATE `symbols` SET should_skip = TRUE WHERE orig_addr = ?", (orig,)
+        self._set_opt_bool(orig, "skip")
+
+    def get_match_options(self, addr: int) -> Optional[dict]:
+        cur = self._db.execute(
+            """SELECT name, value FROM `match_options` WHERE addr = ?""", (addr,)
         )
+
+        return {
+            option: value if value is not None else True
+            for (option, value) in cur.fetchall()
+        }
 
     def _find_potential_match(
         self, name: str, compare_type: SymbolType

@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class DiffReport:
+    # pylint: disable=too-many-instance-attributes
     match_type: SymbolType
     orig_addr: int
     recomp_addr: int
@@ -27,6 +28,7 @@ class DiffReport:
     udiff: Optional[List[str]] = None
     ratio: float = 0.0
     is_effective_match: bool = False
+    is_stub: bool = False
 
     @property
     def effective_ratio(self) -> float:
@@ -271,15 +273,6 @@ class Compare:
                 self._db.skip_compare(thunk_from_orig)
 
     def _compare_function(self, match: MatchInfo) -> DiffReport:
-        if match.size == 0 or match.is_stub:
-            # Report a failed match to make the user aware of the empty function.
-            return DiffReport(
-                match_type=SymbolType.FUNCTION,
-                orig_addr=match.orig_addr,
-                recomp_addr=match.recomp_addr,
-                name=match.name,
-            )
-
         orig_raw = self.orig_bin.read(match.orig_addr, match.size)
         recomp_raw = self.recomp_bin.read(match.recomp_addr, match.size)
 
@@ -422,6 +415,23 @@ class Compare:
 
     def _compare_match(self, match: MatchInfo) -> Optional[DiffReport]:
         """Router for comparison type"""
+
+        if match.size == 0:
+            return None
+
+        options = self._db.get_match_options(match.orig_addr)
+        if options.get("skip", False):
+            return None
+
+        if options.get("stub", False):
+            return DiffReport(
+                match_type=match.compare_type,
+                orig_addr=match.orig_addr,
+                recomp_addr=match.recomp_addr,
+                name=match.name,
+                is_stub=True,
+            )
+
         if match.compare_type == SymbolType.FUNCTION:
             return self._compare_function(match)
 
@@ -456,7 +466,9 @@ class Compare:
 
     def compare_functions(self) -> Iterable[DiffReport]:
         for match in self.get_functions():
-            yield self._compare_match(match)
+            diff = self._compare_match(match)
+            if diff is not None:
+                yield diff
 
     def compare_variables(self):
         pass
@@ -469,4 +481,6 @@ class Compare:
 
     def compare_vtables(self) -> Iterable[DiffReport]:
         for match in self.get_vtables():
-            yield self._compare_match(match)
+            diff = self._compare_match(match)
+            if diff is not None:
+                yield self._compare_match(match)
