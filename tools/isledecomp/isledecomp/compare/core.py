@@ -178,12 +178,12 @@ class Compare:
             if recomp_addr is not None:
                 self._db.set_function_pair(fun.offset, recomp_addr)
                 if fun.should_skip():
-                    self._db.skip_compare(fun.offset)
+                    self._db.mark_stub(fun.offset)
 
         for fun in codebase.iter_name_functions():
             self._db.match_function(fun.offset, fun.name)
             if fun.should_skip():
-                self._db.skip_compare(fun.offset)
+                self._db.mark_stub(fun.offset)
 
         for var in codebase.iter_variables():
             if var.is_static and var.parent_function is not None:
@@ -271,7 +271,7 @@ class Compare:
                 self._db.skip_compare(thunk_from_orig)
 
     def _compare_function(self, match: MatchInfo) -> DiffReport:
-        if match.size == 0:
+        if match.size == 0 or match.is_stub:
             # Report a failed match to make the user aware of the empty function.
             return DiffReport(
                 match_type=SymbolType.FUNCTION,
