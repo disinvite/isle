@@ -74,7 +74,7 @@ LegoGameState::LegoGameState()
 	this->m_previousArea = 0;
 	this->m_unk0x42c = 0;
 	this->m_isDirty = FALSE;
-	this->m_currentAct = -1;
+	this->m_loadedAct = e_actNotFound;
 
 	m_backgroundColor = new LegoBackgroundColor("backgroundcolor", "set 56 54 68");
 	VariableTable()->SetVariable(m_backgroundColor);
@@ -139,7 +139,7 @@ MxResult LegoGameState::Save(MxULong p_slot)
 			MxU32 maybeVersion = 0x1000C;
 			fileStream.Write(&maybeVersion, 4);
 			fileStream.Write(&m_unk0x24, 2);
-			fileStream.Write(&m_unk0x10, 2);
+			fileStream.Write(&m_currentAct, 2);
 			fileStream.Write(&m_unk0x0c, 1);
 
 			for (MxS32 i = 0; i < sizeof(g_colorSaveData) / sizeof(g_colorSaveData[0]); ++i) {
@@ -436,33 +436,71 @@ void LegoGameState::StopArea(MxU32 p_area)
 	}
 }
 
-// STUB: LEGO1 0x1003b060
+// FUNCTION: LEGO1 0x1003b060
 void LegoGameState::SwitchArea(MxU32 p_area)
 {
 	m_previousArea = m_currentArea;
 	m_currentArea = p_area;
 
+	FUN_10015820(TRUE, LegoOmni::c_disableInput | LegoOmni::c_disable3d);
 	BackgroundAudioManager()->Stop();
 	AnimationManager()->FUN_1005ef10();
 	VideoManager()->SetUnk0x554(FALSE);
 
-	MxAtomId* script = g_isleScript;
 	LegoWorld* world;
 
 	switch (p_area) {
 	case 1:
+		InvokeAction(Extra::ActionType::e_opendisk, *g_isleScript, 0, NULL);
 		break;
 	case 2:
 		VideoManager()->SetUnk0x554(TRUE);
-		script = g_infomainScript;
+		InvokeAction(Extra::ActionType::e_opendisk, *g_infomainScript, 0, NULL);
 		break;
 	case 3:
 		VideoManager()->SetUnk0x554(TRUE);
-		script = g_infodoorScript;
+		InvokeAction(Extra::ActionType::e_opendisk, *g_infodoorScript, 0, NULL);
 		break;
-		// TODO
+	case 4:
+	case 0xf:
+	case 0x10:
+	case 0x11:
+	case 0x13:
+	case 0x14:
+	case 0x15:
+	case 0x16:
+	case 0x19:
+	case 0x1d:
+	case 0x1f:
+	case 0x20:
+	case 0x39:
+	case 0x3a:
+	case 0x3b:
+	case 0x3c:
+	case 0x3d:
+	case 0x40:
+	case 0x42:
+		world = FindWorld(*g_isleScript, 0);
+		if (world != NULL) {
+			if (world->GetUnknown0xd0().empty()) {
+				break;
+			}
+			else {
+#ifdef COMPAT_MODE
+				{
+					MxNotificationParam param(c_notificationType20, NULL);
+					NotificationManager()->Send(world, &param);
+				}
+#else
+				NotificationManager()->Send(world, &MxNotificationParam(c_notificationType20, NULL));
+#endif
+				break;
+			}
+		}
+		InvokeAction(Extra::ActionType::e_opendisk, *g_isleScript, 0, NULL);
+		break;
 	case 5:
-		script = g_elevbottScript;
+		InvokeAction(Extra::ActionType::e_opendisk, *g_elevbottScript, 0, NULL);
 		break;
 	case 6:
 	case 7:
@@ -471,7 +509,7 @@ void LegoGameState::SwitchArea(MxU32 p_area)
 		if (world == NULL) {
 			InvokeAction(Extra::ActionType::e_opendisk, *g_isleScript, 0, NULL);
 		}
-		else {
+		else if (!world->GetUnknown0xd0().empty()) {
 #ifdef COMPAT_MODE
 			{
 				MxNotificationParam param(c_notificationType20, NULL);
@@ -481,20 +519,96 @@ void LegoGameState::SwitchArea(MxU32 p_area)
 			NotificationManager()->Send(world, &MxNotificationParam(c_notificationType20, NULL));
 #endif
 		}
+		InvokeAction(Extra::ActionType::e_start, *g_isleScript, 1050, NULL);
+		break;
+	case 8:
+		VideoManager()->SetUnk0x554(TRUE);
+		InvokeAction(Extra::ActionType::e_start, *g_isleScript, 1114, NULL);
+		break;
+	case 9:
+		InvokeAction(Extra::ActionType::e_start, *g_isleScript, 1140, NULL);
+		break;
+	case 10:
+		InvokeAction(Extra::ActionType::e_start, *g_isleScript, 1118, NULL);
+		break;
+	case 11:
+		InvokeAction(Extra::ActionType::e_start, *g_isleScript, 1145, NULL);
 		break;
 	case 12:
 		VideoManager()->SetUnk0x554(TRUE);
-		script = g_regbookScript;
+		InvokeAction(Extra::ActionType::e_opendisk, *g_regbookScript, 0, NULL);
 		break;
 	case 13:
 		VideoManager()->SetUnk0x554(TRUE);
-		script = g_infoscorScript;
+		InvokeAction(Extra::ActionType::e_opendisk, *g_infoscorScript, 0, NULL);
+		break;
+	case 14:
+		if (m_previousArea == 2) {
+			m_currentArea = 15;
+
+			world = FindWorld(*g_isleScript, 0);
+			if (world != NULL) {
+				if (world->GetUnknown0xd0().empty()) {
+					return;
+				}
+				else {
+#ifdef COMPAT_MODE
+					{
+						MxNotificationParam param(c_notificationType20, NULL);
+						NotificationManager()->Send(world, &param);
+					}
+#else
+					NotificationManager()->Send(world, &MxNotificationParam(c_notificationType20, NULL));
+#endif
+				}
+				return;
+			}
+			else {
+				InvokeAction(Extra::ActionType::e_opendisk, *g_isleScript, 0, NULL);
+				break;
+			}
+		}
+
+		InvokeAction(Extra::ActionType::e_opendisk, *g_jetraceScript, 0, NULL);
+		break;
+	case 18:
+		if (m_previousArea == 2) {
+			m_currentArea = 19;
+
+			world = FindWorld(*g_isleScript, 0);
+			if (world != NULL) {
+				if (world->GetUnknown0xd0().empty()) {
+					return;
+				}
+				else {
+#ifdef COMPAT_MODE
+					{
+						MxNotificationParam param(c_notificationType20, NULL);
+						NotificationManager()->Send(world, &param);
+					}
+#else
+					NotificationManager()->Send(world, &MxNotificationParam(c_notificationType20, NULL));
+#endif
+				}
+				return;
+			}
+		}
+
+		InvokeAction(Extra::ActionType::e_opendisk, *g_carraceScript, 0, NULL);
+		break;
+	case 26:
+		VideoManager()->SetUnk0x554(TRUE);
+		InvokeAction(Extra::ActionType::e_opendisk, *g_garageScript, 0, NULL);
 		break;
 
-		// TODO: implement other cases
+	// TODO: implement other cases
+	case 56:
+		VideoManager()->SetUnk0x554(TRUE);
+		InvokeAction(Extra::ActionType::e_opendisk, *g_histbookScript, 0, NULL);
+		break;
+	default:
+		break;
 	}
-
-	InvokeAction(Extra::ActionType::e_opendisk, *script, 0, NULL);
 }
 
 // FUNCTION: LEGO1 0x1003bac0
@@ -603,24 +717,24 @@ void LegoGameState::SerializeScoreHistory(MxS16 p_flags)
 }
 
 // FUNCTION: LEGO1 0x1003cea0
-void LegoGameState::FUN_1003cea0(undefined4 p_state)
+void LegoGameState::SetCurrentAct(Act p_currentAct)
 {
-	m_unk0x10 = p_state;
+	m_currentAct = p_currentAct;
 }
 
 // FUNCTION: LEGO1 0x1003ceb0
-void LegoGameState::FUN_1003ceb0()
+void LegoGameState::FindLoadedAct()
 {
 	if (FindWorld(*g_isleScript, 0)) {
-		m_currentAct = 0;
+		m_loadedAct = e_act1;
 	}
 	else if (FindWorld(*g_act2mainScript, 0)) {
-		m_currentAct = 1;
+		m_loadedAct = e_act2;
 	}
 	else if (FindWorld(*g_act3Script, 0)) {
-		m_currentAct = 2;
+		m_loadedAct = e_act3;
 	}
 	else {
-		m_currentAct = -1;
+		m_loadedAct = e_actNotFound;
 	}
 }
