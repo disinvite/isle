@@ -25,6 +25,12 @@ _SETUP_SQL = """
         primary key (addr, name)
     ) without rowid;
 
+    CREATE VIEW IF NOT EXISTS `match_info`
+    (compare_type, orig_addr, recomp_addr, name, size) AS
+        SELECT compare_type, orig_addr, recomp_addr, name, size
+        FROM `symbols`
+        ORDER BY orig_addr NULLS LAST;
+
     CREATE INDEX `symbols_or` ON `symbols` (orig_addr);
     CREATE INDEX `symbols_re` ON `symbols` (recomp_addr);
     CREATE INDEX `symbols_na` ON `symbols` (name);
@@ -102,23 +108,16 @@ class CompareDb:
         return [string for (string,) in cur.fetchall()]
 
     def get_all(self) -> List[MatchInfo]:
-        cur = self._db.execute(
-            """SELECT compare_type, orig_addr, recomp_addr, name, size
-            FROM `symbols`
-            ORDER BY orig_addr NULLS LAST
-            """,
-        )
+        cur = self._db.execute("SELECT * FROM `match_info`")
         cur.row_factory = matchinfo_factory
 
         return cur.fetchall()
 
     def get_matches(self) -> Optional[MatchInfo]:
         cur = self._db.execute(
-            """SELECT compare_type, orig_addr, recomp_addr, name, size
-            FROM `symbols`
+            """SELECT * FROM `match_info`
             WHERE orig_addr IS NOT NULL
             AND recomp_addr IS NOT NULL
-            ORDER BY orig_addr
             """,
         )
         cur.row_factory = matchinfo_factory
@@ -127,8 +126,7 @@ class CompareDb:
 
     def get_one_match(self, addr: int) -> Optional[MatchInfo]:
         cur = self._db.execute(
-            """SELECT compare_type, orig_addr, recomp_addr, name, size
-            FROM `symbols`
+            """SELECT * FROM `match_info`
             WHERE orig_addr = ?
             AND recomp_addr IS NOT NULL
             """,
@@ -139,8 +137,7 @@ class CompareDb:
 
     def get_by_orig(self, addr: int) -> Optional[MatchInfo]:
         cur = self._db.execute(
-            """SELECT compare_type, orig_addr, recomp_addr, name, size
-            FROM `symbols`
+            """SELECT * FROM `match_info`
             WHERE orig_addr = ?
             """,
             (addr,),
@@ -150,8 +147,7 @@ class CompareDb:
 
     def get_by_recomp(self, addr: int) -> Optional[MatchInfo]:
         cur = self._db.execute(
-            """SELECT compare_type, orig_addr, recomp_addr, name, size
-            FROM `symbols`
+            """SELECT * FROM `match_info`
             WHERE recomp_addr = ?
             """,
             (addr,),
@@ -161,12 +157,10 @@ class CompareDb:
 
     def get_matches_by_type(self, compare_type: SymbolType) -> List[MatchInfo]:
         cur = self._db.execute(
-            """SELECT compare_type, orig_addr, recomp_addr, name, size
-            FROM `symbols`
+            """SELECT * FROM `match_info`
             WHERE compare_type = ?
             AND orig_addr IS NOT NULL
             AND recomp_addr IS NOT NULL
-            ORDER BY orig_addr
             """,
             (compare_type.value,),
         )
@@ -176,11 +170,11 @@ class CompareDb:
 
     def orig_used(self, addr: int) -> bool:
         cur = self._db.execute("SELECT 1 FROM symbols WHERE orig_addr = ?", (addr,))
-        return cur.rowcount > 0
+        return cur.fetchone() is not None
 
     def recomp_used(self, addr: int) -> bool:
         cur = self._db.execute("SELECT 1 FROM symbols WHERE recomp_addr = ?", (addr,))
-        return cur.rowcount > 0
+        return cur.fetchone() is not None
 
     def set_pair(
         self, orig: int, recomp: int, compare_type: Optional[SymbolType] = None

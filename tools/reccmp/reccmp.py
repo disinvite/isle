@@ -187,6 +187,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Print addresses of recompiled functions too",
     )
+    parser.add_argument(
+        "--silent",
+        action="store_true",
+        help="Don't display text summary of matches",
+    )
 
     parser.set_defaults(loglevel=logging.INFO)
     parser.add_argument(
@@ -251,9 +256,10 @@ def main():
         htmlinsert = []
 
         for match in isle_compare.compare_all():
-            print_match_oneline(
-                match, show_both_addrs=args.print_rec_addr, is_plain=args.no_color
-            )
+            if not args.silent:
+                print_match_oneline(
+                    match, show_both_addrs=args.print_rec_addr, is_plain=args.no_color
+                )
 
             if match.match_type == SymbolType.FUNCTION and not match.is_stub:
                 function_count += 1
