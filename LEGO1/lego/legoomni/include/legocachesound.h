@@ -45,7 +45,7 @@ private:
 	undefined m_unk0x44[4];        // 0x44
 	MxString m_string0x48;         // 0x48
 	undefined m_unk0x58;           // 0x58
-	undefined m_unk0x59[0x10];     // 0x59
+	PCMWAVEFORMAT m_unk0x59;       // 0x59
 	undefined m_unk0x69;           // 0x69
 	undefined m_unk0x6a;           // 0x6a
 	undefined4 m_unk0x6c;          // 0x6c

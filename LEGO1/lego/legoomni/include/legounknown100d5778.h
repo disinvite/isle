@@ -7,9 +7,6 @@
 
 #include <dsound.h>
 
-// at LegoCacheSound +0x10
-// at Lego3dWavePresenter +0x70
-
 // VTABLE: LEGO1 0x100d5778
 // SIZE 0x30
 class LegoUnknown100d5778 {
@@ -24,7 +21,7 @@ public:
 
 private:
 	undefined m_unk0x4[4];     // 0x04
-	LPDIRECTSOUND m_unk0x8;    // 0x08
+	LPDIRECTSOUND m_unk0x8;    // 0x08 (TODO: Not certain of type)
 	LegoROI* m_unk0xc;         // 0x0c
 	undefined4 m_unk0x10;      // 0x10
 	MxBool m_unk0x14;          // 0x14

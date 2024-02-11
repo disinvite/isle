@@ -20,7 +20,7 @@ void LegoCacheSound::Init()
 	m_unk0x8 = 0;
 	m_unk0x40 = 0;
 	m_unk0x58 = 0;
-	// m_unk0x59; // TODO
+	memset(&m_unk0x59, 0, sizeof(m_unk0x59));
 	m_unk0x6a = 0;
 	m_unk0x70 = 0;
 	m_unk0x69 = 1;

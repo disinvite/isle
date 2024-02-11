@@ -32,7 +32,8 @@ void LegoUnknown100d5778::Init()
 // FUNCTION: LEGO1 0x10011880
 void LegoUnknown100d5778::FUN_10011880()
 {
-	// Called only from dtor
+	// TODO: I'm not certain this member is LPDIRECTSOUND, but it is something
+	// from dsound.h. They all have Release() as vtable+0x8.
 	if (m_unk0x8) {
 		m_unk0x8->Release();
 		m_unk0x8 = NULL;
@@ -41,10 +42,10 @@ void LegoUnknown100d5778::FUN_10011880()
 	if (m_unk0x14 && m_unk0xc && UnkSaveDataWriter()) {
 		if (m_unk0x15) {
 			UnkSaveDataWriter()->FUN_10083db0(m_unk0xc);
-			Init();
-			return;
 		}
-		UnkSaveDataWriter()->FUN_10083f10(m_unk0xc);
+		else {
+			UnkSaveDataWriter()->FUN_10083f10(m_unk0xc);
+		}
 	}
 
 	Init();
