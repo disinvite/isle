@@ -15,6 +15,8 @@ public:
 	virtual ~LegoUnknown100d5778();
 	void Init();
 	void FUN_10011880();
+	undefined4 FUN_100118e0(LPDIRECTSOUNDBUFFER p_dsBuffer);
+	void FUN_10011ca0();
 
 	// SYNTHETIC: LEGO1 0x10011650
 	// LegoUnknown100d5778::`scalar deleting destructor'

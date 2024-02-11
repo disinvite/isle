@@ -50,3 +50,16 @@ void LegoUnknown100d5778::FUN_10011880()
 
 	Init();
 }
+
+// STUB: LEGO1 0x100118e0
+undefined4 LegoUnknown100d5778::FUN_100118e0(LPDIRECTSOUNDBUFFER p_dsBuffer)
+{
+	// TODO
+	return 0;
+}
+
+// STUB: LEGO1 0x10011ca0
+void LegoUnknown100d5778::FUN_10011ca0()
+{
+	// TODO
+}

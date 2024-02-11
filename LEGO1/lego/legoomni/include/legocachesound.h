@@ -26,6 +26,10 @@ public:
 		return !strcmp(p_name, LegoCacheSound::ClassName()) || MxCore::IsA(p_name);
 	}
 
+	virtual MxResult FUN_10006710(); // vtable+0x14
+	virtual void FUN_10006920();     // vtable+0x18
+	virtual void FUN_10006cd0();     // vtable+0x1c
+
 	inline const MxString& GetString0x48() const { return m_string0x48; }
 	inline const undefined GetUnk0x58() { return m_unk0x58; }
 
@@ -38,20 +42,20 @@ public:
 private:
 	void Init();
 
-	undefined4 m_unk0x8;           // 0x08
-	undefined m_unk0xc[4];         // 0x0c
-	LegoUnknown100d5778 m_unk0x10; // 0x10
-	undefined4 m_unk0x40;          // 0x40
-	undefined m_unk0x44[4];        // 0x44
-	MxString m_string0x48;         // 0x48
-	undefined m_unk0x58;           // 0x58
-	PCMWAVEFORMAT m_unk0x59;       // 0x59
-	undefined m_unk0x69;           // 0x69
-	undefined m_unk0x6a;           // 0x6a
-	undefined4 m_unk0x6c;          // 0x6c
-	undefined m_unk0x70;           // 0x70
-	MxString m_string0x74;         // 0x74
-	undefined m_unk0x84;           // 0x84
+	LPDIRECTSOUNDBUFFER m_dsBuffer; // 0x08
+	undefined m_unk0xc[4];          // 0x0c
+	LegoUnknown100d5778 m_unk0x10;  // 0x10
+	undefined* m_unk0x40;           // 0x40
+	undefined m_unk0x44[4];         // 0x44
+	MxString m_string0x48;          // 0x48
+	undefined m_unk0x58;            // 0x58
+	PCMWAVEFORMAT m_unk0x59;        // 0x59
+	MxBool m_isLooping;             // 0x69
+	undefined m_unk0x6a;            // 0x6a
+	undefined4 m_unk0x6c;           // 0x6c
+	undefined m_unk0x70;            // 0x70
+	MxString m_string0x74;          // 0x74
+	undefined m_unk0x84;            // 0x84
 };
 
 #endif // LEGOCACHESOUND_H
