@@ -30,12 +30,12 @@ LegoUnknown100d6b4c::~LegoUnknown100d6b4c()
 MxResult LegoUnknown100d6b4c::Tickle()
 {
 #ifdef COMPAT_MODE
-	Map100d6b4c::iterator mapIter;
-	for (mapIter = m_map.begin(); mapIter != m_map.end(); mapIter++) {
+	Set100d6b4c::iterator setIter;
+	for (setIter = m_map.begin(); setIter != m_map.end(); setIter++) {
 #else
-	for (Map100d6b4c::iterator mapIter = m_map.begin(); mapIter != m_map.end(); mapIter++) {
+	for (Set100d6b4c::iterator setIter = m_map.begin(); setIter != m_map.end(); setIter++) {
 #endif
-		LegoCacheSound* sound = (*mapIter).m_sound;
+		LegoCacheSound* sound = (*setIter).m_sound;
 		if (sound->GetUnk0x58()) {
 			sound->FUN_10006be0();
 		}
@@ -68,10 +68,10 @@ LegoCacheSound* LegoUnknown100d6b4c::FUN_1003d170(const char* p_key)
 	char* x = new char[strlen(p_key) + 1];
 	strcpy(x, p_key);
 
-	Map100d6b4c::iterator mapIter;
-	for (mapIter = m_map.begin(); mapIter != m_map.end(); mapIter++) {
-		if (!strcmpi((*mapIter).m_name, x)) {
-			return (*mapIter).m_sound;
+	Set100d6b4c::iterator setIter;
+	for (setIter = m_map.begin(); setIter != m_map.end(); setIter++) {
+		if (!strcmpi((*setIter).m_name, x)) {
+			return (*setIter).m_sound;
 		}
 	}
 
@@ -81,12 +81,12 @@ LegoCacheSound* LegoUnknown100d6b4c::FUN_1003d170(const char* p_key)
 // FUNCTION: LEGO1 0x1003d290
 LegoCacheSound* LegoUnknown100d6b4c::FUN_1003d290(LegoCacheSound* p_sound)
 {
-	Map100d6b4c::iterator it = m_map.find(Element1006b4c(p_sound));
+	Set100d6b4c::iterator it = m_map.find(Element100d6b4c(p_sound));
 
 	// TODO
 
 	if (p_sound->GetUnk0x58()) {
-		m_list.push_back(Element1006b4c(p_sound, p_sound->GetString0x48().GetData()));
+		m_list.push_back(Element100d6b4c(p_sound, p_sound->GetString0x48().GetData()));
 	}
 	else {
 		LegoWorld* world = CurrentWorld();
@@ -106,16 +106,16 @@ void LegoUnknown100d6b4c::FUN_1003dc40(LegoCacheSound** p_und)
 	// LegoCacheSound*& p_sound?
 
 #ifdef COMPAT_MODE
-	Map100d6b4c::iterator mapIter;
-	for (mapIter = m_map.begin(); mapIter != m_map.end(); mapIter++) {
+	Set100d6b4c::iterator setIter;
+	for (setIter = m_map.begin(); setIter != m_map.end(); setIter++) {
 #else
-	for (Map100d6b4c::iterator mapIter = m_map.begin(); mapIter != m_map.end(); mapIter++) {
+	for (Set100d6b4c::iterator setIter = m_map.begin(); setIter != m_map.end(); setIter++) {
 #endif
-		if ((*mapIter).m_sound == *p_und) {
+		if ((*setIter).m_sound == *p_und) {
 			(*p_und)->FUN_10006b80();
 
 			delete *p_und;
-			m_map.erase(mapIter);
+			m_map.erase(setIter);
 			return;
 		}
 	}
