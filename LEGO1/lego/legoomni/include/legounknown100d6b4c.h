@@ -100,6 +100,12 @@ private:
 // TEMPLATE: LEGO1 0x1003d760
 // _Tree<Element100d6b4c,Element100d6b4c,set<Element100d6b4c,Set100d6b4cComparator,allocator<Element100d6b4c> >::_Kfn,Set100d6b4cComparator,allocator<Element100d6b4c> >::_Insert
 
+// TEMPLATE: LEGO1 0x1003d9f0
+// _Tree<Element100d6b4c,Element100d6b4c,set<Element100d6b4c,Set100d6b4cComparator,allocator<Element100d6b4c> >::_Kfn,Set100d6b4cComparator,allocator<Element100d6b4c> >::_Lrotate
+
+// TEMPLATE: LEGO1 0x1003da50
+// _Tree<Element100d6b4c,Element100d6b4c,set<Element100d6b4c,Set100d6b4cComparator,allocator<Element100d6b4c> >::_Kfn,Set100d6b4cComparator,allocator<Element100d6b4c> >::_Rrotate
+
 // GLOBAL: LEGO1 0x100f31cc
 // _Tree<Element100d6b4c,Element100d6b4c,set<Element100d6b4c,Set100d6b4cComparator,allocator<Element100d6b4c> >::_Kfn,Set100d6b4cComparator,allocator<Element100d6b4c> >::_Nil
 
