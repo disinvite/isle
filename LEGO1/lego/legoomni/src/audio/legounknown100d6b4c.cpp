@@ -78,7 +78,7 @@ LegoCacheSound* LegoUnknown100d6b4c::FUN_1003d170(const char* p_key)
 	return NULL;
 }
 
-// FUNCTION: LEGO1 0x1003d290
+// STUB: LEGO1 0x1003d290
 LegoCacheSound* LegoUnknown100d6b4c::FUN_1003d290(LegoCacheSound* p_sound)
 {
 	Set100d6b4c::iterator it = m_map.find(Element100d6b4c(p_sound));
@@ -99,17 +99,14 @@ LegoCacheSound* LegoUnknown100d6b4c::FUN_1003d290(LegoCacheSound* p_sound)
 }
 
 // FUNCTION: LEGO1 0x1003dae0
-void LegoUnknown100d6b4c::FUN_1003dae0(char* p_one, char* p_two, char* p_three)
+void LegoUnknown100d6b4c::FUN_1003dae0(char* p_one, char* p_two, MxBool p_three)
 {
-	// TODO
-	// first is char* (name of sound file?)
-	// second is usually null or 0xe4 member of LegoPathActor.
-	// 2 params here, sent into FUN_1003d170/FUN_1003db10
+	// DECOMP: Second parameter is 0xe4 member of LegoPathActor subclass
 	FUN_1003db10(FUN_1003d170(p_one), p_two, p_three);
 }
 
 // FUNCTION: LEGO1 0x1003db10
-LegoCacheSound* LegoUnknown100d6b4c::FUN_1003db10(LegoCacheSound* p_one, char* p_two, char* p_three)
+LegoCacheSound* LegoUnknown100d6b4c::FUN_1003db10(LegoCacheSound* p_one, char* p_two, MxBool p_three)
 {
 	if (!p_one) {
 		return NULL;
@@ -119,12 +116,12 @@ LegoCacheSound* LegoUnknown100d6b4c::FUN_1003db10(LegoCacheSound* p_one, char* p
 		LegoCacheSound* result = p_one->FUN_10006960();
 		if (result) {
 			LegoCacheSound* t = FUN_1003d290(result);
-			t->FUN_10006a30(p_two, (char) p_three);
+			t->FUN_10006a30(p_two, p_three);
 			return t;
 		}
 	}
 	else {
-		p_one->FUN_10006a30(p_two, (char) p_three);
+		p_one->FUN_10006a30(p_two, p_three);
 		return p_one;
 	}
 

@@ -76,7 +76,7 @@ LegoCacheSound* LegoCacheSound::FUN_10006960()
 }
 
 // STUB: LEGO1 0x10006a30
-MxResult LegoCacheSound::FUN_10006a30(char* p_str, char p_unused)
+MxResult LegoCacheSound::FUN_10006a30(char* p_str, MxBool p_unused)
 {
 	// TODO
 	// gets param2 from FUN_1003db10
@@ -149,6 +149,6 @@ void LegoCacheSound::FUN_10006be0()
 }
 
 // FUNCTION: LEGO1 0x10006cd0
-void LegoCacheSound::FUN_10006cd0(undefined4)
+void LegoCacheSound::FUN_10006cd0(undefined4, undefined4)
 {
 }
