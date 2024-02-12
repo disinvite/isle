@@ -68,6 +68,25 @@ void LegoCacheSound::FUN_10006920()
 	Init();
 }
 
+// STUB: LEGO1 0x10006960
+LegoCacheSound* LegoCacheSound::FUN_10006960()
+{
+	// TODO
+	return NULL;
+}
+
+// STUB: LEGO1 0x10006a30
+MxResult LegoCacheSound::FUN_10006a30(char* p_str, char p_unused)
+{
+	// TODO
+	// gets param2 from FUN_1003db10
+	if (!m_unk0x40 && !m_unk0x44) {
+		return FAILURE;
+	}
+
+	return SUCCESS;
+}
+
 // FUNCTION: LEGO1 0x10006b80
 void LegoCacheSound::FUN_10006b80()
 {
@@ -129,8 +148,7 @@ void LegoCacheSound::FUN_10006be0()
 	}
 }
 
-// STUB: LEGO1 0x10006cd0
-void LegoCacheSound::FUN_10006cd0()
+// FUNCTION: LEGO1 0x10006cd0
+void LegoCacheSound::FUN_10006cd0(undefined4)
 {
-	// TODO
 }

@@ -98,6 +98,39 @@ LegoCacheSound* LegoUnknown100d6b4c::FUN_1003d290(LegoCacheSound* p_sound)
 	return p_sound;
 }
 
+// FUNCTION: LEGO1 0x1003dae0
+void LegoUnknown100d6b4c::FUN_1003dae0(char* p_one, char* p_two, char* p_three)
+{
+	// TODO
+	// first is char* (name of sound file?)
+	// second is usually null or 0xe4 member of LegoPathActor.
+	// 2 params here, sent into FUN_1003d170/FUN_1003db10
+	FUN_1003db10(FUN_1003d170(p_one), p_two, p_three);
+}
+
+// FUNCTION: LEGO1 0x1003db10
+LegoCacheSound* LegoUnknown100d6b4c::FUN_1003db10(LegoCacheSound* p_one, char* p_two, char* p_three)
+{
+	if (!p_one) {
+		return NULL;
+	}
+
+	if (p_one->GetUnk0x58()) {
+		LegoCacheSound* result = p_one->FUN_10006960();
+		if (result) {
+			LegoCacheSound* t = FUN_1003d290(result);
+			t->FUN_10006a30(p_two, (char) p_three);
+			return t;
+		}
+	}
+	else {
+		p_one->FUN_10006a30(p_two, (char) p_three);
+		return p_one;
+	}
+
+	return NULL;
+}
+
 // FUNCTION: LEGO1 0x1003dc40
 void LegoUnknown100d6b4c::FUN_1003dc40(LegoCacheSound** p_und)
 {

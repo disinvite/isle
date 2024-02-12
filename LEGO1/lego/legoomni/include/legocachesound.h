@@ -26,13 +26,15 @@ public:
 		return !strcmp(p_name, LegoCacheSound::ClassName()) || MxCore::IsA(p_name);
 	}
 
-	virtual MxResult FUN_10006710(); // vtable+0x14
-	virtual void FUN_10006920();     // vtable+0x18
-	virtual void FUN_10006cd0();     // vtable+0x1c
+	virtual MxResult FUN_10006710();       // vtable+0x14
+	virtual void FUN_10006920();           // vtable+0x18
+	virtual void FUN_10006cd0(undefined4); // vtable+0x1c
 
 	inline const MxString& GetString0x48() const { return m_string0x48; }
 	inline const undefined GetUnk0x58() { return m_unk0x58; }
 
+	LegoCacheSound* FUN_10006960();
+	MxResult FUN_10006a30(char* p_str, char p_unused);
 	void FUN_10006b80();
 	void FUN_10006be0();
 
@@ -46,7 +48,7 @@ private:
 	undefined m_unk0xc[4];          // 0x0c
 	LegoUnknown100d5778 m_unk0x10;  // 0x10
 	undefined* m_unk0x40;           // 0x40
-	undefined m_unk0x44[4];         // 0x44
+	undefined4 m_unk0x44;           // 0x44
 	MxString m_string0x48;          // 0x48
 	undefined m_unk0x58;            // 0x58
 	PCMWAVEFORMAT m_unk0x59;        // 0x59
