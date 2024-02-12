@@ -78,21 +78,26 @@ LegoCacheSound* LegoUnknown100d6b4c::FUN_1003d170(const char* p_key)
 	return NULL;
 }
 
-// STUB: LEGO1 0x1003d290
+// FUNCTION: LEGO1 0x1003d290
 LegoCacheSound* LegoUnknown100d6b4c::FUN_1003d290(LegoCacheSound* p_sound)
 {
 	Set100d6b4c::iterator it = m_map.find(Element100d6b4c(p_sound));
+	if (it != m_map.end()) {
+		LegoCacheSound* sound = (*it).m_sound;
 
-	// TODO
-
-	if (p_sound->GetUnk0x58()) {
-		m_list.push_back(Element100d6b4c(p_sound, p_sound->GetString0x48().GetData()));
-	}
-	else {
-		LegoWorld* world = CurrentWorld();
-		if (world) {
-			world->Add(p_sound);
+		if (sound->GetUnk0x58()) {
+			m_list.push_back(Element100d6b4c(p_sound));
+			return p_sound;
 		}
+
+		delete p_sound;
+		return sound;
+	}
+
+	m_map.insert(Element100d6b4c(p_sound));
+	LegoWorld* world = CurrentWorld();
+	if (world) {
+		world->Add(p_sound);
 	}
 
 	return p_sound;

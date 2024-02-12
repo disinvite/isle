@@ -11,6 +11,14 @@ struct Element100d6b4c {
 	Element100d6b4c(LegoCacheSound* p_sound, const char* p_name) : m_sound(p_sound), m_name(p_name){};
 	Element100d6b4c(LegoCacheSound* p_sound) : m_sound(p_sound), m_name(p_sound->GetString0x48().GetData()){};
 
+	// FUNCTION: LEGO1 0x1003d030
+	~Element100d6b4c()
+	{
+		if (m_sound == NULL) {
+			delete[] const_cast<char*>(m_name);
+		}
+	}
+
 	bool operator==(Element100d6b4c) const { return 0; }
 	bool operator<(Element100d6b4c) const { return 0; }
 
@@ -77,8 +85,8 @@ private:
 // TEMPLATE: LEGO1 0x1002a340
 // List<Element100d6b4c>::~List<Element100d6b4c>
 
-// TEMPLATE: LEGO1 0x1003d030
-// _Tree<Element100d6b4c,Element100d6b4c,set<Element100d6b4c,Set100d6b4cComparator,allocator<Element100d6b4c> >::_Kfn,Set100d6b4cComparator,allocator<Element100d6b4c> >::_Freenode
+// TEMPLATE: LEGO1 0x1003dab0
+// list<Element100d6b4c,allocator<Element100d6b4c> >::_Buynode
 
 // TEMPLATE: LEGO1 0x1003d450
 // _Tree<Element100d6b4c,Element100d6b4c,set<Element100d6b4c,Set100d6b4cComparator,allocator<Element100d6b4c> >::_Kfn,Set100d6b4cComparator,allocator<Element100d6b4c> >::insert
