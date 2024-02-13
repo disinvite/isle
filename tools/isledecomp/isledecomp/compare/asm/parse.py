@@ -12,10 +12,15 @@ from typing import Callable, List, Optional, Tuple
 from collections import namedtuple
 from isledecomp.bin import InvalidVirtualAddressError
 from capstone import Cs, CS_ARCH_X86, CS_MODE_32
+from .partition import Partition
 
 disassembler = Cs(CS_ARCH_X86, CS_MODE_32)
 
 ptr_replace_regex = re.compile(r"(?P<data_size>\w+) ptr \[(?P<addr>0x[0-9a-fA-F]+)\]")
+
+array_index_regex = re.compile(
+    r"(?P<data_size>\w+) ptr \[[\w\*]+ \+ (?P<addr>0x[0-9a-fA-F]+)\]"
+)
 
 DisasmLiteInst = namedtuple("DisasmLiteInst", "address, size, mnemonic, op_str")
 
@@ -35,6 +40,7 @@ def get_float_size(size_str: str) -> int:
 
 
 class ParseAsm:
+    # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         relocate_lookup: Optional[Callable[[int], bool]] = None,
@@ -46,6 +52,17 @@ class ParseAsm:
         self.float_lookup = float_lookup
         self.replacements = {}
         self.number_placeholders = True
+
+        # Mapping of address and label name we need to place down before
+        # the instruction at said address. Obtained by reading jump tables.
+        self.labels = {}
+
+        # Partition of the addresses in this function.
+        # TODO: should construct here instead
+        self.partition = None
+
+        # Second set of placeholders just for jump tables and helper LUTs
+        self.extra_names = {}
 
     def reset(self):
         self.replacements = {}
@@ -93,6 +110,43 @@ class ParseAsm:
         placeholder = f"<OFFSET{idx}>" if self.number_placeholders else "<OFFSET>"
         self.replacements[addr] = placeholder
         return placeholder
+
+    def first_pass(self, inst: DisasmLiteInst, start: int, end: int):
+        # TODO: can we do any meaningful analysis if we don't know
+        # how big the function is?
+        if start == end:
+            return
+
+        # We are only watching these instructons in search of
+        # switch data or jump tables.
+        if inst.mnemonic not in ("mov", "jmp"):
+            return
+
+        # The instruction of interest is either:
+        # mov al, byte ptr [reg + addr]
+        # jmp dword ptr [reg*0x4 + addr]
+        # In both cases we want the right-most operand.
+        operand = inst.op_str.split(", ", 1)[-1]
+
+        # Try to match the address of the array
+        match = array_index_regex.match(operand)
+        if match is None:
+            return
+
+        array_addr = from_hex(match["addr"])
+        if array_addr is None:
+            return
+
+        # If the address is not inside the bounds of the function, return.
+        # This should exclude an index into an array from a global variable.
+        if not start <= array_addr < end:
+            return
+
+        if inst.mnemonic == "mov":
+            self.partition.cut_data(array_addr)
+
+        if inst.mnemonic == "jmp":
+            self.partition.cut_jump(array_addr)
 
     def sanitize(self, inst: DisasmLiteInst) -> Tuple[str, str]:
         if len(inst.op_str) == 0:
@@ -192,10 +246,23 @@ class ParseAsm:
     def parse_asm(self, data: bytes, start_addr: Optional[int] = 0) -> List[str]:
         asm = []
 
-        for inst in disassembler.disasm_lite(data, start_addr):
+        # Grab it here because we will read it twice
+        instructions = [
+            DisasmLiteInst(*inst) for inst in disassembler.disasm_lite(data, start_addr)
+        ]
+
+        end_addr = start_addr + len(data)
+        self.partition = Partition(start_addr, end_addr)
+
+        # PASS 1: Scanning for jump tables
+        for inst in instructions:
+            self.first_pass(inst, start_addr, end_addr)
+
+        # PASS 2: Sanitize and stringify
+        for inst in instructions:
             # Use heuristics to disregard some differences that aren't representative
             # of the accuracy of a function (e.g. global offsets)
-            result = self.sanitize(DisasmLiteInst(*inst))
+            result = self.sanitize(inst)
             # mnemonic + " " + op_str
             asm.append(" ".join(result))
 
