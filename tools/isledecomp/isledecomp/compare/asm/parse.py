@@ -7,12 +7,13 @@ so that virtual addresses are replaced by symbol name or a generic
 placeholder string."""
 
 import re
+import struct
 from functools import cache
 from typing import Callable, List, Optional, Tuple
 from collections import namedtuple
 from isledecomp.bin import InvalidVirtualAddressError
 from capstone import Cs, CS_ARCH_X86, CS_MODE_32
-from .partition import Partition
+from .partition import Partition, PartType
 
 disassembler = Cs(CS_ARCH_X86, CS_MODE_32)
 
@@ -53,6 +54,10 @@ class ParseAsm:
         self.replacements = {}
         self.number_placeholders = True
 
+        # If we did not detect a jump/data table in our first pass
+        # we can skip some processing steps.
+        self.found_jump_table = False
+
         # Mapping of address and label name we need to place down before
         # the instruction at said address. Obtained by reading jump tables.
         self.labels = {}
@@ -60,9 +65,6 @@ class ParseAsm:
         # Partition of the addresses in this function.
         # TODO: should construct here instead
         self.partition = None
-
-        # Second set of placeholders just for jump tables and helper LUTs
-        self.extra_names = {}
 
     def reset(self):
         self.replacements = {}
@@ -111,42 +113,79 @@ class ParseAsm:
         self.replacements[addr] = placeholder
         return placeholder
 
-    def first_pass(self, inst: DisasmLiteInst, start: int, end: int):
+    def read_jump_table(self, data: bytes, table_index: int = 0):
+        # TODO: assert len(data) % 4 == 0
+        data_size = len(data)
+        if data_size % 4 != 0:
+            data_size = 4 * (data_size // 4)
+            data = data[:data_size]
+
+        for i, (addr,) in enumerate(struct.iter_unpack("<L", data)):
+            self.labels[addr] = f".switch_{table_index}_case_{i}"
+
+    def sanitize_jump_table(self, data: bytes) -> List[str]:
+        # TODO: assert len(data) % 4 == 0
+        data_size = len(data)
+        if data_size % 4 != 0:
+            data_size = 4 * (data_size // 4)
+            data = data[:data_size]
+
+        return [
+            self.labels.get(addr, "PLACEHOLDER")
+            for (addr,) in struct.iter_unpack("<L", data)
+        ]
+
+    def first_pass(self, inst: DisasmLiteInst, start: int, end: int) -> int:
+        """Read an instruction from the function and identify any jump tables
+        or data segments within the boundary of the function.
+        Both are associated with switch statements.
+        If we find either one, return the address that it points to.
+        The goal here is to establish the "end of code" so that we do not
+        read bogus instructions from a section that has data.
+        NOTE: This makes a big assumption that we will not have a function
+        where there is code followed by a jump table (and data) followed
+        by more code in the same function.
+        """
+
         # TODO: can we do any meaningful analysis if we don't know
         # how big the function is?
-        if start == end:
-            return
+        if start >= end:
+            return end
 
         # We are only watching these instructons in search of
         # switch data or jump tables.
         if inst.mnemonic not in ("mov", "jmp"):
-            return
+            return end
 
         # The instruction of interest is either:
-        # mov al, byte ptr [reg + addr]
-        # jmp dword ptr [reg*0x4 + addr]
-        # In both cases we want the right-most operand.
+        # - mov al, byte ptr [reg + addr]
+        # - jmp dword ptr [reg*0x4 + addr]
+        # In both cases we want the last operand.
         operand = inst.op_str.split(", ", 1)[-1]
 
         # Try to match the address of the array
         match = array_index_regex.match(operand)
         if match is None:
-            return
+            return end
 
         array_addr = from_hex(match["addr"])
         if array_addr is None:
-            return
+            return end
 
         # If the address is not inside the bounds of the function, return.
         # This should exclude an index into an array from a global variable.
         if not start <= array_addr < end:
-            return
+            return end
+
+        self.found_jump_table = True
 
         if inst.mnemonic == "mov":
             self.partition.cut_data(array_addr)
 
         if inst.mnemonic == "jmp":
             self.partition.cut_jump(array_addr)
+
+        return array_addr
 
     def sanitize(self, inst: DisasmLiteInst) -> Tuple[str, str]:
         if len(inst.op_str) == 0:
@@ -254,16 +293,47 @@ class ParseAsm:
         end_addr = start_addr + len(data)
         self.partition = Partition(start_addr, end_addr)
 
+        end_of_code = end_addr
+
         # PASS 1: Scanning for jump tables
         for inst in instructions:
-            self.first_pass(inst, start_addr, end_addr)
+            # Don't read junk instructions from a jump or data table.
+            if inst.address >= end_of_code:
+                break
+
+            reported_end = self.first_pass(inst, start_addr, end_addr)
+            end_of_code = min(end_of_code, reported_end)
+
+        if self.found_jump_table:
+            # We now have to read the jump table(s).
+            for p_start, p_size, p_type in self.partition.get_all():
+                # TODO: unfinished
+                if p_type == PartType.JUMP:
+                    self.labels[p_start] = ".table"  # TODO
+                    # TODO: cleaner way to convert v.addr back to offset.
+                    self.read_jump_table(
+                        data[p_start - start_addr : p_start - start_addr + p_size]
+                    )
 
         # PASS 2: Sanitize and stringify
         for inst in instructions:
+            if inst.address >= end_of_code:
+                break
+
             # Use heuristics to disregard some differences that aren't representative
             # of the accuracy of a function (e.g. global offsets)
             result = self.sanitize(inst)
+
+            if self.found_jump_table and inst.address in self.labels:
+                asm.append(self.labels[inst.address])
+
             # mnemonic + " " + op_str
             asm.append(" ".join(result))
+
+        if self.found_jump_table:
+            # TODO: meh
+            asm.append(".table")
+            for line in self.sanitize_jump_table(data[end_of_code - start_addr :]):
+                asm.append(line)
 
         return asm
