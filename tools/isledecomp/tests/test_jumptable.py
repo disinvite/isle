@@ -9,11 +9,19 @@ def fixture_part():
     return Partition(0, 1000)
 
 
-def test_partition_basic(part):
-    """Cuts of the same type should merge together."""
+def test_partition_merge(part):
+    """CODE cuts should merge together, but not JUMP or DATA."""
     assert list(part.get_all()) == [(0, 1000, PartType.CODE)]
     part.cut_code(500)
     assert list(part.get_all()) == [(0, 1000, PartType.CODE)]
+
+    part.cut_jump(700)
+    part.cut_jump(900)
+    assert list(part.get_all()) == [
+        (0, 700, PartType.CODE),
+        (700, 200, PartType.JUMP),
+        (900, 100, PartType.JUMP),
+    ]
 
 
 def test_partition_cut(part):
@@ -100,6 +108,8 @@ def test_simple_case_output():
     assert "table" in lines[11]
 
 
-# TODO: 2 jump tables in one function
 # TODO: hypothetical case where we have CODE JUMP CODE
 # can detect code start by looking at jump addresses.
+
+# Test case: 3 jump tables
+# 0x1006f080  Infocenter::HandleEndAction

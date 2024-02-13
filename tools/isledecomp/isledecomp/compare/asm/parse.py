@@ -135,6 +135,9 @@ class ParseAsm:
             for (addr,) in struct.iter_unpack("<L", data)
         ]
 
+    def sanitize_switch_data(self, data: bytes) -> List[str]:
+        return [hex(b) for b in data]
+
     def first_pass(self, inst: DisasmLiteInst, start: int, end: int) -> int:
         """Read an instruction from the function and identify any jump tables
         or data segments within the boundary of the function.
@@ -306,34 +309,56 @@ class ParseAsm:
 
         if self.found_jump_table:
             # We now have to read the jump table(s).
+            jump_table_index = 0
             for p_start, p_size, p_type in self.partition.get_all():
-                # TODO: unfinished
+                if p_type == PartType.DATA:
+                    self.labels[p_start] = f".switch_data_{jump_table_index}"
+
                 if p_type == PartType.JUMP:
-                    self.labels[p_start] = ".table"  # TODO
+                    self.labels[p_start] = f".jump_table_{jump_table_index}"
                     # TODO: cleaner way to convert v.addr back to offset.
                     self.read_jump_table(
-                        data[p_start - start_addr : p_start - start_addr + p_size]
+                        data[p_start - start_addr : p_start - start_addr + p_size],
+                        jump_table_index,
                     )
+                    jump_table_index += 1
 
         # PASS 2: Sanitize and stringify
-        for inst in instructions:
-            if inst.address >= end_of_code:
-                break
+        code_was_read = False
+        for p_start, p_size, p_type in self.partition.get_all():
+            if p_type == PartType.CODE and not code_was_read:
+                code_was_read = True
 
-            # Use heuristics to disregard some differences that aren't representative
-            # of the accuracy of a function (e.g. global offsets)
-            result = self.sanitize(inst)
+                # TODO: This is a hack because we are using the
+                # already read instructions from disasm_lite to save time.
+                # This won't work if the CODE section is not first and
+                # if there is more than one.
+                for inst in instructions:
+                    if inst.address >= end_of_code:
+                        break
 
-            if self.found_jump_table and inst.address in self.labels:
-                asm.append(self.labels[inst.address])
+                    # Use heuristics to disregard some differences that aren't representative
+                    # of the accuracy of a function (e.g. global offsets)
+                    result = self.sanitize(inst)
 
-            # mnemonic + " " + op_str
-            asm.append(" ".join(result))
+                    # If a switch case jumps to this address, show the label
+                    if self.found_jump_table and inst.address in self.labels:
+                        asm.append(self.labels[inst.address])
 
-        if self.found_jump_table:
-            # TODO: meh
-            asm.append(".table")
-            for line in self.sanitize_jump_table(data[end_of_code - start_addr :]):
-                asm.append(line)
+                    # mnemonic + " " + op_str
+                    asm.append(" ".join(result))
+
+            else:
+                if p_start in self.labels:
+                    asm.append(self.labels[p_start])
+
+                data_slice = data[p_start - start_addr : p_start - start_addr + p_size]
+                if p_type == PartType.JUMP:
+                    for line in self.sanitize_jump_table(data_slice):
+                        asm.append(line)
+
+                if p_type == PartType.DATA:
+                    for line in self.sanitize_switch_data(data_slice):
+                        asm.append(line)
 
         return asm

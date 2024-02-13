@@ -31,7 +31,8 @@ class Partition:
                 last = c
 
             # If this cut type is different from the last new type
-            if last[1] != c[1]:
+            # OR if it is the same type, but not a CODE cut:
+            if (last[1] == c[1] and last[1] != PartType.CODE) or (last[1] != c[1]):
                 yield (last[0], c[0] - last[0], last[1])
                 last = c
 
