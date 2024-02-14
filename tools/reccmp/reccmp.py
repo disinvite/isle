@@ -5,7 +5,7 @@ import base64
 import json
 import logging
 import os
-import datetime
+from datetime import datetime
 
 from isledecomp import (
     Bin,
@@ -22,7 +22,7 @@ import colorama
 colorama.init()
 
 
-def gen_json(json_file: str, data):
+def gen_json(json_file: str, orig_file: str, data):
     """Create a JSON file that contains the comparison summary"""
 
     # Remove the diff field
@@ -33,7 +33,8 @@ def gen_json(json_file: str, data):
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump(
             {
-                "timestamp": datetime.datetime.now(datetime.UTC).timestamp(),
+                "file": os.path.basename(orig_file).lower(),
+                "timestamp": datetime.now().timestamp(),
                 "data": reduced_data,
             },
             f,
@@ -267,6 +268,7 @@ def main():
             # If html, record the diffs to an HTML file
             html_obj = {
                 "address": f"0x{match.orig_addr:x}",
+                "recomp": f"0x{match.recomp_addr:x}",
                 "name": match.name,
                 "matching": match.effective_ratio,
             }
@@ -295,7 +297,7 @@ def main():
                 )
 
         if args.json is not None:
-            gen_json(args.json, htmlinsert)
+            gen_json(args.json, args.original, htmlinsert)
 
         if args.html is not None:
             gen_html(args.html, json.dumps(htmlinsert))

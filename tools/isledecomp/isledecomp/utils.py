@@ -94,9 +94,16 @@ def diff_json_display(show_both_addrs: bool = False, is_plain: bool = False):
             else (saved.get("name") if saved is not None else "???")
         )
 
+        if show_both_addrs:
+            addr_string = (
+                f"{orig_addr} / {new['recomp'] if new is not None else 'n/a':10}"
+            )
+        else:
+            addr_string = orig_addr
+
         return " ".join(
             [
-                orig_addr,
+                addr_string,
                 f"{name:60}",
                 f"{old_pct:10}",
                 "->",
