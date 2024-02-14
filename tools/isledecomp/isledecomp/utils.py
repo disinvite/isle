@@ -62,54 +62,49 @@ def percent_string(
 
 
 def diff_json_display(show_both_addrs: bool = False, is_plain: bool = False):
-    # pylint: disable=unused-argument
-    # TODO
-    """Generate and return print function"""
+    """Generate a function that will display the diff according to
+    the reccmp display preferences."""
 
     def formatter(orig_addr, saved, new) -> str:
         # Effective match not considered here
 
-        old_pct = (
-            ""
-            if saved is None
-            else (
-                "stub"
-                if saved.get("stub", False)
-                else percent_string(saved["matching"], False, is_plain)
-            )
-        )
-        new_pct = (
-            ""
-            if new is None
-            else (
+        old_pct = "new"
+        new_pct = "gone"
+        name = ""
+        recomp_addr = "n/a"
+
+        if new is not None:
+            new_pct = (
                 "stub"
                 if new.get("stub", False)
                 else percent_string(new["matching"], False, is_plain)
             )
-        )
 
-        name = (
-            new.get("name")
-            if new is not None
-            else (saved.get("name") if saved is not None else "???")
-        )
+            # Prefer the current name of this function if we have it.
+            # We are using the original address as the key.
+            # A function being renamed is not of interest here.
+            name = new.get("name", "")
+            recomp_addr = new.get("recomp", "n/a")
+
+        if saved is not None:
+            old_pct = (
+                "stub"
+                if saved.get("stub", False)
+                else percent_string(saved["matching"], False, is_plain)
+            )
+
+            if name == "":
+                name = saved.get("name", "")
 
         if show_both_addrs:
-            addr_string = (
-                f"{orig_addr} / {new['recomp'] if new is not None else 'n/a':10}"
-            )
+            addr_string = f"{orig_addr} / {recomp_addr:10}"
         else:
             addr_string = orig_addr
 
-        return " ".join(
-            [
-                addr_string,
-                f"{name:60}",
-                f"{old_pct:10}",
-                "->",
-                f"{new_pct:10}",
-            ]
-        )
+        # The ANSI codes from colorama counted towards string length,
+        # so displaying this as an ascii-like spreadsheet
+        # (using f-string formatting) would take some effort.
+        return f"{addr_string} - {name} ({old_pct} -> {new_pct})"
 
     return formatter
 
@@ -117,39 +112,25 @@ def diff_json_display(show_both_addrs: bool = False, is_plain: bool = False):
 def diff_json(
     saved_data, new_data, show_both_addrs: bool = False, is_plain: bool = False
 ):
-    # TODO: is_plain option
-    # TODO: both_addrs option
+    """Using a saved copy of the diff summary and the current data, print a
+    report showing which functions/symbols have changed match percentage."""
 
-    saved_invert = {
-        obj["address"]: {
-            "name": obj["name"],
-            "matching": obj["matching"],
-            "stub": obj.get("stub", False),
-        }
-        for obj in saved_data["data"]
-    }
+    # Convert to dict, using orig_addr as key
+    saved_invert = {obj["address"]: obj for obj in saved_data}
+    new_invert = {obj["address"]: obj for obj in new_data}
 
-    new_invert = {
-        obj["address"]: {
-            "name": obj["name"],
-            "matching": obj["matching"],
-            "stub": obj.get("stub", False),
-        }
-        for obj in new_data
-    }
+    all_addrs = set(saved_invert.keys()).union(new_invert.keys())
 
-    all_addrs = set(key for key, _ in saved_invert.items()).union(
-        set(key for key, _ in new_invert.items())
-    )
-
+    # Put all the information in one place so we can decide how each item changed.
     combined = {
         addr: (
             saved_invert.get(addr),
             new_invert.get(addr),
         )
-        for addr in all_addrs
+        for addr in sorted(all_addrs)
     }
 
+    # The criteria for diff judgement is in these dict comprehensions:
     new_functions = {
         key: (saved, new) for key, (saved, new) in combined.items() if saved is None
     }
@@ -158,6 +139,7 @@ def diff_json(
         key: (saved, new) for key, (saved, new) in combined.items() if new is None
     }
 
+    # TODO: move these two into functions if the assessment gets more complex
     improved_functions = {
         key: (saved, new)
         for key, (saved, new) in combined.items()
@@ -182,7 +164,6 @@ def diff_json(
 
     get_diff_str = diff_json_display(show_both_addrs, is_plain)
 
-    # TODO: sort by addr.
     for diff_name, diff_dict in [
         ("NEW", new_functions),
         ("IMPROVED", improved_functions),

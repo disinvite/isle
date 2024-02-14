@@ -25,6 +25,11 @@ colorama.init()
 def gen_json(json_file: str, orig_file: str, data):
     """Create a JSON file that contains the comparison summary"""
 
+    # If the structure of the JSON file ever changes, we would run into a problem
+    # reading an older format file in the CI action. Mark which version we are
+    # generating so we could potentially address this down the road.
+    json_format_version = 1
+
     # Remove the diff field
     reduced_data = [
         {key: value for (key, value) in obj.items() if key != "diff"} for obj in data
@@ -34,11 +39,11 @@ def gen_json(json_file: str, orig_file: str, data):
         json.dump(
             {
                 "file": os.path.basename(orig_file).lower(),
+                "format": json_format_version,
                 "timestamp": datetime.now().timestamp(),
                 "data": reduced_data,
             },
             f,
-            indent=2,
         )
 
 
@@ -290,7 +295,7 @@ def main():
             with open(args.diff, "r", encoding="utf-8") as f:
                 saved_data = json.load(f)
                 diff_json(
-                    saved_data,
+                    saved_data["data"],
                     htmlinsert,
                     show_both_addrs=args.print_rec_addr,
                     is_plain=args.no_color,
