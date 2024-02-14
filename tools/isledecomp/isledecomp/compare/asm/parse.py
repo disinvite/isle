@@ -20,7 +20,7 @@ disassembler = Cs(CS_ARCH_X86, CS_MODE_32)
 ptr_replace_regex = re.compile(r"(?P<data_size>\w+) ptr \[(?P<addr>0x[0-9a-fA-F]+)\]")
 
 array_index_regex = re.compile(
-    r"(?P<data_size>\w+) ptr \[[\w\*]+ \+ (?P<addr>0x[0-9a-fA-F]+)\]"
+    r"(?P<data_size>\w+) ptr \[(?P<index>(?:[\w\*]+ \+ )+)(?P<addr>0x[0-9a-fA-F]+)\]"
 )
 
 DisasmLiteInst = namedtuple("DisasmLiteInst", "address, size, mnemonic, op_str")
@@ -239,6 +239,26 @@ class ParseAsm:
             # But just in case: return the string with no changes
             return match.group(0)
 
+        def array_replace(match):
+            """Helper for re.sub, specifically for [something + offset] cases"""
+            offset = from_hex(match.group("addr"))
+
+            if offset is not None:
+                # Use a jump/data table label if we have one
+                placeholder = self.labels.get(offset)
+
+                # If not, don't replace unless this address is relocated.
+                # If it is a jump or data table, it is an absolute address.
+                # We could use the imagebase (or just set some arbitrary threshold)
+                # to do this without .reloc information.
+                if placeholder is None and self.is_relocated(offset):
+                    placeholder = self.replace(offset)
+
+                if placeholder is not None:
+                    return f'{match.group("data_size")} ptr [{match.group("index")}{placeholder}]'
+
+            return match.group(0)
+
         def float_ptr_replace(match):
             offset = from_hex(match.group("addr"))
 
@@ -265,6 +285,9 @@ class ParseAsm:
         if inst.mnemonic.startswith("f"):
             # If floating point instruction
             op_str = ptr_replace_regex.sub(float_ptr_replace, inst.op_str)
+        elif "+" in inst.op_str:
+            # hack?
+            op_str = array_index_regex.sub(array_replace, inst.op_str)
         else:
             op_str = ptr_replace_regex.sub(filter_out_ptr, inst.op_str)
 

@@ -113,3 +113,5 @@ def test_simple_case_output():
 
 # Test case: 3 jump tables
 # 0x1006f080  Infocenter::HandleEndAction
+
+# TODO: jump table and data table index matchup.
