@@ -289,17 +289,20 @@ def main():
 
             htmlinsert.append(html_obj)
 
-        ## Generate files and show summary.
-
+        # Compare with saved diff report.
         if args.diff is not None:
             with open(args.diff, "r", encoding="utf-8") as f:
                 saved_data = json.load(f)
+
                 diff_json(
-                    saved_data["data"],
+                    saved_data,
                     htmlinsert,
+                    args.original,
                     show_both_addrs=args.print_rec_addr,
                     is_plain=args.no_color,
                 )
+
+        ## Generate files and show summary.
 
         if args.json is not None:
             gen_json(args.json, args.original, htmlinsert)

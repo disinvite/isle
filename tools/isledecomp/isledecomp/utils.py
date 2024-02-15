@@ -1,5 +1,7 @@
 import os
 import sys
+from datetime import datetime
+import logging
 import colorama
 
 
@@ -112,13 +114,44 @@ def diff_json_display(show_both_addrs: bool = False, is_plain: bool = False):
 
 
 def diff_json(
-    saved_data, new_data, show_both_addrs: bool = False, is_plain: bool = False
+    saved_data,
+    new_data,
+    orig_file: str,
+    show_both_addrs: bool = False,
+    is_plain: bool = False,
 ):
     """Using a saved copy of the diff summary and the current data, print a
     report showing which functions/symbols have changed match percentage."""
 
+    # Don't try to diff a report generated for a different binary file
+    base_file = os.path.basename(orig_file).lower()
+
+    if saved_data.get("file") != base_file:
+        logging.getLogger().error(
+            "Diff report for '%s' does not match current file '%s'",
+            saved_data.get("file"),
+            base_file,
+        )
+        return
+
+    if "timestamp" in saved_data:
+        now = datetime.now().replace(microsecond=0)
+        then = datetime.fromtimestamp(saved_data["timestamp"]).replace(microsecond=0)
+
+        print(
+            " ".join(
+                [
+                    "Saved diff report generated",
+                    then.strftime("%B %d %Y, %H:%M:%S"),
+                    f"({str(now - then)} ago)",
+                ]
+            )
+        )
+
+        print()
+
     # Convert to dict, using orig_addr as key
-    saved_invert = {obj["address"]: obj for obj in saved_data}
+    saved_invert = {obj["address"]: obj for obj in saved_data["data"]}
     new_invert = {obj["address"]: obj for obj in new_data}
 
     all_addrs = set(saved_invert.keys()).union(new_invert.keys())
