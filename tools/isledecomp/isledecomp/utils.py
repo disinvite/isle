@@ -66,8 +66,6 @@ def diff_json_display(show_both_addrs: bool = False, is_plain: bool = False):
     the reccmp display preferences."""
 
     def formatter(orig_addr, saved, new) -> str:
-        # Effective match not considered here
-
         old_pct = "new"
         new_pct = "gone"
         name = ""
@@ -77,7 +75,9 @@ def diff_json_display(show_both_addrs: bool = False, is_plain: bool = False):
             new_pct = (
                 "stub"
                 if new.get("stub", False)
-                else percent_string(new["matching"], False, is_plain)
+                else percent_string(
+                    new["matching"], new.get("effective", False), is_plain
+                )
             )
 
             # Prefer the current name of this function if we have it.
@@ -90,7 +90,9 @@ def diff_json_display(show_both_addrs: bool = False, is_plain: bool = False):
             old_pct = (
                 "stub"
                 if saved.get("stub", False)
-                else percent_string(saved["matching"], False, is_plain)
+                else percent_string(
+                    saved["matching"], saved.get("effective", False), is_plain
+                )
             )
 
             if name == "":
@@ -131,15 +133,28 @@ def diff_json(
     }
 
     # The criteria for diff judgement is in these dict comprehensions:
+    # Any function not in the saved file
     new_functions = {
         key: (saved, new) for key, (saved, new) in combined.items() if saved is None
     }
 
+    # Any function now missing from the saved file
+    # or a non-stub -> stub conversion
     dropped_functions = {
-        key: (saved, new) for key, (saved, new) in combined.items() if new is None
+        key: (saved, new)
+        for key, (saved, new) in combined.items()
+        if new is None
+        or (
+            new is not None
+            and saved is not None
+            and new.get("stub", False)
+            and not saved.get("stub", False)
+        )
     }
 
     # TODO: move these two into functions if the assessment gets more complex
+    # Any function with increased match percentage
+    # or stub -> non-stub conversion
     improved_functions = {
         key: (saved, new)
         for key, (saved, new) in combined.items()
@@ -151,24 +166,36 @@ def diff_json(
         )
     }
 
+    # Any non-stub function with decreased match percentage
     degraded_functions = {
         key: (saved, new)
         for key, (saved, new) in combined.items()
         if saved is not None
         and new is not None
-        and (
-            new["matching"] < saved["matching"]
-            or (new.get("stub", False) and not saved.get("stub", False))
-        )
+        and new["matching"] < saved["matching"]
+        and not saved.get("stub")
+        and not new.get("stub")
+    }
+
+    # Any function with former or current "effective" match
+    entropy_functions = {
+        key: (saved, new)
+        for key, (saved, new) in combined.items()
+        if saved is not None
+        and new is not None
+        and new["matching"] == 1.0
+        and saved["matching"] == 1.0
+        and new.get("effective", False) != saved.get("effective", False)
     }
 
     get_diff_str = diff_json_display(show_both_addrs, is_plain)
 
     for diff_name, diff_dict in [
-        ("NEW", new_functions),
-        ("IMPROVED", improved_functions),
-        ("DEGRADED", degraded_functions),
-        ("DROPPED", dropped_functions),
+        ("New", new_functions),
+        ("Increased", improved_functions),
+        ("Decreased", degraded_functions),
+        ("Dropped", dropped_functions),
+        ("Compiler entropy", entropy_functions),
     ]:
         if len(diff_dict) == 0:
             continue
