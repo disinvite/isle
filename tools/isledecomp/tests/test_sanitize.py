@@ -81,16 +81,6 @@ def test_jump_displacement():
     assert op_str == "-0x2"
 
 
-@pytest.mark.xfail(reason="Not implemented yet")
-def test_jmp_table():
-    """Should detect the characteristic jump table instruction
-    (for a switch statement) and use placeholder."""
-    p = ParseAsm()
-    inst = mock_inst("jmp", "dword ptr [eax*4 + 0x5555]")
-    (_, op_str) = p.sanitize(inst)
-    assert op_str == "dword ptr [eax*4 + <OFFSET1>]"
-
-
 name_replace_cases = [
     ("byte ptr [0x5555]", "byte ptr [_substitute_]"),
     ("word ptr [0x5555]", "word ptr [_substitute_]"),
@@ -211,3 +201,33 @@ def test_float_variable():
     inst = DisasmLiteInst(0x1000, 6, "fld", "dword ptr [0x1234]")
     (_, op_str) = p.sanitize(inst)
     assert op_str == "dword ptr [g_myFloatVariable]"
+
+
+def test_reg_plus_ptr_replacement():
+    """We want to replace the hex number in these kinds of instructions:
+        - mov al, byte ptr [ecx + addr]
+        - jmp dword ptr [eax*0x4 + addr]
+    But not these:
+        - mov ecx, dword ptr [esi + 0x4]"""
+
+    def relocate_lookup(addr: int) -> bool:
+        return addr == 0x1234
+
+    p = ParseAsm(relocate_lookup=relocate_lookup)
+    (_, op_str) = p.sanitize(mock_inst("mov", "ecx, dword ptr [esi + 0x4]"))
+    assert op_str == "ecx, dword ptr [esi + 0x4]"
+
+    (_, op_str) = p.sanitize(mock_inst("mov", "al, byte ptr [ecx + 0x1234]"))
+    assert op_str == "al, byte ptr [ecx + <OFFSET1>]"
+
+    # Use the relocation lookup as the guide for whether to replace
+    (_, op_str) = p.sanitize(mock_inst("mov", "al, byte ptr [ecx + 0x5555]"))
+    assert op_str == "al, byte ptr [ecx + 0x5555]"
+
+    # Handle register multiply
+    (_, op_str) = p.sanitize(mock_inst("jmp", "dword ptr [eax*0x4 + 0x1234]"))
+    assert op_str == "dword ptr [eax*0x4 + <OFFSET1>]"
+
+    # Handle more complex register math
+    (_, op_str) = p.sanitize(mock_inst("mov", "ax, word ptr [esi + ecx*2 + 0x1234]"))
+    assert op_str == "ax, word ptr [esi + ecx*2 + <OFFSET1>]"

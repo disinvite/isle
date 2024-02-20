@@ -7,15 +7,21 @@ so that virtual addresses are replaced by symbol name or a generic
 placeholder string."""
 
 import re
+import struct
 from functools import cache
 from typing import Callable, List, Optional, Tuple
 from collections import namedtuple
 from isledecomp.bin import InvalidVirtualAddressError
 from capstone import Cs, CS_ARCH_X86, CS_MODE_32
+from .partition import Partition, PartType
 
 disassembler = Cs(CS_ARCH_X86, CS_MODE_32)
 
 ptr_replace_regex = re.compile(r"(?P<data_size>\w+) ptr \[(?P<addr>0x[0-9a-fA-F]+)\]")
+
+array_index_regex = re.compile(
+    r"(?P<data_size>\w+) ptr \[(?P<index>(?:[\w\*]+ \+ )+)(?P<addr>0x[0-9a-fA-F]+)\]"
+)
 
 DisasmLiteInst = namedtuple("DisasmLiteInst", "address, size, mnemonic, op_str")
 
@@ -35,6 +41,7 @@ def get_float_size(size_str: str) -> int:
 
 
 class ParseAsm:
+    # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         relocate_lookup: Optional[Callable[[int], bool]] = None,
@@ -46,6 +53,18 @@ class ParseAsm:
         self.float_lookup = float_lookup
         self.replacements = {}
         self.number_placeholders = True
+
+        # If we did not detect a jump/data table in our first pass
+        # we can skip some processing steps.
+        self.found_jump_table = False
+
+        # Mapping of address and label name we need to place down before
+        # the instruction at said address. Obtained by reading jump tables.
+        self.labels = {}
+
+        # Partition of the addresses in this function.
+        # TODO: should construct here instead
+        self.partition = None
 
     def reset(self):
         self.replacements = {}
@@ -93,6 +112,86 @@ class ParseAsm:
         placeholder = f"<OFFSET{idx}>" if self.number_placeholders else "<OFFSET>"
         self.replacements[addr] = placeholder
         return placeholder
+
+    def read_jump_table(self, data: bytes, table_index: int = 0):
+        # TODO: assert len(data) % 4 == 0
+        data_size = len(data)
+        if data_size % 4 != 0:
+            data_size = 4 * (data_size // 4)
+            data = data[:data_size]
+
+        for i, (addr,) in enumerate(struct.iter_unpack("<L", data)):
+            self.labels[addr] = f".switch_{table_index}_case_{i}"
+
+    def sanitize_jump_table(
+        self, start_addr: int, data: bytes
+    ) -> List[Tuple[str, str]]:
+        # TODO: assert len(data) % 4 == 0
+        data_size = len(data)
+        if data_size % 4 != 0:
+            data_size = 4 * (data_size // 4)
+            data = data[:data_size]
+
+        return [
+            (hex(start_addr + i * 4), self.labels.get(addr, "PLACEHOLDER"))
+            for (i, (addr,)) in enumerate(struct.iter_unpack("<L", data))
+        ]
+
+    def sanitize_switch_data(
+        self, start_addr: int, data: bytes
+    ) -> List[Tuple[str, str]]:
+        return [(hex(start_addr + i), f"db 0x{b:02x}") for i, b in enumerate(data)]
+
+    def first_pass(self, inst: DisasmLiteInst, start: int, end: int) -> int:
+        """Read an instruction from the function and identify any jump tables
+        or data segments within the boundary of the function.
+        Both are associated with switch statements.
+        If we find either one, return the address that it points to.
+        The goal here is to establish the "end of code" so that we do not
+        read bogus instructions from a section that has data.
+        NOTE: This makes a big assumption that we will not have a function
+        where there is code followed by a jump table (and data) followed
+        by more code in the same function.
+        """
+
+        if start >= end:
+            return end
+
+        # We are only watching these instructons in search of
+        # switch data or jump tables.
+        # TODO: Could insert jump destination label by reading all jumps
+        if inst.mnemonic not in ("mov", "jmp"):
+            return end
+
+        # The instruction of interest is either:
+        # - mov al, byte ptr [reg + addr]
+        # - jmp dword ptr [reg*0x4 + addr]
+        # In both cases we want the last operand.
+        operand = inst.op_str.split(", ", 1)[-1]
+
+        # Try to match the address of the array
+        match = array_index_regex.match(operand)
+        if match is None:
+            return end
+
+        array_addr = from_hex(match["addr"])
+        if array_addr is None:
+            return end
+
+        # If the address is not inside the bounds of the function, return.
+        # This should exclude an index into an array from a global variable.
+        if not start <= array_addr < end:
+            return end
+
+        self.found_jump_table = True
+
+        if inst.mnemonic == "mov":
+            self.partition.cut_data(array_addr)
+
+        if inst.mnemonic == "jmp":
+            self.partition.cut_jump(array_addr)
+
+        return array_addr
 
     def sanitize(self, inst: DisasmLiteInst) -> Tuple[str, str]:
         if len(inst.op_str) == 0:
@@ -143,6 +242,26 @@ class ParseAsm:
             # But just in case: return the string with no changes
             return match.group(0)
 
+        def array_replace(match):
+            """Helper for re.sub, specifically for [something + offset] cases"""
+            offset = from_hex(match.group("addr"))
+
+            if offset is not None:
+                # Use a jump/data table label if we have one
+                placeholder = self.labels.get(offset)
+
+                # If not, don't replace unless this address is relocated.
+                # If it is a jump or data table, it is an absolute address.
+                # We could use the imagebase (or just set some arbitrary threshold)
+                # to do this without .reloc information.
+                if placeholder is None and self.is_relocated(offset):
+                    placeholder = self.replace(offset)
+
+                if placeholder is not None:
+                    return f'{match.group("data_size")} ptr [{match.group("index")}{placeholder}]'
+
+            return match.group(0)
+
         def float_ptr_replace(match):
             offset = from_hex(match.group("addr"))
 
@@ -169,6 +288,9 @@ class ParseAsm:
         if inst.mnemonic.startswith("f"):
             # If floating point instruction
             op_str = ptr_replace_regex.sub(float_ptr_replace, inst.op_str)
+        elif "+" in inst.op_str:
+            # hack?
+            op_str = array_index_regex.sub(array_replace, inst.op_str)
         else:
             op_str = ptr_replace_regex.sub(filter_out_ptr, inst.op_str)
 
@@ -192,13 +314,79 @@ class ParseAsm:
     def parse_asm(self, data: bytes, start_addr: Optional[int] = 0) -> List[str]:
         asm = []
 
-        for raw_inst in disassembler.disasm_lite(data, start_addr):
-            # Use heuristics to disregard some differences that aren't representative
-            # of the accuracy of a function (e.g. global offsets)
-            inst = DisasmLiteInst(*raw_inst)
-            result = self.sanitize(inst)
+        # Grab it here because we will read it twice
+        instructions = [
+            DisasmLiteInst(*inst) for inst in disassembler.disasm_lite(data, start_addr)
+        ]
 
-            # mnemonic + " " + op_str
-            asm.append((hex(inst.address), " ".join(result)))
+        end_addr = start_addr + len(data)
+        self.partition = Partition(start_addr, end_addr)
+
+        end_of_code = end_addr
+
+        # PASS 1: Scanning for jump tables
+        for inst in instructions:
+            # Don't read junk instructions from a jump or data table.
+            if inst.address >= end_of_code:
+                break
+
+            reported_end = self.first_pass(inst, start_addr, end_addr)
+            end_of_code = min(end_of_code, reported_end)
+
+        if self.found_jump_table:
+            # We now have to read the jump table(s).
+            jump_table_index = 0
+            for p_start, p_size, p_type in self.partition.get_all():
+                if p_type == PartType.DATA:
+                    self.labels[p_start] = f".switch_data_{jump_table_index}"
+
+                if p_type == PartType.JUMP:
+                    self.labels[p_start] = f".jump_table_{jump_table_index}"
+                    # TODO: cleaner way to convert v.addr back to offset.
+                    self.read_jump_table(
+                        data[p_start - start_addr : p_start - start_addr + p_size],
+                        jump_table_index,
+                    )
+                    jump_table_index += 1
+
+        # PASS 2: Sanitize and stringify
+        code_was_read = False
+        for p_start, p_size, p_type in self.partition.get_all():
+            if p_type == PartType.CODE and not code_was_read:
+                code_was_read = True
+
+                # TODO: This is a hack because we are using the
+                # already read instructions from disasm_lite to save time.
+                # This won't work if the CODE section is not first and
+                # if there is more than one.
+                for inst in instructions:
+                    if inst.address >= end_of_code:
+                        break
+
+                    # Use heuristics to disregard some differences that aren't representative
+                    # of the accuracy of a function (e.g. global offsets)
+                    result = self.sanitize(inst)
+
+                    # If a switch case jumps to this address, show the label
+                    if self.found_jump_table and inst.address in self.labels:
+                        asm.append((None, self.labels[inst.address]))
+
+                    # mnemonic + " " + op_str
+                    asm.append((hex(inst.address), " ".join(result)))
+
+            else:
+                # Drop the label for whichever non-code section this is.
+                if p_start in self.labels:
+                    asm.append((None, self.labels[p_start]))
+
+                # p_start is the virtual address
+                data_slice = data[p_start - start_addr : p_start - start_addr + p_size]
+                if p_type == PartType.JUMP:
+                    for addr, line in self.sanitize_jump_table(p_start, data_slice):
+                        asm.append((addr, line))
+
+                if p_type == PartType.DATA:
+                    for addr, line in self.sanitize_switch_data(p_start, data_slice):
+                        asm.append((addr, line))
 
         return asm
