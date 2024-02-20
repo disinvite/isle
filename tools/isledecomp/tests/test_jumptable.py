@@ -100,7 +100,7 @@ def test_simple_case_internals():
 
 def test_simple_case_output():
     p = ParseAsm()
-    lines = p.parse_asm(SIMPLE_CASE, 0x1000)
+    lines = [line for (_, line) in p.parse_asm(SIMPLE_CASE, 0x1000)]
 
     assert "case" in lines[2]
     assert "case" in lines[5]
