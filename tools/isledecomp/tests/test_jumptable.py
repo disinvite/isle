@@ -11,28 +11,55 @@ def fixture_part():
 
 def test_partition_merge(part):
     """CODE cuts should merge together, but not JUMP or DATA."""
-    assert list(part.get_all()) == [(0, 1000, PartType.CODE)]
+    assert list(part.get_all()) == [(0, 1000, PartType.CODE, 0)]
     part.cut_code(500)
-    assert list(part.get_all()) == [(0, 1000, PartType.CODE)]
+    assert list(part.get_all()) == [(0, 1000, PartType.CODE, 0)]
 
     part.cut_jump(700)
     part.cut_jump(900)
     assert list(part.get_all()) == [
-        (0, 700, PartType.CODE),
-        (700, 200, PartType.JUMP),
-        (900, 100, PartType.JUMP),
+        (0, 700, PartType.CODE, 0),
+        (700, 200, PartType.JUMP, 0),
+        (900, 100, PartType.JUMP, 1),
     ]
 
 
 def test_partition_cut(part):
     part.cut_jump(500)
-    assert list(part.get_all()) == [(0, 500, PartType.CODE), (500, 500, PartType.JUMP)]
+    assert list(part.get_all()) == [
+        (0, 500, PartType.CODE, 0),
+        (500, 500, PartType.JUMP, 0),
+    ]
 
 
 def test_partition_clobber(part):
     part.cut_jump(500)
     part.cut_data(500)
-    assert list(part.get_all()) == [(0, 500, PartType.CODE), (500, 500, PartType.DATA)]
+    assert list(part.get_all()) == [
+        (0, 500, PartType.CODE, 0),
+        (500, 500, PartType.DATA, 0),
+    ]
+
+
+def test_partition_labels(part):
+    """Should correctly pair up jump tables and switch data.
+    By nature switch data comes before any jump, so we can increment our index
+    if we read one, then remember not to increment again on the jump table."""
+
+    # These are paired up according to the order they are read, not the address
+    # order of the items.
+    part.cut_jump(500)  # 0
+    part.cut_data(900)  # 1
+    part.cut_jump(700)  # 1
+    part.cut_jump(800)  # 2
+
+    assert list(part.get_all()) == [
+        (0, 500, PartType.CODE, 0),
+        (500, 200, PartType.JUMP, 0),
+        (700, 100, PartType.JUMP, 1),
+        (800, 100, PartType.JUMP, 2),
+        (900, 100, PartType.DATA, 1),
+    ]
 
 
 ####
@@ -56,9 +83,9 @@ def test_score_partition(score_notify):
 
     # TODO: DATA part will include the 0xcc padding bytes
     assert parts == [
-        (0x10001410, 196, PartType.CODE),
-        (0x100014D4, 24, PartType.JUMP),
-        (0x100014EC, 36, PartType.DATA),
+        (0x10001410, 196, PartType.CODE, 0),
+        (0x100014D4, 24, PartType.JUMP, 0),
+        (0x100014EC, 36, PartType.DATA, 0),
     ]
 
 
@@ -88,8 +115,8 @@ def test_simple_case_internals():
     p = ParseAsm()
     p.parse_asm(SIMPLE_CASE, 0x1000)
     assert list(p.partition.get_all()) == [
-        (0x1000, 26, PartType.CODE),
-        (0x101A, 12, PartType.JUMP),
+        (0x1000, 26, PartType.CODE, 0),
+        (0x101A, 12, PartType.JUMP, 0),
     ]
 
     assert 0x100B in p.labels

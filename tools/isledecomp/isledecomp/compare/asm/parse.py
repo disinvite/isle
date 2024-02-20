@@ -335,23 +335,21 @@ class ParseAsm:
 
         if self.found_jump_table:
             # We now have to read the jump table(s).
-            jump_table_index = 0
-            for p_start, p_size, p_type in self.partition.get_all():
+            for p_start, p_size, p_type, p_index in self.partition.get_all():
                 if p_type == PartType.DATA:
-                    self.labels[p_start] = f".switch_data_{jump_table_index}"
+                    self.labels[p_start] = f".switch_data_{p_index}"
 
                 if p_type == PartType.JUMP:
-                    self.labels[p_start] = f".jump_table_{jump_table_index}"
+                    self.labels[p_start] = f".jump_table_{p_index}"
                     # TODO: cleaner way to convert v.addr back to offset.
                     self.read_jump_table(
                         data[p_start - start_addr : p_start - start_addr + p_size],
-                        jump_table_index,
+                        p_index,
                     )
-                    jump_table_index += 1
 
         # PASS 2: Sanitize and stringify
         code_was_read = False
-        for p_start, p_size, p_type in self.partition.get_all():
+        for p_start, p_size, p_type, _ in self.partition.get_all():
             if p_type == PartType.CODE and not code_was_read:
                 code_was_read = True
 
