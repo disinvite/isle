@@ -12,6 +12,6 @@ if __name__ == "__main__":
         with open(filename, "r", encoding="utf-8") as f:
             for line_no, line in enumerate(f):
                 if re.match(r"\s*virtual", line) is not None:
-                    if re.match(".*// vtable\+0x[0-9a-f]+\n$", line) is None:
+                    if re.match(r".*// vtable\+0x[0-9a-f]+\n$", line) is None:
                         print(f"{filename}:{line_no}")
                         print(repr(line))
