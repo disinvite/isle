@@ -35,3 +35,4 @@ jobs:
       run: |
         pylint tools --ignore=build,ncc
         black --check tools --exclude=ncc
+        python tools/stylepoints.py .
