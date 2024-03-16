@@ -110,6 +110,7 @@ class ListingState {
     this.sortDesc = false;
     this.hidePerfect = false;
     this.hideStub = false;
+    this._showRecomp = false;
   }
 
   get filterType() {
@@ -130,6 +131,18 @@ class ListingState {
   set query(value) {
     // Normalize search string
     this._query = value.toLowerCase().trim();
+  }
+
+  get showRecomp() {
+    return this._showRecomp;
+  }
+
+  set showRecomp(value) {
+    // Don't sort by the recomp column we are about to hide
+    if (!value && this.sortCol === 'recomp') {
+      this.sortCol = 'address';
+    }
+    this._showRecomp = value;
   }
 
   get sortCol() {
@@ -159,7 +172,7 @@ const StateProxy = {
 
     obj[prop] = value;
 
-    if (prop === 'sortCol' || prop === 'sortDesc') {
+    if (prop === 'sortCol' || prop === 'sortDesc' || prop === 'showRecomp') {
       this._onsort();
     } else {
       this._onfilter();
@@ -516,6 +529,10 @@ class ListingTable extends window.HTMLElement {
     hideStub.onchange = evt => (appState.hideStub = evt.target.checked);
     hideStub.checked = appState.hideStub;
 
+    const showRecomp = this.querySelector('input#cbShowRecomp');
+    showRecomp.onchange = evt => (appState.showRecomp = evt.target.checked);
+    showRecomp.checked = appState.showRecomp;
+
     this.querySelectorAll('input[name=filterType]').forEach(radio => {
       const checked = appState.filterType === parseInt(radio.getAttribute('value'));
       setBooleanAttribute(radio, 'checked', checked);
@@ -612,6 +629,12 @@ class ListingTable extends window.HTMLElement {
   }
 
   sortRows() {
+    // Toggle recomp/diffs column
+    setBooleanAttribute(this.querySelector('table'), 'show-recomp', appState.showRecomp);
+    this.querySelectorAll('func-row[data-address]').forEach(row => {
+      setBooleanAttribute(row, 'show-recomp', appState.showRecomp);
+    });
+
     const thead = this.querySelector('thead');
     const headers = thead.querySelectorAll('th');
 

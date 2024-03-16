@@ -62,6 +62,10 @@
         text-align: left;
       }
 
+      #listing:not([show-recomp]) > thead th[data-col="recomp"] {
+        display: none;
+      }
+
       #listing > thead th > div {
         display: flex;
         column-gap: 0.5em;
@@ -175,6 +179,8 @@
             <label for="cbHidePerfect">Hide 100% match</label>
             <input type="checkbox" id="cbHideStub" />
             <label for="cbHideStub">Hide stubs</label>
+            <input type="checkbox" id="cbShowRecomp" />
+            <label for="cbShowRecomp">Show recomp address</label>
           </fieldset>
           <fieldset>
             <legend>Search filters on:</legend>
@@ -226,7 +232,10 @@
       <style>
         :host(:not([hidden])) {
           display: table-row;
-          contain: paint;
+        }
+
+        :host(:not([show-recomp])) > div[data-col="recomp"] {
+          display: none;
         }
 
         ::slotted(*:not([slot="name"])) {
@@ -245,9 +254,9 @@
         }
       </style>
       <div><can-copy><slot name="address"></slot></can-copy></div>
-      <div><can-copy><slot name="recomp"></slot></can-copy></div>
+      <div data-col="recomp"><can-copy><slot name="recomp"></slot></can-copy></div>
       <div><slot name="name"></slot></div>
-      <div><slot name="diffs"></slot></div>
+      <div data-col="diffs"><slot name="diffs"></slot></div>
       <div><slot name="matching"></slot></div>
     </template>
     <template id="diffrow-template">
