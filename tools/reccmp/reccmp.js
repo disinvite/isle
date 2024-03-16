@@ -82,6 +82,10 @@ function setBooleanAttribute(element, attribute, value) {
   }
 }
 
+function copy_to_clipboard(value) {
+  navigator.clipboard.writeText(value);
+}
+
 //
 // Global state
 //
@@ -254,12 +258,6 @@ class SortIndicator extends window.HTMLElement {
 class FuncRow extends window.HTMLElement {
   static observedAttributes = ['expanded'];
 
-  constructor() {
-    super();
-
-    this.onclick = evt => (this.expanded = !this.expanded);
-  }
-
   connectedCallback() {
     if (this.shadowRoot !== null) {
       return;
@@ -268,6 +266,7 @@ class FuncRow extends window.HTMLElement {
     const template = document.querySelector('template#funcrow-template').content;
     const shadow = this.attachShadow({ mode: 'open' });
     shadow.appendChild(template.cloneNode(true));
+    shadow.querySelector(':host > div:nth-of-type(2)').onclick = evt => (this.expanded = !this.expanded);
   }
 
   get address() {
@@ -304,6 +303,37 @@ class NoDiffMessage extends window.HTMLElement {
     shadow.appendChild(template.cloneNode(true));
   }
 }
+
+class CanCopy extends window.HTMLElement {
+  connectedCallback() {
+    if (this.shadowRoot !== null) {
+      return;
+    }
+
+    const template = document.querySelector('template#can-copy-template').content;
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.appendChild(template.cloneNode(true));
+
+    const el = shadow.querySelector('slot').assignedNodes()[0];
+    el.addEventListener('mouseout', evt => { this.copied = false });
+    el.addEventListener('click', evt => {
+      copy_to_clipboard(evt.target.textContent);
+      this.copied = true;
+    });
+  }
+
+  get copied() {
+    return this.getAttribute('copied');
+  }
+
+  set copied(value) {
+    if (value) {
+      setTimeout(() => {this.copied = false; }, 2000);
+    }
+    setBooleanAttribute(this, 'copied', value);
+  }
+}
+
 
 // Displays asm diff for the given @data-address value.
 class DiffRow extends window.HTMLElement {
@@ -346,6 +376,10 @@ class DiffDisplayOptions extends window.HTMLElement {
         label {
           margin-right: 10px;
           user-select: none;
+        }
+
+        label, input {
+          cursor: pointer;
         }
       </style>
       <fieldset>
@@ -544,7 +578,7 @@ class ListingTable extends window.HTMLElement {
       ];
 
       items.forEach(([slotName, content]) => {
-        const div = document.createElement('div');
+        const div = document.createElement('span');
         div.setAttribute('slot', slotName);
         div.innerText = content;
         row.appendChild(div);
@@ -619,4 +653,5 @@ window.onload = () => {
   window.customElements.define('func-row', FuncRow);
   window.customElements.define('diff-row', DiffRow);
   window.customElements.define('no-diff', NoDiffMessage);
+  window.customElements.define('can-copy', CanCopy);
 };

@@ -51,10 +51,17 @@
         background: #383838;
       }
 
-      #listing > thead th {
+      table#listing {
         border: 1px #f0f0f0 solid;
+      }
+
+      #listing > thead th {
+        text-align: left;
         padding: 0.5em;
-        word-break: break-all !important;
+      }
+
+      #listing > thead th:last-child {
+        text-align: right;
       }
 
       .diffneg {
@@ -90,6 +97,10 @@
         /* checkbox and radio buttons v-aligned with text */
         align-items: center;
         display: flex;
+      }
+
+      .filters > fieldset > input, .filters > fieldset > label {
+        cursor: pointer;
       }
 
       .filters > fieldset > label {
@@ -176,16 +187,20 @@
           contain: paint;
         }
 
-        ::slotted(*) {
-          border: 1px #f0f0f0 solid;
+        :host > div {
+          border-top: 1px #f0f0f0 solid;
           display: table-cell;
           padding: 0.5em;
           word-break: break-all !important;
         }
+
+        :host > div:last-child {
+          text-align: right;
+        }
       </style>
-      <slot name="address"></slot>
-      <slot name="name"></slot>
-      <slot name="matching"></slot>
+      <div><can-copy><slot name="address"></slot></can-copy></div>
+      <div><slot name="name"></slot></div>
+      <div><slot name="matching"></slot></div>
     </template>
     <template id="diffrow-template">
       <style>
@@ -196,6 +211,7 @@
 
         td.singleCell {
           border: 1px #f0f0f0 solid;
+          border-bottom: 0px none;
           display: table-cell;
           padding: 0.5em;
           word-break: break-all !important;
@@ -210,6 +226,44 @@
         ::slotted(*) {
           font-style: italic;
           text-align: center;
+        }
+      </style>
+      <slot></slot>
+    </template>
+    <template id="can-copy-template">
+      <style>
+        :host {
+          position: relative;
+        }
+        ::slotted(*) {
+          cursor: pointer;
+        }
+        slot::after {
+          background-color: #fff;
+          color: #222;
+          display: none;
+          font-size: 12px;
+          padding: 1px 2px;
+          width: fit-content;
+          border-radius: 1px;
+          text-align: center;
+          bottom: 120%;
+          box-shadow: 0 4px 14px 0 rgba(0,0,0,.2), 0 0 0 1px rgba(0,0,0,.05);
+          position: absolute;
+          white-space: nowrap;
+          transition: .1s;
+          content: 'Copy to clipboard';
+        }
+        ::slotted(*:hover) {
+          text-decoration: underline;
+          text-decoration-style: dotted;
+        }
+        slot:hover::after {
+          display: block;
+        }
+        :host([copied]) > slot:hover::after {
+          color: red;
+          content: 'Copied!';
         }
       </style>
       <slot></slot>
