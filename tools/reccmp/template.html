@@ -62,17 +62,22 @@
         text-align: left;
       }
 
-      #listing > thead th > span {
+      #listing > thead th > div {
+        display: flex;
+        column-gap: 0.5em;
+      }
+
+      #listing > thead th > div > span {
         cursor: pointer;
       }
 
-      #listing > thead th > span:hover {
+      #listing > thead th > div > span:hover {
         text-decoration: underline;
         text-decoration-style: dotted;
       }
 
-      #listing > thead th:last-child {
-        text-align: right;
+      #listing > thead th:last-child > div {
+        justify-content: right;
       }
 
       #listing > thead th[data-col="name"] {
@@ -186,21 +191,29 @@
           <thead>
             <tr>
               <th data-col="address">
-                <span>Address</span>
-                <sort-indicator/>
+                <div>
+                  <span>Address</span>
+                  <sort-indicator/>
+                </div>
               </th>
               <th data-col="recomp">
-                <span>Recomp</span>
-                <sort-indicator/>
+                <div>
+                  <span>Recomp</span>
+                  <sort-indicator/>
+                </div>
               </th>
               <th data-col="name">
-                <span>Name</span>
-                <sort-indicator/>
+                <div>
+                  <span>Name</span>
+                  <sort-indicator/>
+                </div>
               </th>
               <th data-col="diffs" data-no-sort></th>
               <th data-col="matching">
-                <sort-indicator></sort-indicator>
-                <span>Matching</span>
+                <div>
+                  <sort-indicator></sort-indicator>
+                  <span>Matching</span>
+                </div>
               </th>
             </tr>
           </thead>
