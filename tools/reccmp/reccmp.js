@@ -73,6 +73,18 @@ function getMatchPercentText(row) {
   return (row.matching * 100).toFixed(2) + '%';
 }
 
+function countDiffs(row) {
+  const { diff='' } = row;
+  if (diff === '') {
+    return '';
+  }
+
+  const diffs = diff.map(([slug, subgroups]) => subgroups).flat();
+  const diffLength = diffs.filter(d => !('both' in d)).length;
+  const diffWord = diffLength == 1 ? 'diff' : 'diffs';
+  return diffLength === 0 ? '' : `${diffLength} ${diffWord}`;
+}
+
 // Helper for this set/remove attribute block
 function setBooleanAttribute(element, attribute, value) {
   if (value) {
@@ -248,7 +260,8 @@ class SortIndicator extends window.HTMLElement {
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (newValue === null) {
-      this.textContent = '';
+      // Reserve space for blank indicator so column width stays the same
+      this.innerHTML = '&nbsp;';
     } else {
       this.innerHTML = newValue === 'asc' ? '&#9650;' : '&#9660;';
     }
@@ -266,6 +279,7 @@ class FuncRow extends window.HTMLElement {
     const template = document.querySelector('template#funcrow-template').content;
     const shadow = this.attachShadow({ mode: 'open' });
     shadow.appendChild(template.cloneNode(true));
+    // TODO
     shadow.querySelector(':host > div:nth-of-type(2)').onclick = evt => (this.expanded = !this.expanded);
   }
 
@@ -557,7 +571,7 @@ class ListingTable extends window.HTMLElement {
 
   connectedCallback() {
     const thead = this.querySelector('thead');
-    const headers = thead.querySelectorAll('th');
+    const headers = thead.querySelectorAll('th:not([data-no-sort])'); // TODO
     headers.forEach(th => {
       const col = th.getAttribute('data-col');
       if (col) {
@@ -573,7 +587,9 @@ class ListingTable extends window.HTMLElement {
 
       const items = [
         ['address', obj.address],
+        ['recomp', obj.recomp],
         ['name', obj.name],
+        ['diffs', countDiffs(obj)],
         ['matching', getMatchPercentText(obj)]
       ];
 
@@ -600,6 +616,10 @@ class ListingTable extends window.HTMLElement {
     headers.forEach(th => {
       const col = th.getAttribute('data-col');
       const indicator = th.querySelector('sort-indicator');
+      if (indicator === null) {
+        return;
+      }
+
       if (appState.sortCol === col) {
         indicator.setAttribute('data-sort', appState.sortDesc ? 'desc' : 'asc');
       } else {
@@ -633,6 +653,8 @@ class ListingTable extends window.HTMLElement {
   filterRows() {
     const tbody = this.querySelector('tbody');
     const rows = tbody.querySelectorAll('func-row[data-address], diff-row[data-address]');
+
+    this.querySelector("input#search").placeholder = appState.filterType == 1 ? "Search for offset or function name..." : "Search for instruction...";
 
     rows.forEach(row => {
       const addr = row.getAttribute('data-address');

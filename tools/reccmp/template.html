@@ -83,6 +83,7 @@
 
       sort-indicator {
         margin: 0 0.5em;
+        user-select: none;
       }
 
       .filters {
@@ -170,9 +171,11 @@
         <table id="listing">
           <thead>
             <tr>
-              <th data-col="address" style="width: 20%">Address<sort-indicator/></th>
+              <th data-col="address" style="width: 10%">Address<sort-indicator/></th>
+              <th data-col="recomp" style="width: 10%">Recomp<sort-indicator/></th>
               <th data-col="name" style="width: 60%">Name<sort-indicator/></th>
-              <th data-col="matching" style="width: 20%">Matching<sort-indicator/></th>
+              <th data-col="diffs" data-no-sort style="width: 10%"></th>
+              <th data-col="matching" style="width: 10%"><sort-indicator></sort-indicator>Matching</th>
             </tr>
           </thead>
           <tbody>
@@ -187,6 +190,10 @@
           contain: paint;
         }
 
+        ::slotted([slot=address]), ::slotted([slot=recomp]) {
+          white-space: nowrap;
+        }
+
         :host > div {
           border-top: 1px #f0f0f0 solid;
           display: table-cell;
@@ -199,7 +206,9 @@
         }
       </style>
       <div><can-copy><slot name="address"></slot></can-copy></div>
+      <div><can-copy><slot name="recomp"></slot></can-copy></div>
       <div><slot name="name"></slot></div>
+      <div><slot name="diffs"></slot></div>
       <div><slot name="matching"></slot></div>
     </template>
     <template id="diffrow-template">
@@ -217,7 +226,7 @@
           word-break: break-all !important;
         }
       </style>
-      <td class="singleCell" colspan="3">
+      <td class="singleCell" colspan="5">
         <slot></slot>
       </td>
     </template>
