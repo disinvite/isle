@@ -56,12 +56,27 @@
       }
 
       #listing > thead th {
-        text-align: left;
         padding: 0.5em;
+        user-select: none;
+        width: 10%;
+        text-align: left;
+      }
+
+      #listing > thead th > span {
+        cursor: pointer;
+      }
+
+      #listing > thead th > span:hover {
+        text-decoration: underline;
+        text-decoration-style: dotted;
       }
 
       #listing > thead th:last-child {
         text-align: right;
+      }
+
+      #listing > thead th[data-col="name"] {
+        width: 60%;
       }
 
       .diffneg {
@@ -82,7 +97,6 @@
       }
 
       sort-indicator {
-        margin: 0 0.5em;
         user-select: none;
       }
 
@@ -171,11 +185,23 @@
         <table id="listing">
           <thead>
             <tr>
-              <th data-col="address" style="width: 10%">Address<sort-indicator/></th>
-              <th data-col="recomp" style="width: 10%">Recomp<sort-indicator/></th>
-              <th data-col="name" style="width: 60%">Name<sort-indicator/></th>
-              <th data-col="diffs" data-no-sort style="width: 10%"></th>
-              <th data-col="matching" style="width: 10%"><sort-indicator></sort-indicator>Matching</th>
+              <th data-col="address">
+                <span>Address</span>
+                <sort-indicator/>
+              </th>
+              <th data-col="recomp">
+                <span>Recomp</span>
+                <sort-indicator/>
+              </th>
+              <th data-col="name">
+                <span>Name</span>
+                <sort-indicator/>
+              </th>
+              <th data-col="diffs" data-no-sort></th>
+              <th data-col="matching">
+                <sort-indicator></sort-indicator>
+                <span>Matching</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -190,7 +216,7 @@
           contain: paint;
         }
 
-        ::slotted([slot=address]), ::slotted([slot=recomp]) {
+        ::slotted(*:not([slot="name"])) {
           white-space: nowrap;
         }
 

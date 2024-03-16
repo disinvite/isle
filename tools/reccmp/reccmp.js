@@ -575,7 +575,10 @@ class ListingTable extends window.HTMLElement {
     headers.forEach(th => {
       const col = th.getAttribute('data-col');
       if (col) {
-        th.onclick = evt => (appState.sortCol = col);
+        const span = th.querySelector('span');
+        if (span) {
+          span.addEventListener('click', evt => {appState.sortCol = col;});
+        }
       }
     });
 
