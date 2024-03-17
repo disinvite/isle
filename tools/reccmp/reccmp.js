@@ -98,6 +98,8 @@ function copy_to_clipboard(value) {
   navigator.clipboard.writeText(value);
 }
 
+const PAGE_SIZE = 10;
+
 //
 // Global state
 //
@@ -107,10 +109,149 @@ class ListingState {
     this._query = '';
     this._sortCol = 'address';
     this._filterType = 1;
-    this.sortDesc = false;
-    this.hidePerfect = false;
-    this.hideStub = false;
+    this._sortDesc = false;
+    this._hidePerfect = false;
+    this._hideStub = false;
     this._showRecomp = false;
+    this._expanded = {};
+    this._page = 0;
+
+    this._listeners = [];
+
+    this._results = [];
+    this.filterResults();
+    this.sortResults();
+  }
+
+  addListener(fn) {
+    this._listeners.push(fn);
+  }
+
+  callListeners() {
+    for (const fn of this._listeners) {
+      fn();
+    }
+  }
+
+  filterResults() {
+    const filterFn = this.rowFilterFn.bind(this);
+    this._results = data.filter(filterFn);
+    this.page = Math.min(this.page, this.maxPage());
+    this.callListeners();
+  }
+
+  sortResults() {
+    const sortFn = this.rowSortFn.bind(this);
+    this._results = this._results.sort(sortFn);
+    this.callListeners();
+  }
+
+  pageSlice() {
+    return this._results.slice(this.page * PAGE_SIZE, (this.page + 1) * PAGE_SIZE);
+  }
+
+  maxPage() {
+    return Math.floor(this._results.length / PAGE_SIZE);
+  }
+
+  // A list showing the range of each page based on the sort column and direction.
+  pageHeadings() {
+    if (this._results.length == 0) {
+      return [];
+    }
+
+    const headings = [];
+
+    for (let i = 0; i < this.maxPage(); i++) {
+      const startIdx = i * PAGE_SIZE;
+      const endIdx = Math.min(this._results.length, ((i+1) * PAGE_SIZE)) - 1;
+      headings.push([
+        i,
+        this._results[startIdx][this.sortCol],
+        this._results[endIdx][this.sortCol]
+      ]);
+    }
+
+    return headings;
+  }
+
+  rowFilterFn(row) {
+    // Destructuring sets defaults for optional values from this object.
+    const {
+      effective = false,
+      stub = false,
+      diff = '',
+      name,
+      address,
+      matching
+    } = row;
+
+    if (this.hidePerfect && (effective || matching >= 1)) {
+      return false;
+    }
+
+    if (this.hideStub && stub) {
+      return false;
+    }
+
+    if (this.query === '') {
+      return true;
+    }
+
+    // Name/addr search
+    if (this.filterType === 1) {
+      return (
+        address.includes(this.query) ||
+        name.toLowerCase().includes(this.query)
+      );
+    }
+
+    // no diff for review.
+    if (diff === '') {
+      return false;
+    }
+
+    // special matcher for combined diff
+    const anyLineMatch = ([addr, line]) => line.toLowerCase().trim().includes(this.query);
+
+    // Flatten all diff groups for the search
+    const diffs = diff.map(([slug, subgroups]) => subgroups).flat();
+    for (const subgroup of diffs) {
+      const { both = [], orig = [], recomp = [] } = subgroup;
+
+      // If search includes context
+      if (this.filterType === 2 && both.some(anyLineMatch)) {
+        return true;
+      }
+
+      if (orig.some(anyLineMatch) || recomp.some(anyLineMatch)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  rowSortFn(rowA, rowB) {
+    const valA = rowA[this.sortCol];
+    const valB = rowB[this.sortCol];
+
+    if (valA > valB) {
+      return this.sortDesc ? -1 : 1;
+    } else if (valA < valB) {
+      return this.sortDesc ? 1 : -1;
+    }
+
+    return 0;
+  }
+
+  get page() {
+    return this._page;
+  }
+
+  set page(page) {
+    this._page = Math.max(0, Math.min(page, this.maxPage() - 1));
+    this.callListeners();
   }
 
   get filterType() {
@@ -122,6 +263,7 @@ class ListingState {
     if (value >= 1 && value <= 3) {
       this._filterType = value;
     }
+    this.filterResults();
   }
 
   get query() {
@@ -131,6 +273,7 @@ class ListingState {
   set query(value) {
     // Normalize search string
     this._query = value.toLowerCase().trim();
+    this.filterResults();
   }
 
   get showRecomp() {
@@ -141,8 +284,13 @@ class ListingState {
     // Don't sort by the recomp column we are about to hide
     if (!value && this.sortCol === 'recomp') {
       this.sortCol = 'address';
+      this._showRecomp = value;
+      // sortCol update will call listeners
+      return;
     }
+
     this._showRecomp = value;
+    this.callListeners();
   }
 
   get sortCol() {
@@ -155,113 +303,39 @@ class ListingState {
     } else {
       this._sortCol = column;
     }
+
+    this.sortResults();
+  }
+
+  get sortDesc() {
+    return this._sortDesc;
+  }
+
+  set sortDesc(value) {
+    this._sortDesc = value;
+    this.sortResults();
+  }
+
+  get hidePerfect() {
+    return this._hidePerfect;
+  }
+
+  set hidePerfect(value) {
+    this._hidePerfect = value;
+    this.filterResults();
+  }
+
+  get hideStub() {
+    return this._hideStub;
+  }
+
+  set hideStub(value) {
+    this._hideStub = value;
+    this.filterResults();
   }
 }
 
-const StateProxy = {
-  set(obj, prop, value) {
-    if (prop === 'onsort') {
-      this._onsort = value;
-      return true;
-    }
-
-    if (prop === 'onfilter') {
-      this._onfilter = value;
-      return true;
-    }
-
-    obj[prop] = value;
-
-    if (prop === 'sortCol' || prop === 'sortDesc' || prop === 'showRecomp') {
-      this._onsort();
-    } else {
-      this._onfilter();
-    }
-    return true;
-  }
-};
-
-const appState = new Proxy(new ListingState(), StateProxy);
-
-//
-// Stateful functions
-//
-
-function addrShouldAppear(addr) {
-  // Destructuring sets defaults for optional values from this object.
-  const {
-    effective = false,
-    stub = false,
-    diff = '',
-    name,
-    address,
-    matching
-  } = getDataByAddr(addr);
-
-  if (appState.hidePerfect && (effective || matching >= 1)) {
-    return false;
-  }
-
-  if (appState.hideStub && stub) {
-    return false;
-  }
-
-  if (appState.query === '') {
-    return true;
-  }
-
-  // Name/addr search
-  if (appState.filterType === 1) {
-    return (
-      address.includes(appState.query) ||
-      name.toLowerCase().includes(appState.query)
-    );
-  }
-
-  // no diff for review.
-  if (diff === '') {
-    return false;
-  }
-
-  // special matcher for combined diff
-  const anyLineMatch = ([addr, line]) => line.toLowerCase().trim().includes(appState.query);
-
-  // Flatten all diff groups for the search
-  const diffs = diff.map(([slug, subgroups]) => subgroups).flat();
-  for (const subgroup of diffs) {
-    const { both = [], orig = [], recomp = [] } = subgroup;
-
-    // If search includes context
-    if (appState.filterType === 2 && both.some(anyLineMatch)) {
-      return true;
-    }
-
-    if (orig.some(anyLineMatch) || recomp.some(anyLineMatch)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-// Row comparator function, using our chosen sort column and direction.
-// -1 (A before B)
-//  1 (B before A)
-//  0 (equal)
-function rowSortOrder(addrA, addrB) {
-  const objA = getDataByAddr(addrA);
-  const objB = getDataByAddr(addrB);
-  const valA = objA[appState.sortCol];
-  const valB = objB[appState.sortCol];
-
-  if (valA > valB) {
-    return appState.sortDesc ? -1 : 1;
-  } else if (valA < valB) {
-    return appState.sortDesc ? 1 : -1;
-  }
-
-  return 0;
-}
+const appState = new ListingState();
 
 //
 // Custom elements
@@ -514,8 +588,7 @@ class ListingTable extends window.HTMLElement {
     super();
 
     // Redraw the table on any changes.
-    appState.onsort = () => this.sortRows();
-    appState.onfilter = () => this.filterRows();
+    appState.addListener(() => this.somethingChanged());
 
     const input = this.querySelector('input[type=search]');
     input.oninput = evt => (appState.query = evt.target.value);
@@ -531,6 +604,18 @@ class ListingTable extends window.HTMLElement {
     const showRecomp = this.querySelector('input#cbShowRecomp');
     showRecomp.onchange = evt => (appState.showRecomp = evt.target.checked);
     showRecomp.checked = appState.showRecomp;
+
+    this.querySelector("button#pagePrev").addEventListener('click', evt => {
+      appState.page = appState.page - 1;
+    });
+
+    this.querySelector("button#pageNext").addEventListener('click', evt => {
+      appState.page = appState.page + 1;
+    });
+
+    this.querySelector('select#pageSelect').addEventListener('change', evt => {
+      appState.page = evt.target.value;
+    });
 
     this.querySelectorAll('input[name=filterType]').forEach(radio => {
       const checked = appState.filterType === parseInt(radio.getAttribute('value'));
@@ -598,11 +683,57 @@ class ListingTable extends window.HTMLElement {
       }
     });
 
-    const tbody = this.querySelector('tbody');
+    this.somethingChanged();
+  }
 
-    for (const obj of data) {
+  somethingChanged() {
+    // Toggle recomp/diffs column
+    setBooleanAttribute(this.querySelector('table'), 'show-recomp', appState.showRecomp);
+    this.querySelectorAll('func-row[data-address]').forEach(row => {
+      setBooleanAttribute(row, 'show-recomp', appState.showRecomp);
+    });
+
+    const thead = this.querySelector('thead');
+    const headers = thead.querySelectorAll('th');
+
+    const pageSelect = this.querySelector('select#pageSelect');
+    pageSelect.innerHTML = '';
+    for (const row of appState.pageHeadings()) {
+      const opt = document.createElement('option');
+      opt.value = row[0]
+      if (appState.page == opt.value) {
+        opt.setAttribute('selected', '');
+      }
+
+      opt.textContent = `${appState.sortCol}: ${row[1]} to ${row[2]}`;
+      pageSelect.appendChild(opt);
+    }
+
+    this.querySelector('fieldset#pageDisplay > legend').textContent = `Page ${appState.page+1}`;
+
+    // Update sort indicator
+    headers.forEach(th => {
+      const col = th.getAttribute('data-col');
+      const indicator = th.querySelector('sort-indicator');
+      if (indicator === null) {
+        return;
+      }
+
+      if (appState.sortCol === col) {
+        indicator.setAttribute('data-sort', appState.sortDesc ? 'desc' : 'asc');
+      } else {
+        indicator.removeAttribute('data-sort');
+      }
+    });
+
+    // Add the rows
+    const tbody = this.querySelector('tbody');
+    tbody.innerHTML = ''; // ?
+
+    for (const obj of appState.pageSlice()) {
       const row = document.createElement('func-row');
       row.setAttribute('data-address', obj.address); // ?
+      setBooleanAttribute(row, 'show-recomp', appState.showRecomp);
 
       const items = [
         ['address', obj.address],
@@ -623,72 +754,8 @@ class ListingTable extends window.HTMLElement {
       tbody.appendChild(row);
     }
 
-    this.sortRows();
-    this.filterRows();
-  }
-
-  sortRows() {
-    // Toggle recomp/diffs column
-    setBooleanAttribute(this.querySelector('table'), 'show-recomp', appState.showRecomp);
-    this.querySelectorAll('func-row[data-address]').forEach(row => {
-      setBooleanAttribute(row, 'show-recomp', appState.showRecomp);
-    });
-
-    const thead = this.querySelector('thead');
-    const headers = thead.querySelectorAll('th');
-
-    // Update sort indicator
-    headers.forEach(th => {
-      const col = th.getAttribute('data-col');
-      const indicator = th.querySelector('sort-indicator');
-      if (indicator === null) {
-        return;
-      }
-
-      if (appState.sortCol === col) {
-        indicator.setAttribute('data-sort', appState.sortDesc ? 'desc' : 'asc');
-      } else {
-        indicator.removeAttribute('data-sort');
-      }
-    });
-
-    // Select only the function rows and the diff child row.
-    // Exclude any nested tables used to *display* the diffs.
-    const tbody = this.querySelector('tbody');
-    const rows = tbody.querySelectorAll('func-row[data-address], diff-row[data-address]');
-
-    // Sort all rows according to chosen order
-    const newRows = Array.from(rows);
-    newRows.sort((rowA, rowB) => {
-      const addrA = rowA.getAttribute('data-address');
-      const addrB = rowB.getAttribute('data-address');
-
-      // Diff row always sorts after its parent row
-      if (addrA === addrB && rowB.className === 'diffRow') {
-        return -1;
-      }
-
-      return rowSortOrder(addrA, addrB);
-    });
-
-    // Replace existing rows with updated order
-    newRows.forEach(row => tbody.appendChild(row));
-  }
-
-  filterRows() {
-    const tbody = this.querySelector('tbody');
-    const rows = tbody.querySelectorAll('func-row[data-address], diff-row[data-address]');
-
-    this.querySelector("input#search").placeholder = appState.filterType == 1 ? "Search for offset or function name..." : "Search for instruction...";
-
-    rows.forEach(row => {
-      const addr = row.getAttribute('data-address');
-      const hidden = !addrShouldAppear(addr);
-      setBooleanAttribute(row, 'hidden', hidden);
-    });
-
     // Update row count
-    this.querySelector('#rowcount').textContent = `${tbody.querySelectorAll('func-row:not([hidden])').length}`;
+    this.querySelector('#rowcount').textContent = `${appState._results.length}` // TODO
   }
 }
 

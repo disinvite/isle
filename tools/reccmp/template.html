@@ -192,7 +192,16 @@
             <label for="filterDiff">Asm diffs only</label>
           </fieldset>
         </div>
-        <p>Results: <span id="rowcount"></span></p>
+        <div class="filters">
+          <p>Results: <span id="rowcount"></span></p>
+          <fieldset id="pageDisplay">
+            <legend>Page</legend>
+            <button id="pagePrev">prev</button>
+            <select id="pageSelect">
+            </select>
+            <button id="pageNext">next</button>
+          </fieldset>
+        </div>
         <table id="listing">
           <thead>
             <tr>
