@@ -293,7 +293,7 @@ class FuncRow extends window.HTMLElement {
     const shadow = this.attachShadow({ mode: 'open' });
     shadow.appendChild(template.cloneNode(true));
     // TODO
-    shadow.querySelector(':host > div:nth-of-type(2)').onclick = evt => (this.expanded = !this.expanded);
+    shadow.querySelector(':host > div[data-col="name"]').onclick = evt => (this.expanded = !this.expanded);
   }
 
   get address() {

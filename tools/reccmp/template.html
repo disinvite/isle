@@ -238,6 +238,15 @@
           display: none;
         }
 
+        div[data-col="name"]:hover {
+          cursor: pointer;
+        }
+
+        div[data-col="name"]:hover > ::slotted(*) {
+          text-decoration: underline;
+          text-decoration-style: dotted;
+        }
+
         ::slotted(*:not([slot="name"])) {
           white-space: nowrap;
         }
@@ -253,11 +262,11 @@
           text-align: right;
         }
       </style>
-      <div><can-copy><slot name="address"></slot></can-copy></div>
+      <div data-col="address"><can-copy><slot name="address"></slot></can-copy></div>
       <div data-col="recomp"><can-copy><slot name="recomp"></slot></can-copy></div>
-      <div><slot name="name"></slot></div>
+      <div data-col="name"><slot name="name"></slot></div>
       <div data-col="diffs"><slot name="diffs"></slot></div>
-      <div><slot name="matching"></slot></div>
+      <div data-col="matching"><slot name="matching"></slot></div>
     </template>
     <template id="diffrow-template">
       <style>
