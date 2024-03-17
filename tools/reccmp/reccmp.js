@@ -98,7 +98,7 @@ function copy_to_clipboard(value) {
   navigator.clipboard.writeText(value);
 }
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 200;
 
 //
 // Global state
@@ -150,19 +150,23 @@ class ListingState {
     return this._results.slice(this.page * PAGE_SIZE, (this.page + 1) * PAGE_SIZE);
   }
 
+  pageCount() {
+    return Math.ceil(this._results.length / PAGE_SIZE);
+  }
+
   maxPage() {
-    return Math.floor(this._results.length / PAGE_SIZE);
+    return this.pageCount() - 1;
   }
 
   // A list showing the range of each page based on the sort column and direction.
   pageHeadings() {
-    if (this._results.length == 0) {
+    if (this._results.length === 0) {
       return [];
     }
 
     const headings = [];
 
-    for (let i = 0; i < this.maxPage(); i++) {
+    for (let i = 0; i < this.pageCount(); i++) {
       const startIdx = i * PAGE_SIZE;
       const endIdx = Math.min(this._results.length, ((i+1) * PAGE_SIZE)) - 1;
       headings.push([
@@ -250,7 +254,7 @@ class ListingState {
   }
 
   set page(page) {
-    this._page = Math.max(0, Math.min(page, this.maxPage() - 1));
+    this._page = Math.max(0, Math.min(page, this.maxPage()));
     this.callListeners();
   }
 
@@ -709,7 +713,7 @@ class ListingTable extends window.HTMLElement {
       pageSelect.appendChild(opt);
     }
 
-    this.querySelector('fieldset#pageDisplay > legend').textContent = `Page ${appState.page+1}`;
+    this.querySelector('fieldset#pageDisplay > legend').textContent = `Page ${appState.page + 1} of ${appState.pageCount()}`;
 
     // Update sort indicator
     headers.forEach(th => {
