@@ -61,6 +61,46 @@ function formatAsm(entries, addrOption) {
   return output;
 }
 
+// Special internal values to ensure this sort order for matching column:
+// 1. Stub
+// 2. Any match percentage [0.0, 1.0)
+// 3. Effective match
+// 4. Actual 100% match
+function matchingColAdjustment(row) {
+  if ('stub' in row) {
+    return -1;
+  }
+
+  if ('effective' in row) {
+    return 1.0;
+  }
+
+  if (row.matching == 1.0) {
+    return 1000;
+  }
+
+  return row.matching;
+}
+
+function getCppClass(str) {
+  const idx = str.indexOf("::");
+  if (idx != -1) {
+    return str.slice(0, idx);
+  }
+
+  return str;
+}
+
+// Clamp string length to specified length and pad with ellipsis
+function stringTruncate(str, maxlen = 20) {
+  str = getCppClass(str);
+  if (str.length > maxlen) {
+    return `${str.slice(0, maxlen)}...`;
+  }
+
+  return str;
+}
+
 function getMatchPercentText(row) {
   if ('stub' in row) {
     return 'stub';
@@ -119,8 +159,7 @@ class ListingState {
     this._listeners = [];
 
     this._results = [];
-    this.filterResults();
-    this.sortResults();
+    this.updateResults();
   }
 
   addListener(fn) {
@@ -149,16 +188,13 @@ class ListingState {
     }
   }
 
-  filterResults() {
+  updateResults() {
     const filterFn = this.rowFilterFn.bind(this);
-    this._results = data.filter(filterFn);
-    this.page = Math.min(this.page, this.maxPage());
-    this.callListeners();
-  }
-
-  sortResults() {
     const sortFn = this.rowSortFn.bind(this);
-    this._results = this._results.sort(sortFn);
+
+    this._results = data.filter(filterFn).sort(sortFn);
+
+    this.page = Math.min(this.page, this.maxPage());
     this.callListeners();
   }
 
@@ -185,11 +221,16 @@ class ListingState {
     for (let i = 0; i < this.pageCount(); i++) {
       const startIdx = i * PAGE_SIZE;
       const endIdx = Math.min(this._results.length, ((i+1) * PAGE_SIZE)) - 1;
-      headings.push([
-        i,
-        this._results[startIdx][this.sortCol],
-        this._results[endIdx][this.sortCol]
-      ]);
+
+      let start = this._results[startIdx][this.sortCol];
+      let end = this._results[endIdx][this.sortCol];
+
+      if (this.sortCol === "matching") {
+        start = getMatchPercentText(this._results[startIdx]);
+        end = getMatchPercentText(this._results[endIdx]);
+      }
+
+      headings.push([i, stringTruncate(start), stringTruncate(end)]);
     }
 
     return headings;
@@ -253,8 +294,13 @@ class ListingState {
   }
 
   rowSortFn(rowA, rowB) {
-    const valA = rowA[this.sortCol];
-    const valB = rowB[this.sortCol];
+    const valA = this.sortCol == "matching"
+      ? matchingColAdjustment(rowA)
+      : rowA[this.sortCol];
+
+    const valB = this.sortCol == "matching"
+      ? matchingColAdjustment(rowB)
+      : rowB[this.sortCol];
 
     if (valA > valB) {
       return this.sortDesc ? -1 : 1;
@@ -283,7 +329,7 @@ class ListingState {
     if (value >= 1 && value <= 3) {
       this._filterType = value;
     }
-    this.filterResults();
+    this.updateResults();
   }
 
   get query() {
@@ -293,7 +339,7 @@ class ListingState {
   set query(value) {
     // Normalize search string
     this._query = value.toLowerCase().trim();
-    this.filterResults();
+    this.updateResults();
   }
 
   get showRecomp() {
@@ -324,7 +370,7 @@ class ListingState {
       this._sortCol = column;
     }
 
-    this.sortResults();
+    this.updateResults();
   }
 
   get sortDesc() {
@@ -333,7 +379,7 @@ class ListingState {
 
   set sortDesc(value) {
     this._sortDesc = value;
-    this.sortResults();
+    this.updateResults();
   }
 
   get hidePerfect() {
@@ -342,7 +388,7 @@ class ListingState {
 
   set hidePerfect(value) {
     this._hidePerfect = value;
-    this.filterResults();
+    this.updateResults();
   }
 
   get hideStub() {
@@ -351,7 +397,7 @@ class ListingState {
 
   set hideStub(value) {
     this._hideStub = value;
-    this.filterResults();
+    this.updateResults();
   }
 }
 
@@ -584,13 +630,12 @@ class DiffDisplay extends window.HTMLElement {
   }
 }
 
-// Main application.
-class ListingTable extends window.HTMLElement {
+class ListingOptions extends window.HTMLElement {
   constructor() {
     super();
 
-    // Redraw the table on any changes.
-    appState.addListener(() => this.somethingChanged());
+    // Register to receive updates
+    appState.addListener(() => this.onUpdate());
 
     const input = this.querySelector('input[type=search]');
     input.oninput = evt => (appState.query = evt.target.value);
@@ -625,6 +670,42 @@ class ListingTable extends window.HTMLElement {
 
       radio.onchange = evt => (appState.filterType = radio.getAttribute('value'));
     });
+
+    this.onUpdate();
+  }
+
+  onUpdate() {
+    // Update page number and max page
+    this.querySelector('fieldset#pageDisplay > legend').textContent = `Page ${appState.page + 1} of ${appState.pageCount()}`;
+
+    // Update page select dropdown
+    const pageSelect = this.querySelector('select#pageSelect');
+    pageSelect.innerHTML = '';
+    for (const row of appState.pageHeadings()) {
+      const opt = document.createElement('option');
+      opt.value = row[0]
+      if (appState.page == opt.value) {
+        opt.setAttribute('selected', '');
+      }
+
+      const [start, end] = [row[1], row[2]];
+
+      opt.textContent = `${appState.sortCol}: ${start} to ${end}`;
+      pageSelect.appendChild(opt);
+    }
+
+    // Update row count
+    this.querySelector('#rowcount').textContent = `${appState._results.length}` // TODO
+  }
+}
+
+// Main application.
+class ListingTable extends window.HTMLElement {
+  constructor() {
+    super();
+
+    // Register to receive updates
+    appState.addListener(() => this.somethingChanged());
   }
 
   setDiffRow(address, shouldExpand) {
@@ -698,21 +779,6 @@ class ListingTable extends window.HTMLElement {
     const thead = this.querySelector('thead');
     const headers = thead.querySelectorAll('th');
 
-    const pageSelect = this.querySelector('select#pageSelect');
-    pageSelect.innerHTML = '';
-    for (const row of appState.pageHeadings()) {
-      const opt = document.createElement('option');
-      opt.value = row[0]
-      if (appState.page == opt.value) {
-        opt.setAttribute('selected', '');
-      }
-
-      opt.textContent = `${appState.sortCol}: ${row[1]} to ${row[2]}`;
-      pageSelect.appendChild(opt);
-    }
-
-    this.querySelector('fieldset#pageDisplay > legend').textContent = `Page ${appState.page + 1} of ${appState.pageCount()}`;
-
     // Update sort indicator
     headers.forEach(th => {
       const col = th.getAttribute('data-col');
@@ -763,14 +829,12 @@ class ListingTable extends window.HTMLElement {
         this.setDiffRow(obj.address, true);
       }
     }
-
-    // Update row count
-    this.querySelector('#rowcount').textContent = `${appState._results.length}` // TODO
   }
 }
 
 window.onload = () => {
   window.customElements.define('listing-table', ListingTable);
+  window.customElements.define('listing-options', ListingOptions);
   window.customElements.define('diff-display', DiffDisplay);
   window.customElements.define('diff-display-options', DiffDisplayOptions);
   window.customElements.define('sort-indicator', SortIndicator);
