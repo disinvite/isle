@@ -202,12 +202,16 @@ class ListingState {
     return this._results.slice(this.page * PAGE_SIZE, (this.page + 1) * PAGE_SIZE);
   }
 
+  resultsCount() {
+    return this._results.length;
+  }
+
   pageCount() {
     return Math.ceil(this._results.length / PAGE_SIZE);
   }
 
   maxPage() {
-    return this.pageCount() - 1;
+    return Math.max(0, this.pageCount() - 1);
   }
 
   // A list showing the range of each page based on the sort column and direction.
@@ -676,26 +680,38 @@ class ListingOptions extends window.HTMLElement {
 
   onUpdate() {
     // Update page number and max page
-    this.querySelector('fieldset#pageDisplay > legend').textContent = `Page ${appState.page + 1} of ${appState.pageCount()}`;
+    this.querySelector('fieldset#pageDisplay > legend').textContent = `Page ${appState.page + 1} of ${Math.max(1, appState.pageCount())}`;
+
+    // Disable prev/next buttons on first/last page
+    setBooleanAttribute(this.querySelector("button#pagePrev"), 'disabled', appState.page === 0);
+    setBooleanAttribute(this.querySelector("button#pageNext"), 'disabled', appState.page === appState.maxPage());
 
     // Update page select dropdown
     const pageSelect = this.querySelector('select#pageSelect');
+    setBooleanAttribute(pageSelect, 'disabled', appState.resultsCount() === 0);
     pageSelect.innerHTML = '';
-    for (const row of appState.pageHeadings()) {
+
+    if (appState.resultsCount() === 0) {
       const opt = document.createElement('option');
-      opt.value = row[0]
-      if (appState.page == opt.value) {
-        opt.setAttribute('selected', '');
-      }
-
-      const [start, end] = [row[1], row[2]];
-
-      opt.textContent = `${appState.sortCol}: ${start} to ${end}`;
+      opt.textContent = '- no results -';
       pageSelect.appendChild(opt);
+    } else {
+      for (const row of appState.pageHeadings()) {
+        const opt = document.createElement('option');
+        opt.value = row[0]
+        if (appState.page == opt.value) {
+          opt.setAttribute('selected', '');
+        }
+
+        const [start, end] = [row[1], row[2]];
+
+        opt.textContent = `${appState.sortCol}: ${start} to ${end}`;
+        pageSelect.appendChild(opt);
+      }
     }
 
     // Update row count
-    this.querySelector('#rowcount').textContent = `${appState._results.length}` // TODO
+    this.querySelector('#rowcount').textContent = `${appState.resultsCount()}`
   }
 }
 
