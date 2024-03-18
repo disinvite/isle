@@ -147,8 +147,6 @@ class ListingState {
     } else {
       delete this._expanded[addr];
     }
-
-    this.callListeners();
   }
 
   filterResults() {
@@ -386,7 +384,9 @@ class FuncRow extends window.HTMLElement {
     const template = document.querySelector('template#funcrow-template').content;
     const shadow = this.attachShadow({ mode: 'open' });
     shadow.appendChild(template.cloneNode(true));
-    shadow.querySelector(':host > div[data-col="name"]').onclick = evt => (appState.toggleExpanded(this.address));
+    shadow.querySelector(':host > div[data-col="name"]').addEventListener('click', evt => {
+      this.dispatchEvent(new Event("name-click"));
+    });
   }
 
   get address() {
@@ -627,7 +627,7 @@ class ListingTable extends window.HTMLElement {
     });
   }
 
-  addDiffRow(address) {
+  setDiffRow(address, shouldExpand) {
     const tbody = this.querySelector('tbody');
     const funcrow = tbody.querySelector(`func-row[data-address="${address}"]`);
     if (funcrow === null) {
@@ -636,6 +636,10 @@ class ListingTable extends window.HTMLElement {
 
     const existing = tbody.querySelector(`diff-row[data-address="${address}"]`);
     if (existing !== null) {
+      if (!shouldExpand) {
+        tbody.removeChild(existing);
+      }
+
       return;
     }
 
@@ -731,7 +735,12 @@ class ListingTable extends window.HTMLElement {
     for (const obj of appState.pageSlice()) {
       const row = document.createElement('func-row');
       row.setAttribute('data-address', obj.address); // ?
+      row.addEventListener("name-click", evt => {
+        appState.toggleExpanded(obj.address);
+        this.setDiffRow(obj.address, appState.isExpanded(obj.address));
+      });
       setBooleanAttribute(row, 'show-recomp', appState.showRecomp);
+      setBooleanAttribute(row, 'expanded', appState.isExpanded(row));
 
       const items = [
         ['address', obj.address],
@@ -751,7 +760,7 @@ class ListingTable extends window.HTMLElement {
       tbody.appendChild(row);
 
       if (appState.isExpanded(obj.address)) {
-        this.addDiffRow(obj.address);
+        this.setDiffRow(obj.address, true);
       }
     }
 
