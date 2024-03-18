@@ -133,6 +133,24 @@ class ListingState {
     }
   }
 
+  isExpanded(addr) {
+    return addr in this._expanded;
+  }
+
+  toggleExpanded(addr) {
+    this.setExpanded(addr, !this.isExpanded(addr));
+  }
+
+  setExpanded(addr, value) {
+    if (value) {
+      this._expanded[addr] = true;
+    } else {
+      delete this._expanded[addr];
+    }
+
+    this.callListeners();
+  }
+
   filterResults() {
     const filterFn = this.rowFilterFn.bind(this);
     this._results = data.filter(filterFn);
@@ -360,8 +378,6 @@ class SortIndicator extends window.HTMLElement {
 }
 
 class FuncRow extends window.HTMLElement {
-  static observedAttributes = ['expanded'];
-
   connectedCallback() {
     if (this.shadowRoot !== null) {
       return;
@@ -370,29 +386,11 @@ class FuncRow extends window.HTMLElement {
     const template = document.querySelector('template#funcrow-template').content;
     const shadow = this.attachShadow({ mode: 'open' });
     shadow.appendChild(template.cloneNode(true));
-    shadow.querySelector(':host > div[data-col="name"]').onclick = evt => (this.expanded = !this.expanded);
+    shadow.querySelector(':host > div[data-col="name"]').onclick = evt => (appState.toggleExpanded(this.address));
   }
 
   get address() {
     return this.getAttribute('data-address');
-  }
-
-  get expanded() {
-    return this.getAttribute('expanded') !== null;
-  }
-
-  set expanded(value) {
-    setBooleanAttribute(this, 'expanded', value);
-  }
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (name !== 'expanded') {
-      return;
-    }
-
-    if (this.onchangeExpand) {
-      this.onchangeExpand(this.expanded);
-    }
   }
 }
 
@@ -629,7 +627,7 @@ class ListingTable extends window.HTMLElement {
     });
   }
 
-  setRowExpand(address, shouldExpand) {
+  addDiffRow(address) {
     const tbody = this.querySelector('tbody');
     const funcrow = tbody.querySelector(`func-row[data-address="${address}"]`);
     if (funcrow === null) {
@@ -637,41 +635,37 @@ class ListingTable extends window.HTMLElement {
     }
 
     const existing = tbody.querySelector(`diff-row[data-address="${address}"]`);
-    if (shouldExpand) {
-      if (existing === null) {
-        const diffrow = document.createElement('diff-row');
-        diffrow.address = address;
-
-        // Decide what goes inside the diff row.
-        const obj = getDataByAddr(address);
-
-        if ('stub' in obj) {
-          const msg = document.createElement('no-diff');
-          const p = document.createElement('div');
-          p.innerText = 'Stub. No diff.';
-          msg.appendChild(p);
-          diffrow.appendChild(msg);
-        } else if (obj.diff.length === 0) {
-          const msg = document.createElement('no-diff');
-          const p = document.createElement('div');
-          p.innerText = 'Identical function - no diff';
-          msg.appendChild(p);
-          diffrow.appendChild(msg);
-        } else {
-          const dd = new DiffDisplay();
-          dd.option = '1';
-          dd.address = address;
-          diffrow.appendChild(dd);
-        }
-
-        // Insert the diff row after the parent func row.
-        tbody.insertBefore(diffrow, funcrow.nextSibling);
-      }
-    } else {
-      if (existing !== null) {
-        tbody.removeChild(existing);
-      }
+    if (existing !== null) {
+      return;
     }
+
+    const diffrow = document.createElement('diff-row');
+    diffrow.address = address;
+
+    // Decide what goes inside the diff row.
+    const obj = getDataByAddr(address);
+
+    if ('stub' in obj) {
+      const msg = document.createElement('no-diff');
+      const p = document.createElement('div');
+      p.innerText = 'Stub. No diff.';
+      msg.appendChild(p);
+      diffrow.appendChild(msg);
+    } else if (obj.diff.length === 0) {
+      const msg = document.createElement('no-diff');
+      const p = document.createElement('div');
+      p.innerText = 'Identical function - no diff';
+      msg.appendChild(p);
+      diffrow.appendChild(msg);
+    } else {
+      const dd = new DiffDisplay();
+      dd.option = '1';
+      dd.address = address;
+      diffrow.appendChild(dd);
+    }
+
+    // Insert the diff row after the parent func row.
+    tbody.insertBefore(diffrow, funcrow.nextSibling);
   }
 
   connectedCallback() {
@@ -754,8 +748,11 @@ class ListingTable extends window.HTMLElement {
         row.appendChild(div);
       });
 
-      row.onchangeExpand = shouldExpand => this.setRowExpand(obj.address, shouldExpand);
       tbody.appendChild(row);
+
+      if (appState.isExpanded(obj.address)) {
+        this.addDiffRow(obj.address);
+      }
     }
 
     // Update row count
