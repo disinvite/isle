@@ -679,6 +679,11 @@ class ListingOptions extends window.HTMLElement {
   }
 
   onUpdate() {
+    // Update input placeholder based on search type
+    this.querySelector('input[type=search]').placeholder = appState.filterType === 1
+      ? 'Search for offset or function name...'
+      : 'Search for instruction...';
+
     // Update page number and max page
     this.querySelector('fieldset#pageDisplay > legend').textContent = `Page ${appState.page + 1} of ${Math.max(1, appState.pageCount())}`;
 
