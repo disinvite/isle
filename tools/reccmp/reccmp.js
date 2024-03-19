@@ -703,7 +703,7 @@ class ListingOptions extends window.HTMLElement {
       for (const row of appState.pageHeadings()) {
         const opt = document.createElement('option');
         opt.value = row[0];
-        if (appState.page === opt.value) {
+        if (appState.page === row[0]) {
           opt.setAttribute('selected', '');
         }
 
