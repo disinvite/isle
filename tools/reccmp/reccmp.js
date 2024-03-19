@@ -75,7 +75,7 @@ function matchingColAdjustment(row) {
     return 1.0;
   }
 
-  if (row.matching == 1.0) {
+  if (row.matching === 1.0) {
     return 1000;
   }
 
@@ -83,8 +83,8 @@ function matchingColAdjustment(row) {
 }
 
 function getCppClass(str) {
-  const idx = str.indexOf("::");
-  if (idx != -1) {
+  const idx = str.indexOf('::');
+  if (idx !== -1) {
     return str.slice(0, idx);
   }
 
@@ -114,14 +114,14 @@ function getMatchPercentText(row) {
 }
 
 function countDiffs(row) {
-  const { diff='' } = row;
+  const { diff = '' } = row;
   if (diff === '') {
     return '';
   }
 
   const diffs = diff.map(([slug, subgroups]) => subgroups).flat();
   const diffLength = diffs.filter(d => !('both' in d)).length;
-  const diffWord = diffLength == 1 ? 'diff' : 'diffs';
+  const diffWord = diffLength === 1 ? 'diff' : 'diffs';
   return diffLength === 0 ? '' : `${diffLength} ${diffWord}`;
 }
 
@@ -134,7 +134,7 @@ function setBooleanAttribute(element, attribute, value) {
   }
 }
 
-function copy_to_clipboard(value) {
+function copyToClipboard(value) {
   navigator.clipboard.writeText(value);
 }
 
@@ -224,12 +224,12 @@ class ListingState {
 
     for (let i = 0; i < this.pageCount(); i++) {
       const startIdx = i * PAGE_SIZE;
-      const endIdx = Math.min(this._results.length, ((i+1) * PAGE_SIZE)) - 1;
+      const endIdx = Math.min(this._results.length, ((i + 1) * PAGE_SIZE)) - 1;
 
       let start = this._results[startIdx][this.sortCol];
       let end = this._results[endIdx][this.sortCol];
 
-      if (this.sortCol === "matching") {
+      if (this.sortCol === 'matching') {
         start = getMatchPercentText(this._results[startIdx]);
         end = getMatchPercentText(this._results[endIdx]);
       }
@@ -298,11 +298,11 @@ class ListingState {
   }
 
   rowSortFn(rowA, rowB) {
-    const valA = this.sortCol == "matching"
+    const valA = this.sortCol === 'matching'
       ? matchingColAdjustment(rowA)
       : rowA[this.sortCol];
 
-    const valB = this.sortCol == "matching"
+    const valB = this.sortCol === 'matching'
       ? matchingColAdjustment(rowB)
       : rowB[this.sortCol];
 
@@ -435,7 +435,7 @@ class FuncRow extends window.HTMLElement {
     const shadow = this.attachShadow({ mode: 'open' });
     shadow.appendChild(template.cloneNode(true));
     shadow.querySelector(':host > div[data-col="name"]').addEventListener('click', evt => {
-      this.dispatchEvent(new Event("name-click"));
+      this.dispatchEvent(new Event('name-click'));
     });
   }
 
@@ -467,9 +467,9 @@ class CanCopy extends window.HTMLElement {
     shadow.appendChild(template.cloneNode(true));
 
     const el = shadow.querySelector('slot').assignedNodes()[0];
-    el.addEventListener('mouseout', evt => { this.copied = false });
+    el.addEventListener('mouseout', evt => { this.copied = false; });
     el.addEventListener('click', evt => {
-      copy_to_clipboard(evt.target.textContent);
+      copyToClipboard(evt.target.textContent);
       this.copied = true;
     });
   }
@@ -480,12 +480,11 @@ class CanCopy extends window.HTMLElement {
 
   set copied(value) {
     if (value) {
-      setTimeout(() => {this.copied = false; }, 2000);
+      setTimeout(() => { this.copied = false; }, 2000);
     }
     setBooleanAttribute(this, 'copied', value);
   }
 }
-
 
 // Displays asm diff for the given @data-address value.
 class DiffRow extends window.HTMLElement {
@@ -656,11 +655,11 @@ class ListingOptions extends window.HTMLElement {
     showRecomp.onchange = evt => (appState.showRecomp = evt.target.checked);
     showRecomp.checked = appState.showRecomp;
 
-    this.querySelector("button#pagePrev").addEventListener('click', evt => {
+    this.querySelector('button#pagePrev').addEventListener('click', evt => {
       appState.page = appState.page - 1;
     });
 
-    this.querySelector("button#pageNext").addEventListener('click', evt => {
+    this.querySelector('button#pageNext').addEventListener('click', evt => {
       appState.page = appState.page + 1;
     });
 
@@ -688,8 +687,8 @@ class ListingOptions extends window.HTMLElement {
     this.querySelector('fieldset#pageDisplay > legend').textContent = `Page ${appState.page + 1} of ${Math.max(1, appState.pageCount())}`;
 
     // Disable prev/next buttons on first/last page
-    setBooleanAttribute(this.querySelector("button#pagePrev"), 'disabled', appState.page === 0);
-    setBooleanAttribute(this.querySelector("button#pageNext"), 'disabled', appState.page === appState.maxPage());
+    setBooleanAttribute(this.querySelector('button#pagePrev'), 'disabled', appState.page === 0);
+    setBooleanAttribute(this.querySelector('button#pageNext'), 'disabled', appState.page === appState.maxPage());
 
     // Update page select dropdown
     const pageSelect = this.querySelector('select#pageSelect');
@@ -703,8 +702,8 @@ class ListingOptions extends window.HTMLElement {
     } else {
       for (const row of appState.pageHeadings()) {
         const opt = document.createElement('option');
-        opt.value = row[0]
-        if (appState.page == opt.value) {
+        opt.value = row[0];
+        if (appState.page === opt.value) {
           opt.setAttribute('selected', '');
         }
 
@@ -716,7 +715,7 @@ class ListingOptions extends window.HTMLElement {
     }
 
     // Update row count
-    this.querySelector('#rowcount').textContent = `${appState.resultsCount()}`
+    this.querySelector('#rowcount').textContent = `${appState.resultsCount()}`;
   }
 }
 
@@ -782,7 +781,7 @@ class ListingTable extends window.HTMLElement {
       if (col) {
         const span = th.querySelector('span');
         if (span) {
-          span.addEventListener('click', evt => {appState.sortCol = col;});
+          span.addEventListener('click', evt => { appState.sortCol = col; });
         }
       }
     });
@@ -822,7 +821,7 @@ class ListingTable extends window.HTMLElement {
     for (const obj of appState.pageSlice()) {
       const row = document.createElement('func-row');
       row.setAttribute('data-address', obj.address); // ?
-      row.addEventListener("name-click", evt => {
+      row.addEventListener('name-click', evt => {
         appState.toggleExpanded(obj.address);
         this.setDiffRow(obj.address, appState.isExpanded(obj.address));
       });
