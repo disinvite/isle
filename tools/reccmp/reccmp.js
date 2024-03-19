@@ -194,7 +194,8 @@ class ListingState {
 
     this._results = data.filter(filterFn).sort(sortFn);
 
-    this.page = Math.min(this.page, this.maxPage());
+    // Set _page directly to avoid double call to listeners.
+    this._page = this.pageClamp(this.page);
     this.callListeners();
   }
 
@@ -315,12 +316,16 @@ class ListingState {
     return 0;
   }
 
+  pageClamp(page) {
+    return Math.max(0, Math.min(page, this.maxPage()));
+  }
+
   get page() {
     return this._page;
   }
 
   set page(page) {
-    this._page = Math.max(0, Math.min(page, this.maxPage()));
+    this._page = this.pageClamp(page);
     this.callListeners();
   }
 
@@ -353,10 +358,7 @@ class ListingState {
   set showRecomp(value) {
     // Don't sort by the recomp column we are about to hide
     if (!value && this.sortCol === 'recomp') {
-      this.sortCol = 'address';
-      this._showRecomp = value;
-      // sortCol update will call listeners
-      return;
+      this._sortCol = 'address';
     }
 
     this._showRecomp = value;
@@ -369,7 +371,7 @@ class ListingState {
 
   set sortCol(column) {
     if (column === this._sortCol) {
-      this.sortDesc = !this.sortDesc;
+      this._sortDesc = !this._sortDesc;
     } else {
       this._sortCol = column;
     }
