@@ -162,6 +162,23 @@
       label {
         user-select: none;
       }
+
+      #pageDisplay > button {
+        cursor: pointer;
+        padding: 0.25em 0.5em;
+      }
+
+      #pageDisplay select {
+        cursor: pointer;
+        padding: 0.25em;
+        margin: 0 0.5em;
+      }
+
+      p.rowcount {
+        align-self: flex-end;
+        font-size: 1.2em;
+        margin-bottom: 0;
+      }
     </style>
     <script>var data = {{{data}}};</script>
     <script>{{{reccmp_js}}}</script>
@@ -193,7 +210,7 @@
           </fieldset>
         </div>
         <div class="filters">
-          <p>Results: <span id="rowcount"></span></p>
+          <p class="rowcount">Results: <span id="rowcount"></span></p>
           <fieldset id="pageDisplay">
             <legend>Page</legend>
             <button id="pagePrev">prev</button>
