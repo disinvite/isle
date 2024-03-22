@@ -5,6 +5,7 @@ https://en.wikiversity.org/wiki/Visual_C%2B%2B_name_mangling
 import re
 from collections import namedtuple
 from typing import Optional
+import pydemangler
 
 
 class InvalidEncodedNumberError(Exception):
@@ -52,7 +53,28 @@ def demangle_string_const(symbol: str) -> Optional[StringConstInfo]:
 
 
 def demangle_vtable(symbol: str) -> str:
+    # pylint: disable=c-extension-no-member
     """Get the class name referenced in the vtable symbol."""
+    raw = pydemangler.demangle(symbol)
+
+    if raw is None:
+        pass  # TODO: This shouldn't happen if MSVC behaves
+
+    # Remove storage class and other stuff we don't care about
+    return (
+        raw.replace("<class ", "<")
+        .replace("<struct ", "<")
+        .replace("const ", "")
+        .replace("volatile ", "")
+    )
+
+
+def demangle_vtable_ourselves(symbol: str) -> str:
+    """Parked implementation of MSVC symbol demangling.
+    We only use this for vtables and it works okay with the simple cases or
+    templates that refer to other classes/structs. Some namespace support.
+    Does not support backrefs, primitive types, or vtables with
+    virtual inheritance."""
 
     # Seek ahead 4 chars to strip off "??_7" prefix
     t = symbol[4:].split("@")

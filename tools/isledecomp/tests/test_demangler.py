@@ -53,8 +53,15 @@ vtable_cases = [
         "MxPtrList<LegoPathController>::`vftable'",
     ),
     ("??_7Renderer@Tgl@@6B@", "Tgl::Renderer::`vftable'"),
-    # ("??_7LegoExtraActor@@6B0@@", "LegoExtraActor::`vftable'{for `LegoExtraActor'}"),
-    # ("??_7LegoExtraActor@@6BLegoAnimActor@@@", "LegoExtraActor::`vftable'{for `LegoAnimActor'}"),
+    ("??_7LegoExtraActor@@6B0@@", "LegoExtraActor::`vftable'{for `LegoExtraActor'}"),
+    (
+        "??_7LegoExtraActor@@6BLegoAnimActor@@@",
+        "LegoExtraActor::`vftable'{for `LegoAnimActor'}",
+    ),
+    (
+        "??_7LegoAnimActor@@6B?$LegoContainer@PAM@@@",
+        "LegoAnimActor::`vftable'{for `LegoContainer<float *>'}",
+    ),
 ]
 
 
