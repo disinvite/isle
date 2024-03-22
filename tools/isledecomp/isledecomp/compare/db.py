@@ -329,7 +329,7 @@ class CompareDb:
         temp_base = base_class if base_class is not None else name
 
         name_option0 = f"{name}::`vftable'"
-        name_option1 = f"{name}`vftable'{{for `{temp_base}'}}"
+        name_option1 = f"{name}::`vftable'{{for `{temp_base}'}}"
 
         row = self._db.execute(
             """
