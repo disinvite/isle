@@ -86,6 +86,7 @@ class Compare:
         self._find_original_strings()
         self._match_thunks()
         self._match_exports()
+        self._find_vtordisp()
 
     def _load_cvdump(self):
         logger.info("Parsing %s ...", self.pdb_file)
@@ -284,6 +285,79 @@ class Compare:
                 orig_addr, recomp_addr
             ):
                 logger.debug("Matched export %s", repr(export_name))
+
+    def _find_vtordisp(self):
+        """If there are any cases of virtual inheritance, we can read
+        through the vtables for those classes and find the vtable thunk
+        functions (vtordisp).
+
+        Our approach is this: walk both vtables and check where we have a
+        vtordisp in the recomp table. Inspect the function at that vtable
+        position (in both) and check whether we jump to the same function.
+
+        One potential pitfall here is that the virtual displacement could
+        differ between the thunks. We are not (yet) checking for this, so the
+        result is that the vtable will appear to match but we will have a diff
+        on the thunk in our regular function comparison.
+
+        We could do this differently and check only the original vtable,
+        construct the name of the vtordisp function and match based on that.
+        The problem is that we haven't seen enough vtordisp functions to do
+        this reliably. An example symbol looks like this:
+
+            LegoExtraActor::ClassName`vtordisp{4294967292,0}'
+
+        4294967292 is the ulong version of -4. The displacement on ECX is -4.
+        So if we see 'sub ecx, 0x4' and 'jmp @LegoExtraActor::ClassName' in our
+        thunk then we can mock up the name of the vtordisp. However:
+        - Is that definitely what the first number suggests?
+        - What is the second number used for?
+        """
+
+        for match in self._db.get_matches_by_type(SymbolType.VTABLE):
+            # We need some method of identifying vtables that
+            # might have thunks, and this ought to work okay.
+            if "{for" not in match.name:
+                continue
+
+            # TODO: We might want to fix this at the source (cvdump) instead.
+            # Any problem will be logged later when we compare the vtable.
+            vtable_size = 4 * (match.size // 4)
+            orig_table = self.orig_bin.read(match.orig_addr, vtable_size)
+            recomp_table = self.recomp_bin.read(match.recomp_addr, vtable_size)
+
+            raw_addrs = zip(
+                [t for (t,) in struct.iter_unpack("<L", orig_table)],
+                [t for (t,) in struct.iter_unpack("<L", recomp_table)],
+            )
+
+            # Now walk both vtables looking for thunks.
+            for orig_addr, recomp_addr in raw_addrs:
+                thunk_fn = self.get_by_recomp(recomp_addr)
+
+                if "vtordisp" not in thunk_fn.name:
+                    continue
+
+                # Read the function bytes here.
+                orig_thunk_bin = self.orig_bin.read(orig_addr, thunk_fn.size)
+                recomp_thunk_bin = self.recomp_bin.read(recomp_addr, thunk_fn.size)
+
+                # Big assumption here that the thunk will always end with a JMP.
+                (orig_jmp, orig_disp) = struct.unpack("<Bi", orig_thunk_bin[-5:])
+                (recomp_jmp, recomp_disp) = struct.unpack("<Bi", recomp_thunk_bin[-5:])
+
+                # Make sure it's a JMP
+                if orig_jmp != 0xE9 or recomp_jmp != 0xE9:
+                    continue
+
+                # Calculate jump displacement from the end of the JMP instruction
+                # i.e. the end of the function
+                orig_actual = orig_addr + thunk_fn.size + orig_disp
+                recomp_actual = recomp_addr + thunk_fn.size + recomp_disp
+
+                # If they are thunking the same function, then this must be a match.
+                if self.is_pointer_match(orig_actual, recomp_actual):
+                    self._db.set_function_pair(orig_addr, recomp_addr)
 
     def _compare_function(self, match: MatchInfo) -> DiffReport:
         orig_raw = self.orig_bin.read(match.orig_addr, match.size)
