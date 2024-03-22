@@ -323,12 +323,31 @@ class CompareDb:
 
         return did_match
 
-    def match_vtable(self, addr: int, name: str) -> bool:
-        did_match = self._match_on(SymbolType.VTABLE, addr, name)
-        if not did_match:
-            logger.error("Failed to find vtable for class: %s", name)
+    def match_vtable(
+        self, addr: int, name: str, base_class: Optional[str] = None
+    ) -> bool:
+        temp_base = base_class if base_class is not None else name
 
-        return did_match
+        name_option0 = f"{name}::`vftable'"
+        name_option1 = f"{name}`vftable'{{for `{temp_base}'}}"
+
+        row = self._db.execute(
+            """
+            SELECT recomp_addr
+            FROM `symbols`
+            WHERE orig_addr IS NULL
+            AND (name = ? OR name = ?)
+            AND (compare_type = ?)
+            LIMIT 1
+            """,
+            (name_option0, name_option1, SymbolType.VTABLE.value),
+        ).fetchone()
+
+        if row is not None:
+            self.set_pair(addr, row[0], SymbolType.VTABLE)
+
+        logger.error("Failed to find vtable for class: %s", name)
+        return False
 
     def match_static_variable(self, addr: int, name: str, function_addr: int) -> bool:
         """Matching a static function variable by combining the variable name

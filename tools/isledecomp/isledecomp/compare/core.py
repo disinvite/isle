@@ -198,7 +198,7 @@ class Compare:
                 self._db.match_variable(var.offset, var.name)
 
         for tbl in codebase.iter_vtables():
-            self._db.match_vtable(tbl.offset, tbl.name)
+            self._db.match_vtable(tbl.offset, tbl.name, tbl.base_class)
 
         for string in codebase.iter_strings():
             # Not that we don't trust you, but we're checking the string
@@ -432,7 +432,7 @@ class Compare:
             match_type=SymbolType.VTABLE,
             orig_addr=match.orig_addr,
             recomp_addr=match.recomp_addr,
-            name=f"{match.name}::`vftable'",
+            name=match.name,
             udiff=unified_diff,
             ratio=ratio,
         )

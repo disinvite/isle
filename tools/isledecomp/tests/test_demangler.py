@@ -46,10 +46,15 @@ def test_invalid_encoded_number():
 
 
 vtable_cases = [
-    ("??_7LegoCarBuildAnimPresenter@@6B@", "LegoCarBuildAnimPresenter"),
-    ("??_7?$MxCollection@PAVLegoWorld@@@@6B@", "MxCollection<LegoWorld *>"),
-    ("??_7?$MxPtrList@VLegoPathController@@@@6B@", "MxPtrList<LegoPathController>"),
-    ("??_7Renderer@Tgl@@6B@", "Tgl::Renderer"),
+    ("??_7LegoCarBuildAnimPresenter@@6B@", "LegoCarBuildAnimPresenter::`vftable'"),
+    ("??_7?$MxCollection@PAVLegoWorld@@@@6B@", "MxCollection<LegoWorld *>::`vftable'"),
+    (
+        "??_7?$MxPtrList@VLegoPathController@@@@6B@",
+        "MxPtrList<LegoPathController>::`vftable'",
+    ),
+    ("??_7Renderer@Tgl@@6B@", "Tgl::Renderer::`vftable'"),
+    # ("??_7LegoExtraActor@@6B0@@", "LegoExtraActor::`vftable'{for `LegoExtraActor'}"),
+    # ("??_7LegoExtraActor@@6BLegoAnimActor@@@", "LegoExtraActor::`vftable'{for `LegoAnimActor'}"),
 ]
 
 

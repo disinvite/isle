@@ -66,11 +66,11 @@ def demangle_vtable(symbol: str) -> str:
         else:
             generic = t[1][1:]
 
-        return f"{class_name}<{generic}>"
+        return f"{class_name}<{generic}>::`vftable'"
 
     # If we have two classes listed, it is a namespace hierarchy.
     # @@6B@ is a common generic suffix for these vtable symbols.
     if t[1] != "" and t[1] != "6B":
-        return t[1] + "::" + t[0]
+        return t[1] + "::" + t[0] + "::`vftable'"
 
-    return t[0]
+    return t[0] + "::`vftable'"
