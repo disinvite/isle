@@ -4,6 +4,7 @@ import sqlite3
 import logging
 from typing import List, Optional
 from isledecomp.types import SymbolType
+from isledecomp.cvdump.demangler import get_vtordisp_name
 
 _SETUP_SQL = """
     DROP TABLE IF EXISTS `symbols`;
@@ -248,6 +249,37 @@ class CompareDb:
             option: value if value is not None else True
             for (option, value) in cur.fetchall()
         }
+
+    def is_vtordisp(self, recomp_addr: int) -> bool:
+        """Check whether this function is a vtordisp based on its
+        decorated name. If its demangled name is missing the vtordisp
+        indicator, correct that."""
+        row = self._db.execute(
+            """SELECT name, decorated_name
+            FROM `symbols`
+            WHERE recomp_addr = ?""",
+            (recomp_addr,),
+        ).fetchone()
+
+        if row is None:
+            return False
+
+        (name, decorated_name) = row
+        if "`vtordisp" in name:
+            return True
+
+        new_name = get_vtordisp_name(decorated_name)
+        if new_name is None:
+            return False
+
+        self._db.execute(
+            """UPDATE `symbols`
+            SET name = ?
+            WHERE recomp_addr = ?""",
+            (new_name, recomp_addr),
+        )
+
+        return True
 
     def _find_potential_match(
         self, name: str, compare_type: SymbolType

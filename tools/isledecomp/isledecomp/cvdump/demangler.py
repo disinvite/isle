@@ -52,6 +52,29 @@ def demangle_string_const(symbol: str) -> Optional[StringConstInfo]:
     return StringConstInfo(len=strlen, is_utf16=is_utf16)
 
 
+def get_vtordisp_name(symbol: str) -> Optional[str]:
+    # pylint: disable=c-extension-no-member
+    """For adjuster thunk functions, the PDB will sometimes use a name
+    that contains "vtordisp" but often will just reuse the name of the
+    function being thunked. We want to use the vtordisp name if possible."""
+    name = pydemangler.demangle(symbol)
+    if name is None:
+        return None
+
+    if "`vtordisp" not in name:
+        return None
+
+    # Now we remove the parts of the friendly name that we don't need
+    try:
+        # Assuming this is the last of the function prefixes
+        thiscall_idx = name.index("__thiscall")
+        # To match the end of the `vtordisp{x,y}' string
+        end_idx = name.index("}'")
+        return name[thiscall_idx + 11 : end_idx + 2]
+    except ValueError:
+        return name
+
+
 def demangle_vtable(symbol: str) -> str:
     # pylint: disable=c-extension-no-member
     """Get the class name referenced in the vtable symbol."""

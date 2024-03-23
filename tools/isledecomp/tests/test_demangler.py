@@ -4,6 +4,7 @@ from isledecomp.cvdump.demangler import (
     demangle_vtable,
     parse_encoded_number,
     InvalidEncodedNumberError,
+    get_vtordisp_name,
 )
 
 string_demangle_cases = [
@@ -68,3 +69,15 @@ vtable_cases = [
 @pytest.mark.parametrize("symbol, class_name", vtable_cases)
 def test_vtable(symbol, class_name):
     assert demangle_vtable(symbol) == class_name
+
+
+def test_vtordisp():
+    """Make sure we can accurately detect an adjuster thunk symbol"""
+    assert get_vtordisp_name("") is None
+    assert get_vtordisp_name("?ClassName@LegoExtraActor@@UBEPBDXZ") is None
+    assert (
+        get_vtordisp_name("?ClassName@LegoExtraActor@@$4PPPPPPPM@A@BEPBDXZ") is not None
+    )
+
+    # A function called vtordisp
+    assert get_vtordisp_name("?vtordisp@LegoExtraActor@@UBEPBDXZ") is None

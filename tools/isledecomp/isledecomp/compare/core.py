@@ -333,10 +333,10 @@ class Compare:
 
             # Now walk both vtables looking for thunks.
             for orig_addr, recomp_addr in raw_addrs:
-                thunk_fn = self.get_by_recomp(recomp_addr)
-
-                if "vtordisp" not in thunk_fn.name:
+                if not self._db.is_vtordisp(recomp_addr):
                     continue
+
+                thunk_fn = self.get_by_recomp(recomp_addr)
 
                 # Read the function bytes here.
                 orig_thunk_bin = self.orig_bin.read(orig_addr, thunk_fn.size)
