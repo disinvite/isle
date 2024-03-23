@@ -343,8 +343,8 @@ class CompareDb:
             (name_option0, name_option1, SymbolType.VTABLE.value),
         ).fetchone()
 
-        if row is not None:
-            self.set_pair(addr, row[0], SymbolType.VTABLE)
+        if row is not None and self.set_pair(addr, row[0], SymbolType.VTABLE):
+            return True
 
         logger.error("Failed to find vtable for class: %s", name)
         return False
