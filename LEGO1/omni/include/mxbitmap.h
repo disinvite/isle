@@ -44,6 +44,7 @@ public:
 	virtual MxLong Read(const char* p_filename);                                           // vtable+24
 
 	// FUNCTION: LEGO1 0x1004e0d0
+	// FUNCTION: BETA10 0x10060fc0
 	virtual int VTable0x28(int) { return -1; } // vtable+28
 
 	virtual void BitBlt(
@@ -80,12 +81,14 @@ public:
 	// Bit mask trick to round up to the nearest multiple of four.
 	// Pixel data may be stored with padding.
 	// https://learn.microsoft.com/en-us/windows/win32/medfound/image-stride
+	// FUNCTION: BETA10 0x1002c510
 	inline MxLong AlignToFourByte(MxLong p_value) const { return (p_value + 3) & -4; }
 
 	// Same as the one from legoutils.h, but flipped the other way
 	// TODO: While it's not outside the realm of possibility that they
 	// reimplemented Abs for only this file, that seems odd, right?
-	inline MxLong AbsFlipped(MxLong p_value) const { return p_value > 0 ? p_value : -p_value; }
+	// FUNCTION: BETA10 0x1002c690
+	static MxLong AbsFlipped(MxLong p_value) { return p_value > 0 ? p_value : -p_value; }
 
 	inline BITMAPINFOHEADER* GetBmiHeader() const { return m_bmiHeader; }
 	inline MxLong GetBmiWidth() const { return m_bmiHeader->biWidth; }
@@ -94,12 +97,33 @@ public:
 	inline MxLong GetBmiHeightAbs() const { return AbsFlipped(m_bmiHeader->biHeight); }
 	inline MxU8* GetBitmapData() const { return m_data; }
 	inline MxBITMAPINFO* GetBitmapInfo() const { return m_info; }
-	inline MxLong GetDataSize() const
+	// FUNCTION: BETA10 0x1013dd10
+	inline MxLong MxBitmapInfoSize() const { return sizeof(MxBITMAPINFO); }
+	// FUNCTION: BETA10 0x100982b0
+	inline MxLong GetDataSize() const { return AlignToFourByte(m_bmiHeader->biWidth) * GetBmiHeightAbs(); }
+
+	// FUNCTION: BETA10 0x1002c4b0
+	inline MxBool IsTopDown()
 	{
-		MxLong absHeight = GetBmiHeightAbs();
-		MxLong alignedWidth = AlignToFourByte(m_bmiHeader->biWidth);
-		return alignedWidth * absHeight;
+		if (m_bmiHeader->biCompression == BI_RGB_TOPDOWN) {
+			return TRUE;
+		}
+		else {
+			return m_bmiHeader->biHeight < 0;
+		}
 	}
+
+	// FUNCTION: BETA10 0x1013dd30
+	inline MxBool IsBottomUp()
+	{
+		if (m_bmiHeader->biCompression == BI_RGB_TOPDOWN) {
+			return FALSE;
+		}
+		else {
+			return m_bmiHeader->biHeight > 0;
+		}
+	}
+
 	inline MxLong GetAdjustedStride()
 	{
 		if (m_bmiHeader->biCompression == BI_RGB_TOPDOWN || m_bmiHeader->biHeight < 0) {
@@ -117,25 +141,30 @@ public:
 			height = p_top;
 		}
 		else {
-			height = GetBmiHeightAbs() - p_top - 1;
+			height = GetBmiHeightAbs() - 1 - p_top;
 		}
 		return GetBmiStride() * height;
 	}
 
+#define MyGetLine(p_top) (IsTopDown() ? p_top : GetBmiHeightAbs() - p_top - 1)
+#define MyGetStride() (AlignToFourByte(GetBmiWidth()))
+
+	// FUNCTION: BETA10 0x1002c320
 	inline MxU8* GetStart(MxS32 p_left, MxS32 p_top)
 	{
 		if (m_bmiHeader->biCompression == BI_RGB) {
-			return GetLine(p_top) + m_data + p_left;
+			return MyGetStride() * MyGetLine(p_top) + m_data + p_left;
 		}
 		else if (m_bmiHeader->biCompression == BI_RGB_TOPDOWN) {
 			return m_data;
 		}
 		else {
-			return GetLine(0) + m_data;
+			return MyGetStride() * MyGetLine(0) + m_data;
 		}
 	}
 
 	// SYNTHETIC: LEGO1 0x100bc9f0
+	// SYNTHETIC: BETA10 0x1013dcd0
 	// MxBitmap::`scalar deleting destructor'
 
 private:

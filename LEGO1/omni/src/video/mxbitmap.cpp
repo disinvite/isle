@@ -7,8 +7,10 @@ DECOMP_SIZE_ASSERT(MxBitmap, 0x20);
 DECOMP_SIZE_ASSERT(MxBITMAPINFO, 0x428);
 
 // Bitmap header magic string "BM" (42 4d)
-// Sources: https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapfileheader, DirectX Complete
-// (1998) GLOBAL: LEGO1 0x10102184
+// Sources: https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapfileheader
+// DirectX Complete (1998)
+// GLOBAL: LEGO1 0x10102184
+// GLOBAL: BETA10 0x10203030
 MxU16 g_bitmapSignature = TWOCC('B', 'M');
 
 // FUNCTION: LEGO1 0x100bc980
@@ -37,38 +39,48 @@ MxBitmap::~MxBitmap()
 }
 
 // FUNCTION: LEGO1 0x100bcaa0
+// FUNCTION: BETA10 0x1013cc47
 MxResult MxBitmap::SetSize(MxS32 p_width, MxS32 p_height, MxPalette* p_palette, MxBool p_isHighColor)
 {
 	MxResult ret = FAILURE;
 	MxLong size = AlignToFourByte(p_width) * p_height;
 
-	m_info = new MxBITMAPINFO;
-	if (m_info) {
-		m_data = new MxU8[size];
-		if (m_data) {
-			m_bmiHeader = &m_info->m_bmiHeader;
-			m_paletteData = m_info->m_bmiColors;
-			memset(&m_info->m_bmiHeader, 0, sizeof(m_info->m_bmiHeader));
-
-			m_bmiHeader->biSize = sizeof(*m_bmiHeader); // should be 40 bytes
-			m_bmiHeader->biWidth = p_width;
-			m_bmiHeader->biHeight = p_height;
-			m_bmiHeader->biPlanes = 1;
-			m_bmiHeader->biBitCount = 8;
-			m_bmiHeader->biCompression = 0;
-			m_bmiHeader->biSizeImage = size;
-
-			if (!ImportColorsToPalette(m_paletteData, p_palette)) {
-				if (!SetBitDepth(p_isHighColor)) {
-					ret = SUCCESS;
-				}
-			}
-		}
+	m_info = (MxBITMAPINFO*) new MxU8[MxBitmapInfoSize()];
+	if (!m_info) {
+		goto done;
 	}
 
+	m_data = new MxU8[size];
+	if (!m_data) {
+		goto done;
+	}
+
+	m_bmiHeader = &m_info->m_bmiHeader;
+	m_paletteData = m_info->m_bmiColors;
+	memset(m_bmiHeader, 0, sizeof(m_info->m_bmiHeader));
+
+	m_bmiHeader->biSize = sizeof(*m_bmiHeader); // should be 40 bytes
+	m_bmiHeader->biWidth = p_width;
+	m_bmiHeader->biHeight = p_height;
+	m_bmiHeader->biPlanes = 1;
+	m_bmiHeader->biBitCount = 8;
+	m_bmiHeader->biCompression = 0;
+	m_bmiHeader->biSizeImage = size;
+
+	if (ImportColorsToPalette(m_paletteData, p_palette)) {
+		goto done;
+	}
+
+	if (SetBitDepth(p_isHighColor)) {
+		goto done;
+	}
+
+	ret = SUCCESS;
+
+done:
 	if (ret) {
 		if (m_info) {
-			delete m_info;
+			delete[] m_info;
 			m_info = NULL;
 		}
 
@@ -82,27 +94,31 @@ MxResult MxBitmap::SetSize(MxS32 p_width, MxS32 p_height, MxPalette* p_palette, 
 }
 
 // FUNCTION: LEGO1 0x100bcba0
+// FUNCTION: BETA10 0x1013ce25
 MxResult MxBitmap::ImportBitmapInfo(MxBITMAPINFO* p_info)
 {
 	MxResult result = FAILURE;
-	MxLong width = p_info->m_bmiHeader.biWidth;
-	MxLong height = p_info->m_bmiHeader.biHeight;
-	MxLong size = AlignToFourByte(width) * height;
+	MxLong size = AlignToFourByte(p_info->m_bmiHeader.biWidth) * p_info->m_bmiHeader.biHeight;
 
-	this->m_info = new MxBITMAPINFO;
-	if (this->m_info) {
-		this->m_data = new MxU8[size];
-		if (this->m_data) {
-			memcpy(this->m_info, p_info, sizeof(*this->m_info));
-			this->m_bmiHeader = &this->m_info->m_bmiHeader;
-			this->m_paletteData = this->m_info->m_bmiColors;
-			result = SUCCESS;
-		}
+	this->m_info = (MxBITMAPINFO*) new MxU8[MxBitmapInfoSize()];
+	if (!this->m_info) {
+		goto done;
 	}
 
+	this->m_data = new MxU8[size];
+	if (!this->m_data) {
+		goto done;
+	}
+
+	memcpy(this->m_info, p_info, MxBitmapInfoSize());
+	this->m_bmiHeader = &this->m_info->m_bmiHeader;
+	this->m_paletteData = this->m_info->m_bmiColors;
+	result = SUCCESS;
+
+done:
 	if (result != SUCCESS) {
 		if (this->m_info) {
-			delete this->m_info;
+			delete[] this->m_info;
 			this->m_info = NULL;
 		}
 
@@ -116,31 +132,37 @@ MxResult MxBitmap::ImportBitmapInfo(MxBITMAPINFO* p_info)
 }
 
 // FUNCTION: LEGO1 0x100bcc40
+// FUNCTION: BETA10 0x1013cf6d
 MxResult MxBitmap::ImportBitmap(MxBitmap* p_bitmap)
 {
 	MxResult result = FAILURE;
 
-	this->m_info = new MxBITMAPINFO;
-	if (this->m_info) {
-		this->m_data = new MxU8[p_bitmap->GetDataSize()];
-		if (this->m_data) {
-			memcpy(this->m_info, p_bitmap->GetBitmapInfo(), MxBITMAPINFO::Size());
-			memcpy(this->m_data, p_bitmap->GetBitmapData(), p_bitmap->GetDataSize());
-
-			this->m_bmiHeader = &this->m_info->m_bmiHeader;
-			this->m_paletteData = this->m_info->m_bmiColors;
-			result = SUCCESS;
-		}
+	this->m_info = (MxBITMAPINFO*) new MxU8[p_bitmap->MxBitmapInfoSize()];
+	if (!this->m_info) {
+		goto done;
 	}
 
+	this->m_data = new MxU8[p_bitmap->GetDataSize()];
+	if (!this->m_data) {
+		goto done;
+	}
+
+	memcpy(this->m_info, p_bitmap->GetBitmapInfo(), p_bitmap->MxBitmapInfoSize());
+	memcpy(this->m_data, p_bitmap->GetBitmapData(), p_bitmap->GetDataSize());
+
+	this->m_bmiHeader = &this->m_info->m_bmiHeader;
+	this->m_paletteData = this->m_info->m_bmiColors;
+	result = SUCCESS;
+
+done:
 	if (result != SUCCESS) {
 		if (this->m_info) {
-			delete this->m_info;
+			delete[] this->m_info;
 			this->m_info = NULL;
 		}
 
 		if (this->m_data) {
-			delete this->m_data;
+			delete[] this->m_data;
 			this->m_data = NULL;
 		}
 	}
@@ -149,16 +171,25 @@ MxResult MxBitmap::ImportBitmap(MxBitmap* p_bitmap)
 }
 
 // FUNCTION: LEGO1 0x100bcd10
+// FUNCTION: BETA10 0x1013d0c7
 MxLong MxBitmap::Read(const char* p_filename)
 {
 	MxResult result = FAILURE;
-	HANDLE handle =
-		CreateFileA(p_filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE handle = 0;
 
-	if (handle != INVALID_HANDLE_VALUE && !LoadFile(handle)) {
-		result = SUCCESS;
+	handle = CreateFileA(p_filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+	if (handle == INVALID_HANDLE_VALUE) {
+		goto done;
 	}
 
+	if (LoadFile(handle)) {
+		goto done;
+	}
+
+	result = SUCCESS;
+
+done:
 	if (handle) {
 		CloseHandle(handle);
 	}
@@ -167,45 +198,62 @@ MxLong MxBitmap::Read(const char* p_filename)
 }
 
 // FUNCTION: LEGO1 0x100bcd60
+// FUNCTION: BETA10 0x1013d169
 MxResult MxBitmap::LoadFile(HANDLE p_handle)
 {
 	MxResult result = FAILURE;
 	DWORD bytesRead;
 	BITMAPFILEHEADER hdr;
+	MxLong size = 0;
 
-	BOOL ret = ReadFile(p_handle, &hdr, sizeof(hdr), &bytesRead, NULL);
-	if (ret && (hdr.bfType == g_bitmapSignature)) {
-		this->m_info = new MxBITMAPINFO;
-		if (this->m_info) {
-			ret = ReadFile(p_handle, this->m_info, sizeof(*this->m_info), &bytesRead, NULL);
-			if (ret && (this->m_info->m_bmiHeader.biBitCount == 8)) {
-				MxLong size = hdr.bfSize - (sizeof(MxBITMAPINFO) + sizeof(BITMAPFILEHEADER));
-				this->m_data = new MxU8[size];
-				if (this->m_data) {
-					ret = ReadFile(p_handle, this->m_data, size, &bytesRead, NULL);
-					if (ret) {
-						this->m_bmiHeader = &this->m_info->m_bmiHeader;
-						this->m_paletteData = this->m_info->m_bmiColors;
-						if (this->m_info->m_bmiHeader.biSizeImage == 0) {
-							MxLong height = AbsFlipped(this->m_info->m_bmiHeader.biHeight);
-							this->m_info->m_bmiHeader.biSizeImage =
-								AlignToFourByte(this->m_info->m_bmiHeader.biWidth) * height;
-						}
-						result = SUCCESS;
-					}
-				}
-			}
-		}
+	if (!ReadFile(p_handle, &hdr, sizeof(hdr), &bytesRead, NULL)) {
+		goto done;
 	}
 
+	if (hdr.bfType != g_bitmapSignature) {
+		goto done;
+	}
+
+	this->m_info = (MxBITMAPINFO*) new MxU8[MxBitmapInfoSize()];
+	if (!this->m_info) {
+		goto done;
+	}
+
+	if (!ReadFile(p_handle, this->m_info, MxBitmapInfoSize(), &bytesRead, NULL)) {
+		goto done;
+	}
+
+	if (this->m_info->m_bmiHeader.biBitCount != 8) {
+		goto done;
+	}
+
+	size = hdr.bfSize - sizeof(BITMAPFILEHEADER) - MxBitmapInfoSize();
+	this->m_data = new MxU8[size];
+	if (!this->m_data) {
+		goto done;
+	}
+
+	if (!ReadFile(p_handle, this->m_data, size, &bytesRead, NULL)) {
+		goto done;
+	}
+
+	this->m_bmiHeader = &this->m_info->m_bmiHeader;
+	this->m_paletteData = this->m_info->m_bmiColors;
+	if (this->m_info->m_bmiHeader.biSizeImage == 0) {
+		this->m_info->m_bmiHeader.biSizeImage = GetDataSize();
+	}
+
+	result = SUCCESS;
+
+done:
 	if (result != SUCCESS) {
 		if (this->m_info) {
-			delete this->m_info;
+			delete[] this->m_info;
 			this->m_info = NULL;
 		}
 
 		if (this->m_data) {
-			delete this->m_data;
+			delete[] this->m_data;
 			this->m_data = NULL;
 		}
 	}
@@ -214,6 +262,7 @@ MxResult MxBitmap::LoadFile(HANDLE p_handle)
 }
 
 // FUNCTION: LEGO1 0x100bce70
+// FUNCTION: BETA10 0x1013d399
 void MxBitmap::BitBlt(
 	MxBitmap* p_src,
 	MxS32 p_srcLeft,
@@ -224,14 +273,11 @@ void MxBitmap::BitBlt(
 	MxS32 p_height
 )
 {
-	MxLong dstHeight = GetBmiHeightAbs();
-	MxLong srcHeight = p_src->GetBmiHeightAbs();
-
-	if (GetRectIntersection(
+	if (!GetRectIntersection(
 			p_src->GetBmiWidth(),
-			srcHeight,
+			p_src->GetBmiHeightAbs(),
 			GetBmiWidth(),
-			dstHeight,
+			GetBmiHeightAbs(),
 			&p_srcLeft,
 			&p_srcTop,
 			&p_dstLeft,
@@ -239,20 +285,24 @@ void MxBitmap::BitBlt(
 			&p_width,
 			&p_height
 		)) {
-		MxU8* srcStart = p_src->GetStart(p_srcLeft, p_srcTop);
-		MxU8* dstStart = GetStart(p_dstLeft, p_dstTop);
-		MxLong srcStride = p_src->GetAdjustedStride();
-		MxLong dstStride = GetAdjustedStride();
+		return;
+	}
 
-		while (p_height--) {
-			memcpy(dstStart, srcStart, p_width);
-			dstStart += dstStride;
-			srcStart += srcStride;
-		}
+	MxU8* srcStart = p_src->GetStart(p_srcLeft, p_srcTop);
+	MxU8* dstStart = GetStart(p_dstLeft, p_dstTop);
+	MxLong srcStride =
+		p_src->IsTopDown() ? AlignToFourByte(p_src->GetBmiWidth()) : -AlignToFourByte(p_src->GetBmiWidth());
+	MxLong dstStride = IsTopDown() ? AlignToFourByte(GetBmiWidth()) : -AlignToFourByte(GetBmiWidth());
+
+	while (p_height--) {
+		memcpy(dstStart, srcStart, p_width);
+		dstStart += dstStride;
+		srcStart += srcStride;
 	}
 }
 
 // FUNCTION: LEGO1 0x100bd020
+// FUNCTION: BETA10 0x1013d4ea
 void MxBitmap::BitBltTransparent(
 	MxBitmap* p_src,
 	MxS32 p_srcLeft,
@@ -263,14 +313,11 @@ void MxBitmap::BitBltTransparent(
 	MxS32 p_height
 )
 {
-	MxLong dstHeight = GetBmiHeightAbs();
-	MxLong srcHeight = p_src->GetBmiHeightAbs();
-
-	if (GetRectIntersection(
+	if (!GetRectIntersection(
 			p_src->GetBmiWidth(),
-			srcHeight,
+			p_src->GetBmiHeightAbs(),
 			GetBmiWidth(),
-			dstHeight,
+			GetBmiHeightAbs(),
 			&p_srcLeft,
 			&p_srcTop,
 			&p_dstLeft,
@@ -278,23 +325,26 @@ void MxBitmap::BitBltTransparent(
 			&p_width,
 			&p_height
 		)) {
-		MxU8* srcStart = p_src->GetStart(p_srcLeft, p_srcTop);
-		MxU8* dstStart = GetStart(p_dstLeft, p_dstTop);
-		MxLong srcStride = p_src->GetAdjustedStride() - p_width;
-		MxLong dstStride = GetAdjustedStride() - p_width;
+		return;
+	}
 
-		for (MxS32 h = 0; h < p_height; h++) {
-			for (MxS32 w = 0; w < p_width; w++) {
-				if (*srcStart) {
-					*dstStart = *srcStart;
-				}
-				srcStart++;
-				dstStart++;
+	MxU8* srcStart = p_src->GetStart(p_srcLeft, p_srcTop);
+	MxU8* dstStart = GetStart(p_dstLeft, p_dstTop);
+	MxLong srcStride = p_src->IsTopDown() ? p_src->AlignToFourByte(p_src->GetBmiWidth())
+										  : -p_src->AlignToFourByte(p_src->GetBmiWidth()) + -p_width;
+	MxLong dstStride = IsTopDown() ? AlignToFourByte(GetBmiWidth()) : -AlignToFourByte(GetBmiWidth()) + -p_width;
+
+	for (MxS32 h = 0; h < p_height; h++) {
+		for (MxS32 w = 0; w < p_width; w++) {
+			if (*srcStart) {
+				*dstStart = *srcStart;
 			}
-
-			srcStart += srcStride;
-			dstStart += dstStride;
+			srcStart++;
+			dstStart++;
 		}
+
+		srcStart += srcStride;
+		dstStart += dstStride;
 	}
 }
 
@@ -337,6 +387,7 @@ done:
 }
 
 // FUNCTION: LEGO1 0x100bd280
+// FUNCTION: BETA10 0x1013d80e
 void MxBitmap::ImportPalette(MxPalette* p_palette)
 {
 	// Odd to use a switch on a boolean, but it matches.
@@ -355,6 +406,7 @@ void MxBitmap::ImportPalette(MxPalette* p_palette)
 }
 
 // FUNCTION: LEGO1 0x100bd2d0
+// FUNCTION: BETA10 0x1013d8a9
 MxResult MxBitmap::SetBitDepth(MxBool p_isHighColor)
 {
 	MxResult ret = FAILURE;
@@ -410,6 +462,7 @@ done:
 }
 
 // FUNCTION: LEGO1 0x100bd3e0
+// FUNCTION: BETA10 0x1013dad2
 MxResult MxBitmap::StretchBits(
 	HDC p_hdc,
 	MxS32 p_xSrc,
@@ -421,8 +474,8 @@ MxResult MxBitmap::StretchBits(
 )
 {
 	// Compression fix?
-	if ((this->m_bmiHeader->biCompression != BI_RGB_TOPDOWN) && (0 < this->m_bmiHeader->biHeight)) {
-		p_ySrc = (this->m_bmiHeader->biHeight - p_destHeight) - p_ySrc;
+	if (IsBottomUp()) {
+		p_ySrc = GetBmiHeightAbs() - p_ySrc - p_destHeight;
 	}
 
 	return StretchDIBits(
@@ -443,6 +496,7 @@ MxResult MxBitmap::StretchBits(
 }
 
 // FUNCTION: LEGO1 0x100bd450
+// FUNCTION: BETA10 0x1013db55
 MxResult MxBitmap::ImportColorsToPalette(RGBQUAD* p_rgbquad, MxPalette* p_palette)
 {
 	MxResult ret = FAILURE;
