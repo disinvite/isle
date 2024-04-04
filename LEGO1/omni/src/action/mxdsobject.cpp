@@ -131,27 +131,34 @@ MxU32 MxDSObject::GetSizeOnDisk()
 }
 
 // FUNCTION: LEGO1 0x100bfa20
+// FUNCTION: BETA10 0x10147d73
 void MxDSObject::Deserialize(MxU8*& p_source, MxS16 p_unk0x24)
 {
-	GetString(p_source, this->m_sourceName, this, &MxDSObject::SetSourceName);
-	GetScalar(p_source, this->m_unk0x14);
-	GetString(p_source, this->m_objectName, this, &MxDSObject::SetObjectName);
-	GetScalar(p_source, this->m_objectId);
+	SetSourceName((char*) p_source);
+	p_source += strlen(m_sourceName) + 1;
+
+	m_unk0x14 = *(MxU32*) p_source;
+	p_source += 4;
+
+	SetObjectName((char*) p_source);
+	p_source += strlen(m_objectName) + 1;
+
+	m_objectId = *(MxU32*) p_source;
+	p_source += 4;
 
 	this->m_unk0x24 = p_unk0x24;
 }
 
 // FUNCTION: LEGO1 0x100bfb30
+// FUNCTION: BETA10 0x10147f35
 MxDSObject* DeserializeDSObjectDispatch(MxU8*& p_source, MxS16 p_flags)
 {
+	MxDSObject* obj = NULL;
+
 	MxU16 type = *(MxU16*) p_source;
 	p_source += 2;
 
-	MxDSObject* obj = NULL;
-
 	switch (type) {
-	default:
-		return NULL;
 	case MxDSObject::e_object:
 		obj = new MxDSObject();
 		break;
@@ -167,6 +174,15 @@ MxDSObject* DeserializeDSObjectDispatch(MxU8*& p_source, MxS16 p_flags)
 	case MxDSObject::e_sound:
 		obj = new MxDSSound();
 		break;
+	case MxDSObject::e_event:
+		obj = new MxDSEvent();
+		break;
+	case MxDSObject::e_still:
+		obj = new MxDSStill();
+		break;
+	case MxDSObject::e_objectAction:
+		obj = new MxDSObjectAction();
+		break;
 	case MxDSObject::e_multiAction:
 		obj = new MxDSMultiAction();
 		break;
@@ -176,18 +192,11 @@ MxDSObject* DeserializeDSObjectDispatch(MxU8*& p_source, MxS16 p_flags)
 	case MxDSObject::e_parallelAction:
 		obj = new MxDSParallelAction();
 		break;
-	case MxDSObject::e_event:
-		obj = new MxDSEvent();
-		break;
 	case MxDSObject::e_selectAction:
 		obj = new MxDSSelectAction();
 		break;
-	case MxDSObject::e_still:
-		obj = new MxDSStill();
-		break;
-	case MxDSObject::e_objectAction:
-		obj = new MxDSObjectAction();
-		break;
+	default:
+		return NULL;
 	}
 
 	if (obj) {

@@ -48,11 +48,13 @@ MxDSAction* MxDSSound::Clone()
 }
 
 // FUNCTION: LEGO1 0x100c95a0
+// FUNCTION: BETA10 0x1015d272
 void MxDSSound::Deserialize(MxU8*& p_source, MxS16 p_unk0x24)
 {
 	MxDSMediaAction::Deserialize(p_source, p_unk0x24);
 
-	GetScalar(p_source, this->m_volume);
+	m_volume = *(MxS32*) p_source;
+	p_source += 4;
 }
 
 // FUNCTION: LEGO1 0x100c95d0

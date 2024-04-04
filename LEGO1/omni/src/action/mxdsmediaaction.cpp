@@ -5,11 +5,12 @@
 DECOMP_SIZE_ASSERT(MxDSMediaAction, 0xb8)
 
 // FUNCTION: LEGO1 0x100c8b40
+// FUNCTION: BETA10 0x1015c760
 MxDSMediaAction::MxDSMediaAction()
 {
 	this->m_mediaSrcPath = NULL;
-	this->m_unk0x9c.m_unk0x00 = 0;
-	this->m_unk0x9c.m_unk0x04 = 0;
+	this->m_unk0x9c.SetUnk0x00(0);
+	this->m_unk0x9c.SetUnk0x04(0);
 	this->m_framesPerSecond = 0;
 	this->m_mediaFormat = 0;
 	this->m_paletteManagement = 1;
@@ -104,15 +105,20 @@ MxU32 MxDSMediaAction::GetSizeOnDisk()
 }
 
 // FUNCTION: LEGO1 0x100c8f60
+// FUNCTION: BETA10 0x1015cc93
 void MxDSMediaAction::Deserialize(MxU8*& p_source, MxS16 p_unk0x24)
 {
 	MxDSAction::Deserialize(p_source, p_unk0x24);
 
-	GetString(p_source, this->m_mediaSrcPath, this, &MxDSMediaAction::CopyMediaSrcPath);
-	GetScalar(p_source, this->m_unk0x9c.m_unk0x00);
-	GetScalar(p_source, this->m_unk0x9c.m_unk0x04);
-	GetScalar(p_source, this->m_framesPerSecond);
-	GetScalar(p_source, this->m_mediaFormat);
-	GetScalar(p_source, this->m_paletteManagement);
-	GetScalar(p_source, this->m_sustainTime);
+	CopyMediaSrcPath((char*) p_source);
+	p_source += strlen(m_mediaSrcPath) + 1;
+
+	// clang-format off
+	m_unk0x9c.SetUnk0x00(*(MxU32*) p_source); p_source += 4;
+	m_unk0x9c.SetUnk0x04(*(MxU32*) p_source); p_source += 4;
+	m_framesPerSecond = *(MxS32*) p_source; p_source += 4;
+	m_mediaFormat = *(MxS32*) p_source; p_source += 4;
+	m_paletteManagement = *(MxS32*) p_source; p_source += 4;
+	m_sustainTime = *(MxLong*) p_source; p_source += 4;
+	// clang-format on
 }

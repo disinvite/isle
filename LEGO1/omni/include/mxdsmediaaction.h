@@ -44,12 +44,21 @@ public:
 	inline MxLong GetSustainTime() const { return this->m_sustainTime; }
 
 private:
-	MxU32 m_sizeOnDisk;   // 0x94
-	char* m_mediaSrcPath; // 0x98
-	struct {
-		undefined4 m_unk0x00;
-		undefined4 m_unk0x04;
-	} m_unk0x9c;               // 0x9c
+	// SIZE 0x8
+	typedef struct {
+		// FUNCTION: BETA10 0x1015d7c0
+		inline void SetUnk0x00(undefined4 p_value) { m_unk0x00 = p_value; }
+		// FUNCTION: BETA10 0x1015d7e0
+		inline void SetUnk0x04(undefined4 p_value) { m_unk0x04 = p_value; }
+
+	private:
+		undefined4 m_unk0x00; // 0x00
+		undefined4 m_unk0x04; // 0x04
+	} UnkStruct;
+
+	MxU32 m_sizeOnDisk;        // 0x94
+	char* m_mediaSrcPath;      // 0x98
+	UnkStruct m_unk0x9c;       // 0x9c
 	MxS32 m_framesPerSecond;   // 0xa4
 	MxS32 m_mediaFormat;       // 0xa8
 	MxS32 m_paletteManagement; // 0xac

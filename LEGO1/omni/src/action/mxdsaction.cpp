@@ -221,26 +221,29 @@ void MxDSAction::AppendData(MxU16 p_extraLength, const char* p_extraData)
 }
 
 // FUNCTION: LEGO1 0x100adf70
+// FUNCTION: BETA10 0x1012ba6a
 void MxDSAction::Deserialize(MxU8*& p_source, MxS16 p_unk0x24)
 {
 	MxDSObject::Deserialize(p_source, p_unk0x24);
 
-	GetScalar(p_source, this->m_flags);
-	GetScalar(p_source, this->m_startTime);
-	GetScalar(p_source, this->m_duration);
-	GetScalar(p_source, this->m_loopCount);
-	GetDouble(p_source, this->m_location[0]);
-	GetDouble(p_source, this->m_location[1]);
-	GetDouble(p_source, this->m_location[2]);
-	GetDouble(p_source, this->m_direction[0]);
-	GetDouble(p_source, this->m_direction[1]);
-	GetDouble(p_source, this->m_direction[2]);
-	GetDouble(p_source, this->m_up[0]);
-	GetDouble(p_source, this->m_up[1]);
-	GetDouble(p_source, this->m_up[2]);
+	// clang-format off
+	this->m_flags = *(MxU32*) p_source; p_source += 4;
+	this->m_startTime = *(MxU32*) p_source; p_source += 4;
+	this->m_duration = *(MxU32*) p_source; p_source += 4;
+	this->m_loopCount = *(MxU32*) p_source; p_source += 4;
 
-	MxU16 extraLength = *(MxU16*) p_source;
-	p_source += 2;
+	this->m_location[0] = *(double*) p_source; p_source += 8;
+	this->m_location[1] = *(double*) p_source; p_source += 8;
+	this->m_location[2] = *(double*) p_source; p_source += 8;
+	this->m_direction[0] = *(double*) p_source; p_source += 8;
+	this->m_direction[1] = *(double*) p_source; p_source += 8;
+	this->m_direction[2] = *(double*) p_source; p_source += 8;
+	this->m_up[0] = *(double*) p_source; p_source += 8;
+	this->m_up[1] = *(double*) p_source; p_source += 8;
+	this->m_up[2] = *(double*) p_source; p_source += 8;
+
+	MxU16 extraLength = *(MxU16*) p_source; p_source += 2;
+	// clang-format on
 
 	if (extraLength) {
 		AppendData(extraLength, (char*) p_source);
