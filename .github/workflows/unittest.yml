@@ -54,6 +54,12 @@ jobs:
       run: |
         pip install pytest -r tools/requirements.txt
 
+    - name: Run python type checking
+      shell: bash
+      run: |
+        pip install mypy
+        mypy tools/isledecomp --exclude=build
+
     - name: Run python unit tests (Ubuntu)
       shell: bash
       run: |
