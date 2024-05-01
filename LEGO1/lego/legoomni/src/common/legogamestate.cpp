@@ -39,6 +39,7 @@
 #include "legoworld.h"
 #include "misc.h"
 #include "mxbackgroundaudiomanager.h"
+#include "mxdebug.h"
 #include "mxmisc.h"
 #include "mxobjectfactory.h"
 #include "mxstring.h"
@@ -50,6 +51,7 @@
 #include "roi/legoroi.h"
 #include "sndanim_actions.h"
 
+#include <assert.h>
 #include <stdio.h>
 
 DECOMP_SIZE_ASSERT(LegoGameState::Username, 0x0e)
@@ -107,6 +109,8 @@ ColorStringStruct g_colorSaveData[43] = {
 // in that table is a special entry, the string "END_OF_VARIABLES"
 extern const char* g_endOfVariables;
 
+extern const char* g_actorNames[7];
+
 // FUNCTION: LEGO1 0x10039550
 LegoGameState::LegoGameState()
 {
@@ -140,16 +144,14 @@ LegoGameState::LegoGameState()
 }
 
 // FUNCTION: LEGO1 0x10039720
+// FUNCTION: BETA10 0x10083c1b
 LegoGameState::~LegoGameState()
 {
 	LegoROI::FUN_100a9d30(NULL);
 
 	if (m_stateCount) {
 		for (MxS16 i = 0; i < m_stateCount; i++) {
-			LegoState* state = m_stateArray[i];
-			if (state) {
-				delete state;
-			}
+			delete m_stateArray[i];
 		}
 
 		delete[] m_stateArray;
@@ -159,10 +161,11 @@ LegoGameState::~LegoGameState()
 }
 
 // FUNCTION: LEGO1 0x10039780
+// FUNCTION: BETA10 0x10083d43
 void LegoGameState::SetActor(MxU8 p_actorId)
 {
 	if (p_actorId) {
-		m_actorId = p_actorId;
+		SetActorId(p_actorId);
 	}
 
 	IslePathActor* oldActor = CurrentActor();

@@ -8,7 +8,8 @@
 DECOMP_SIZE_ASSERT(LegoActor, 0x78)
 
 // GLOBAL: LEGO1 0x100f32d0
-const char* g_actorNames[] = {"none", "pepper", "mama", "papa", "nick", "laura", "The_Brickster!"};
+// GLOBAL: BETA10 0x101e1800
+const char* g_actorNames[7] = {"none", "pepper", "mama", "papa", "nick", "laura", "The_Brickster!"};
 
 // FUNCTION: LEGO1 0x1002d110
 LegoActor::LegoActor()
@@ -114,8 +115,10 @@ void LegoActor::ParseAction(char* p_extra)
 }
 
 // FUNCTION: LEGO1 0x1002d660
+// FUNCTION: BETA10 0x1003d617
 const char* LegoActor::GetActorName(MxU8 p_id)
 {
+	assert(p_id <= _countof(g_actorNames));
 	return g_actorNames[p_id];
 }
 
