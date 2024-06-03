@@ -18,6 +18,8 @@
 #include "tgl/d3drm/impl.h"
 #include "viewmanager/viewroi.h"
 
+#include <assert.h>
+
 DECOMP_SIZE_ASSERT(LegoVideoManager, 0x590)
 DECOMP_SIZE_ASSERT(MxStopWatch, 0x18)
 DECOMP_SIZE_ASSERT(MxFrequencyMeter, 0x20)
@@ -441,23 +443,26 @@ void LegoVideoManager::EnableFullScreenMovie(MxBool p_enable)
 }
 
 // FUNCTION: LEGO1 0x1007c310
+// FUNCTION: BETA10 0x100d7459
 void LegoVideoManager::EnableFullScreenMovie(MxBool p_enable, MxBool p_scale)
 {
 	if (m_isFullscreenMovie != p_enable) {
 		m_isFullscreenMovie = p_enable;
 
 		if (p_enable) {
+			assert(!m_palette);
 			m_palette = m_videoParam.GetPalette()->Clone();
 			OverrideSkyColor(FALSE);
 
-			m_displaySurface->GetVideoParam().Flags().SetF1bit3(p_scale);
+			GetDisplaySurface()->GetVideoParam().Flags().SetF1bit3(p_scale);
 
-			m_render3d = FALSE;
+			SetRender3D(FALSE);
 			m_fullScreenMovie = TRUE;
 		}
 		else {
-			m_displaySurface->ClearScreen();
-			m_displaySurface->GetVideoParam().Flags().SetF1bit3(FALSE);
+			GetDisplaySurface()->ClearScreen();
+			GetDisplaySurface()->GetVideoParam().Flags().SetF1bit3(FALSE);
+			assert(m_palette);
 
 			// restore previous pallete
 			RealizePalette(m_palette);
@@ -465,27 +470,22 @@ void LegoVideoManager::EnableFullScreenMovie(MxBool p_enable, MxBool p_scale)
 			m_palette = NULL;
 
 			// update region where video used to be
-			MxRect32 rect(
-				0,
-				0,
-				m_videoParam.GetRect().GetRight() - m_videoParam.GetRect().GetLeft(),
-				m_videoParam.GetRect().GetBottom() - m_videoParam.GetRect().GetTop()
-			);
+			MxRect32 rect(0, 0, m_videoParam.GetRect().GetWidth() - 1, m_videoParam.GetRect().GetHeight() - 1);
 
 			InvalidateRect(rect);
 			UpdateRegion();
 			OverrideSkyColor(TRUE);
 
-			m_render3d = TRUE;
+			SetRender3D(TRUE);
 			m_fullScreenMovie = FALSE;
 		}
 	}
 
 	if (p_enable) {
-		m_displaySurface->GetVideoParam().Flags().SetF1bit3(p_scale);
+		GetDisplaySurface()->GetVideoParam().Flags().SetF1bit3(p_scale);
 	}
 	else {
-		m_displaySurface->GetVideoParam().Flags().SetF1bit3(FALSE);
+		GetDisplaySurface()->GetVideoParam().Flags().SetF1bit3(FALSE);
 	}
 }
 
@@ -504,6 +504,7 @@ void LegoVideoManager::SetSkyColor(float p_red, float p_green, float p_blue)
 }
 
 // FUNCTION: LEGO1 0x1007c4c0
+// FUNCTION: BETA10 0x100d7755
 void LegoVideoManager::OverrideSkyColor(MxBool p_shouldOverride)
 {
 	this->m_videoParam.GetPalette()->SetOverrideSkyColor(p_shouldOverride);

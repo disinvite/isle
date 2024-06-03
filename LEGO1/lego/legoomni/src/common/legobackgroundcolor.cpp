@@ -12,14 +12,20 @@ DECOMP_SIZE_ASSERT(LegoBackgroundColor, 0x30)
 
 // GLOBAL: LEGO1 0x100f3fb0
 // STRING: LEGO1 0x100f3a18
+// GLOBAL: BETA10 0x101ed738
+// STRING: BETA10 0x101edb84
 const char* g_delimiter = " \t";
 
 // GLOBAL: LEGO1 0x100f3fb4
 // STRING: LEGO1 0x100f3bf0
+// GLOBAL: BETA10 0x101ed73c
+// STRING: BETA10 0x101edb88
 const char* g_set = "set";
 
 // GLOBAL: LEGO1 0x100f3fb8
 // STRING: LEGO1 0x100f0cdc
+// GLOBAL: BETA10 0x101ed740
+// STRING: BETA10 0x101edb8c
 const char* g_reset = "reset";
 
 // FUNCTION: LEGO1 0x1003bfb0
@@ -31,46 +37,50 @@ LegoBackgroundColor::LegoBackgroundColor(const char* p_key, const char* p_value)
 }
 
 // FUNCTION: LEGO1 0x1003c070
+// FUNCTION: BETA10 0x10086634
 void LegoBackgroundColor::SetValue(const char* p_colorString)
 {
 	m_value = p_colorString;
 	m_value.ToLowerCase();
 
 	LegoVideoManager* videomanager = VideoManager();
-	if (!videomanager || !p_colorString) {
-		return;
-	}
+	if (videomanager && p_colorString) {
+		float convertedR, convertedG, convertedB;
+		// DECOMP: Beta calls m_value.GetData(). Is the string copy an inline
+		// function of MxString?
+		char* colorStringCopy = strcpy(new char[strlen(p_colorString) + 1], p_colorString);
+		char* colorStringSplit = strtok(colorStringCopy, g_delimiter);
 
-	float convertedR, convertedG, convertedB;
-	char* colorStringCopy = strcpy(new char[strlen(p_colorString) + 1], p_colorString);
-	char* colorStringSplit = strtok(colorStringCopy, g_delimiter);
+		if (!strcmp(colorStringSplit, g_set)) {
+			colorStringSplit = strtok(NULL, g_delimiter);
+			if (colorStringSplit) {
+				m_h = (float) (atoi(colorStringSplit) / 100.0);
+			}
 
-	if (!strcmp(colorStringSplit, g_set)) {
-		colorStringSplit = strtok(0, g_delimiter);
-		if (colorStringSplit) {
-			m_h = (float) (atoi(colorStringSplit) * 0.01);
+			colorStringSplit = strtok(NULL, g_delimiter);
+			if (colorStringSplit) {
+				m_s = (float) (atoi(colorStringSplit) / 100.0);
+			}
+
+			colorStringSplit = strtok(NULL, g_delimiter);
+			if (colorStringSplit) {
+				m_v = (float) (atoi(colorStringSplit) / 100.0);
+			}
+
+			ConvertHSVToRGB(m_h, m_s, m_v, &convertedR, &convertedG, &convertedB);
+			videomanager->SetSkyColor(convertedR, convertedG, convertedB);
 		}
-		colorStringSplit = strtok(0, g_delimiter);
-		if (colorStringSplit) {
-			m_s = (float) (atoi(colorStringSplit) * 0.01);
-		}
-		colorStringSplit = strtok(0, g_delimiter);
-		if (colorStringSplit) {
-			m_v = (float) (atoi(colorStringSplit) * 0.01);
+		else if (!strcmp(colorStringSplit, g_reset)) {
+			ConvertHSVToRGB(m_h, m_s, m_v, &convertedR, &convertedG, &convertedB);
+			videomanager->SetSkyColor(convertedR, convertedG, convertedB);
 		}
 
-		ConvertHSVToRGB(m_h, m_s, m_v, &convertedR, &convertedG, &convertedB);
-		videomanager->SetSkyColor(convertedR, convertedG, convertedB);
+		delete[] colorStringCopy;
 	}
-	else if (!strcmp(colorStringSplit, g_reset)) {
-		ConvertHSVToRGB(m_h, m_s, m_v, &convertedR, &convertedG, &convertedB);
-		videomanager->SetSkyColor(convertedR, convertedG, convertedB);
-	}
-
-	delete[] colorStringCopy;
 }
 
 // FUNCTION: LEGO1 0x1003c230
+// FUNCTION: BETA10 0x100867f9
 void LegoBackgroundColor::ToggleDayNight(MxBool p_sun)
 {
 	char buffer[30];
@@ -98,6 +108,7 @@ void LegoBackgroundColor::ToggleDayNight(MxBool p_sun)
 }
 
 // FUNCTION: LEGO1 0x1003c330
+// FUNCTION: BETA10 0x100868de
 void LegoBackgroundColor::ToggleSkyColor()
 {
 	char buffer[30];
@@ -117,13 +128,14 @@ void LegoBackgroundColor::ToggleSkyColor()
 }
 
 // FUNCTION: LEGO1 0x1003c400
+// FUNCTION: BETA10 0x10086984
 void LegoBackgroundColor::SetLightColor(float p_r, float p_g, float p_b)
 {
 	if (!VideoManager()->GetVideoParam().Flags().GetF2bit0()) {
 		// TODO: Computed constants based on what?
-		p_r *= 4.3478260869565215;
-		p_g *= 1.5873015873015872;
-		p_b *= 1.1764705882352942;
+		p_r /= 0.23;
+		p_g /= 0.63;
+		p_b /= 0.85;
 
 		if (p_r > 1.0) {
 			p_r = 1.0;

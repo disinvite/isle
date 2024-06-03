@@ -4,6 +4,7 @@
 #include "mxvariable.h"
 
 // VTABLE: LEGO1 0x100d74a8
+// VTABLE: BETA10 0x101bc4f0
 // SIZE 0x30
 class LegoBackgroundColor : public MxVariable {
 public:

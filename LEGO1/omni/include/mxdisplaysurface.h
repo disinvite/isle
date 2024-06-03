@@ -97,6 +97,8 @@ public:
 
 	inline LPDIRECTDRAWSURFACE GetDirectDrawSurface1() { return this->m_ddSurface1; }
 	inline LPDIRECTDRAWSURFACE GetDirectDrawSurface2() { return this->m_ddSurface2; }
+
+	// FUNCTION: BETA10 0x100d9290
 	inline MxVideoParam& GetVideoParam() { return this->m_videoParam; }
 
 	static void FUN_100bb500(

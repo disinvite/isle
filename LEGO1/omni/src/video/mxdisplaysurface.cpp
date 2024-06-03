@@ -38,24 +38,18 @@ void MxDisplaySurface::Init()
 }
 
 // FUNCTION: LEGO1 0x100ba640
+// FUNCTION: BETA10 0x1013f506
 void MxDisplaySurface::ClearScreen()
 {
-	MxS32 backBuffers;
 	DDSURFACEDESC desc;
-	HRESULT hr;
 
-	if (!m_videoParam.Flags().GetFlipSurfaces()) {
-		backBuffers = 1;
-	}
-	else {
-		backBuffers = m_videoParam.GetBackBuffers() + 1;
-	}
+	MxS32 backBuffers = m_videoParam.Flags().GetFlipSurfaces() ? m_videoParam.GetBackBuffers() + 1 : 1;
 
 	for (MxS32 i = 0; i < backBuffers; i++) {
 		memset(&desc, 0, sizeof(DDSURFACEDESC));
 
 		desc.dwSize = sizeof(DDSURFACEDESC);
-		hr = m_ddSurface2->Lock(NULL, &desc, DDLOCK_WAIT, NULL);
+		HRESULT hr = m_ddSurface2->Lock(NULL, &desc, DDLOCK_WAIT, NULL);
 		if (hr == DDERR_SURFACELOST) {
 			m_ddSurface2->Restore();
 			hr = m_ddSurface2->Lock(NULL, &desc, DDLOCK_WAIT, NULL);
@@ -145,20 +139,18 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		this->m_videoParam.Flags().SetFlipSurfaces(FALSE);
 	}
 
-	if (!this->m_videoParam.Flags().GetFlipSurfaces()) {
-		this->m_videoParam.SetBackBuffers(1);
-	}
-	else {
-		MxU32 backBuffers = this->m_videoParam.GetBackBuffers();
-
-		if (backBuffers < 1) {
+	if (this->m_videoParam.Flags().GetFlipSurfaces()) {
+		if (m_videoParam.GetBackBuffers() < 1) {
 			this->m_videoParam.SetBackBuffers(1);
 		}
-		else if (backBuffers > 2) {
+		else if (m_videoParam.GetBackBuffers() > 2) {
 			this->m_videoParam.SetBackBuffers(2);
 		}
 
 		this->m_videoParam.Flags().SetBackBuffers(TRUE);
+	}
+	else {
+		this->m_videoParam.SetBackBuffers(1);
 	}
 
 	if (this->m_videoParam.Flags().GetFullScreen()) {
@@ -176,7 +168,7 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 			goto done;
 		}
 
-		MxS32 bitdepth = !this->m_videoParam.Flags().Get16Bit() ? 8 : 16;
+		MxS32 bitdepth = this->m_videoParam.Flags().Get16Bit() ? 16 : 8;
 
 		if (ddsd.dwWidth != width || ddsd.dwHeight != height || ddsd.ddpfPixelFormat.dwRGBBitCount != bitdepth) {
 			if (lpDirectDraw->SetDisplayMode(width, height, bitdepth)) {
@@ -188,9 +180,9 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 	if (this->m_videoParam.Flags().GetFlipSurfaces()) {
 		memset(&ddsd, 0, sizeof(ddsd));
 		ddsd.dwSize = sizeof(ddsd);
-		ddsd.dwBackBufferCount = this->m_videoParam.GetBackBuffers();
 		ddsd.dwFlags = DDSD_CAPS | DDSD_BACKBUFFERCOUNT;
 		ddsd.ddsCaps.dwCaps = DDSCAPS_3DDEVICE | DDSCAPS_PRIMARYSURFACE | DDSCAPS_FLIP | DDSCAPS_COMPLEX;
+		ddsd.dwBackBufferCount = this->m_videoParam.GetBackBuffers();
 
 		if (lpDirectDraw->CreateSurface(&ddsd, &this->m_ddSurface1, NULL)) {
 			goto done;
@@ -217,10 +209,13 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		ddsd.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_CAPS;
 		ddsd.dwWidth = this->m_videoParam.GetRect().GetWidth();
 		ddsd.dwHeight = this->m_videoParam.GetRect().GetHeight();
-		ddsd.ddsCaps.dwCaps = DDSCAPS_VIDEOMEMORY | DDSCAPS_3DDEVICE | DDSCAPS_OFFSCREENPLAIN;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_3DDEVICE | DDSCAPS_OFFSCREENPLAIN;
 
-		if (!this->m_videoParam.Flags().GetBackBuffers()) {
-			ddsd.ddsCaps.dwCaps = DDSCAPS_3DDEVICE | DDSCAPS_SYSTEMMEMORY | DDSCAPS_OFFSCREENPLAIN;
+		if (this->m_videoParam.Flags().GetBackBuffers()) {
+			ddsd.ddsCaps.dwCaps |= DDSCAPS_VIDEOMEMORY;
+		}
+		else {
+			ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
 		}
 
 		if (lpDirectDraw->CreateSurface(&ddsd, &this->m_ddSurface2, NULL)) {
@@ -231,12 +226,23 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 	memset(&this->m_surfaceDesc, 0, sizeof(this->m_surfaceDesc));
 	this->m_surfaceDesc.dwSize = sizeof(this->m_surfaceDesc);
 
-	if (!this->m_ddSurface2->GetSurfaceDesc(&this->m_surfaceDesc)) {
-		if (!lpDirectDraw->CreateClipper(0, &this->m_ddClipper, NULL) && !this->m_ddClipper->SetHWnd(0, hWnd) &&
-			!this->m_ddSurface1->SetClipper(this->m_ddClipper)) {
-			result = SUCCESS;
-		}
+	if (this->m_ddSurface2->GetSurfaceDesc(&this->m_surfaceDesc)) {
+		goto done;
 	}
+
+	if (lpDirectDraw->CreateClipper(0, &this->m_ddClipper, NULL)) {
+		goto done;
+	}
+
+	if (this->m_ddClipper->SetHWnd(0, hWnd)) {
+		goto done;
+	}
+
+	if (this->m_ddSurface1->SetClipper(this->m_ddClipper)) {
+		goto done;
+	}
+
+	result = SUCCESS;
 
 done:
 	return result;
