@@ -30,6 +30,7 @@ BOOL CConfigApp::InitInstance()
 	if (!IsLegoNotRunning()) {
 		return FALSE;
 	}
+
 	if (!DetectDirectX5()) {
 		AfxMessageBox(
 			"\"LEGO\xae Island\" is not detecting DirectX 5 or later.  Please quit all other applications and try "
@@ -47,10 +48,12 @@ BOOL CConfigApp::InitInstance()
 	if (_stricmp(afxCurrentAppName, "config") == 0) {
 		m_run_config_dialog = TRUE;
 	}
+
 	m_device_enumerator = new LegoDeviceEnumerate;
 	if (m_device_enumerator->DoEnumerate()) {
 		return FALSE;
 	}
+
 	m_driver = NULL;
 	m_device = NULL;
 	m_full_screen = TRUE;
@@ -79,6 +82,7 @@ BOOL CConfigApp::InitInstance()
 		m_3d_sound = TRUE;
 		m_texture_quality = 1;
 	}
+
 	if (!m_run_config_dialog) {
 		ReadRegisterSettings();
 		ValidateSettings();
@@ -97,6 +101,7 @@ BOOL CConfigApp::InitInstance()
 		_spawnl(_P_NOWAIT, exe, exe, "/diskstream", "/script", "\\lego\\scripts\\isle\\isle.si", NULL);
 		return FALSE;
 	}
+
 	CMainDialog main_dialog(NULL);
 	main_dialog.DoModal();
 	return FALSE;
@@ -109,9 +114,11 @@ BOOL CConfigApp::IsLegoNotRunning()
 	if (_stricmp(afxCurrentAppName, "config") == 0 || !hWnd) {
 		return TRUE;
 	}
+
 	if (SetForegroundWindow(hWnd)) {
 		ShowWindow(hWnd, SW_RESTORE);
 	}
+
 	return FALSE;
 }
 
@@ -141,6 +148,7 @@ BOOL CConfigApp::WriteReg(const char* p_key, const char* p_value) const
 			RegCloseKey(hKey);
 		}
 	}
+
 	return FALSE;
 }
 
@@ -159,6 +167,7 @@ BOOL CConfigApp::ReadReg(LPCSTR p_key, LPCSTR p_value, DWORD p_size) const
 			}
 		}
 	}
+
 	return out;
 }
 
@@ -181,6 +190,7 @@ BOOL CConfigApp::ReadRegBool(LPCSTR p_key, BOOL* p_bool) const
 
 		read = FALSE;
 	}
+
 	return read;
 }
 
@@ -232,48 +242,62 @@ BOOL CConfigApp::ReadRegisterSettings()
 			tmp = m_device_enumerator->GetDevice(tmp, m_driver, m_device);
 		}
 	}
+
 	if (tmp != 0) {
 		is_modified = TRUE;
 		m_device_enumerator->FUN_1009d210();
 		tmp = m_device_enumerator->FUN_1009d0d0();
 		m_device_enumerator->GetDevice(tmp, m_driver, m_device);
 	}
+
 	if (!ReadRegInt("Display Bit Depth", &m_display_bit_depth)) {
 		is_modified = TRUE;
 	}
+
 	if (!ReadRegBool("Flip Surfaces", &m_flip_surfaces)) {
 		is_modified = TRUE;
 	}
+
 	if (!ReadRegBool("Full Screen", &m_full_screen)) {
 		is_modified = TRUE;
 	}
+
 	if (!ReadRegBool("Back Buffers in Video RAM", &m_3d_video_ram)) {
 		is_modified = TRUE;
 	}
+
 	if (!ReadRegBool("Wide View Angle", &m_wide_view_angle)) {
 		is_modified = TRUE;
 	}
+
 	if (!ReadRegBool("3DSound", &m_3d_sound)) {
 		is_modified = TRUE;
 	}
+
 	if (!ReadRegBool("Draw Cursor", &m_draw_cursor)) {
 		is_modified = TRUE;
 	}
+
 	if (!ReadRegInt("Island Quality", &m_model_quality)) {
 		is_modified = TRUE;
 	}
+
 	if (!ReadRegInt("Island Texture", &m_texture_quality)) {
 		is_modified = TRUE;
 	}
+
 	if (!ReadRegBool("UseJoystick", &m_use_joystick)) {
 		is_modified = TRUE;
 	}
+
 	if (!ReadRegBool("Music", &m_music)) {
 		is_modified = TRUE;
 	}
+
 	if (!ReadRegInt("JoystickIndex", &m_joystick_index)) {
 		is_modified = TRUE;
 	}
+
 	return is_modified;
 }
 
@@ -286,20 +310,24 @@ BOOL CConfigApp::ValidateSettings()
 		m_full_screen = TRUE;
 		is_modified = TRUE;
 	}
+
 	if (IsDeviceInBasicRGBMode()) {
 		if (m_3d_video_ram) {
 			m_3d_video_ram = FALSE;
 			is_modified = TRUE;
 		}
+
 		if (m_flip_surfaces) {
 			m_flip_surfaces = FALSE;
 			is_modified = TRUE;
 		}
+
 		if (m_display_bit_depth != 16) {
 			m_display_bit_depth = 16;
 			is_modified = TRUE;
 		}
 	}
+
 	if (!GetHardwareDeviceColorModel()) {
 		m_draw_cursor = FALSE;
 		is_modified = TRUE;
@@ -309,33 +337,40 @@ BOOL CConfigApp::ValidateSettings()
 			m_3d_video_ram = TRUE;
 			is_modified = TRUE;
 		}
+
 		if (m_full_screen && !m_flip_surfaces) {
 			m_flip_surfaces = TRUE;
 			is_modified = TRUE;
 		}
 	}
+
 	if (m_flip_surfaces) {
 		if (!m_3d_video_ram) {
 			m_3d_video_ram = TRUE;
 			is_modified = TRUE;
 		}
+
 		if (!m_full_screen) {
 			m_full_screen = TRUE;
 			is_modified = TRUE;
 		}
 	}
+
 	if ((m_display_bit_depth != 8 && m_display_bit_depth != 16) && (m_display_bit_depth != 0 || m_full_screen)) {
 		m_display_bit_depth = 8;
 		is_modified = TRUE;
 	}
+
 	if (m_model_quality < 0 || m_model_quality > 2) {
 		m_model_quality = 1;
 		is_modified = TRUE;
 	}
+
 	if (m_texture_quality < 0 || m_texture_quality > 1) {
 		m_texture_quality = 0;
 		is_modified = TRUE;
 	}
+
 	return is_modified;
 }
 
@@ -345,9 +380,11 @@ DWORD CConfigApp::GetConditionalDeviceRenderBitDepth() const
 	if (IsDeviceInBasicRGBMode()) {
 		return 0;
 	}
+
 	if (GetHardwareDeviceColorModel()) {
 		return 0;
 	}
+
 	return m_device->m_HELDesc.dwDeviceRenderBitDepth & 0x800;
 }
 
@@ -370,19 +407,23 @@ BOOL CConfigApp::AdjustDisplayBitDepthBasedOnRenderStatus()
 			return FALSE;
 		}
 	}
+
 	if (m_display_bit_depth == 16) {
 		if (GetDeviceRenderBitStatus()) {
 			return FALSE;
 		}
 	}
+
 	if (GetConditionalDeviceRenderBitDepth()) {
 		m_display_bit_depth = 8;
 		return TRUE;
 	}
+
 	if (GetDeviceRenderBitStatus()) {
 		m_display_bit_depth = 16;
 		return TRUE;
 	}
+
 	m_display_bit_depth = 8;
 	return TRUE;
 }
@@ -427,6 +468,7 @@ int CConfigApp::ExitInstance()
 		delete m_device_enumerator;
 		m_device_enumerator = NULL;
 	}
+
 	return CWinApp::ExitInstance();
 }
 

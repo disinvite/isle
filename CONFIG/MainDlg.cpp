@@ -75,6 +75,7 @@ BOOL CMainDialog::OnInitDialog()
 			if (&device == currentConfigApp->m_device) {
 				selected = device_i;
 			}
+
 			device_i += 1;
 			sprintf(
 				device_name,
@@ -165,6 +166,7 @@ void CMainDialog::OnButtonCancel()
 	if (m_modified) {
 		currentConfigApp->WriteRegisterSettings();
 	}
+
 	OnCancel();
 }
 
@@ -186,6 +188,7 @@ void CMainDialog::UpdateInterface()
 		currentConfigApp->m_draw_cursor = FALSE;
 		GetDlgItem(IDC_CHK_DRAW_CURSOR)->EnableWindow(FALSE);
 	}
+
 	if (full_screen) {
 		CheckRadioButton(
 			IDC_RAD_PALETTE_256,
@@ -198,6 +201,7 @@ void CMainDialog::UpdateInterface()
 		CheckDlgButton(IDC_RAD_PALETTE_16BIT, 0);
 		currentConfigApp->m_display_bit_depth = 0;
 	}
+
 	GetDlgItem(IDC_RAD_PALETTE_256)
 		->EnableWindow(full_screen && currentConfigApp->GetConditionalDeviceRenderBitDepth());
 	GetDlgItem(IDC_RAD_PALETTE_16BIT)->EnableWindow(full_screen && currentConfigApp->GetDeviceRenderBitStatus());
@@ -326,6 +330,7 @@ void CMainDialog::SwitchToAdvanced(BOOL p_advanced)
 		GetDlgItem(IDC_BMP_SHARK)->EnableWindow(FALSE);
 		button_advanced->SetWindowText("Advanced");
 	}
+
 	SetWindowPos(&wndTop, 0, 0, dialog_rect.right - dialog_rect.left, height, SWP_NOMOVE);
 }
 
