@@ -20,10 +20,10 @@
 // FUNCTION: CONFIG 0x402cc0
 // CObject::Dump
 
-// FUNCTION: CONFIG 0x00403c90
+// FUNCTION: CONFIG 0x403c90
 // CWnd::BeginModalState
 
-// FUNCTION: CONFIG 0x00403ca0
+// FUNCTION: CONFIG 0x403ca0
 // CWnd::EndModalState
 
 #endif

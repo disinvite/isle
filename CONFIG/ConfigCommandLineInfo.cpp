@@ -5,13 +5,13 @@
 DECOMP_SIZE_ASSERT(CCommandLineInfo, 0x24)
 DECOMP_SIZE_ASSERT(CConfigCommandLineInfo, 0x24)
 
-// FUNCTION: CONFIG 0x00403b10
+// FUNCTION: CONFIG 0x403b10
 CConfigCommandLineInfo::CConfigCommandLineInfo()
 {
 	currentConfigApp->m_run_config_dialog = FALSE;
 }
 
-// FUNCTION: CONFIG 0x00403bf0
+// FUNCTION: CONFIG 0x403bf0
 void CConfigCommandLineInfo::ParseParam(LPCSTR pszParam, BOOL bFlag, BOOL bLast)
 {
 	if (bFlag) {

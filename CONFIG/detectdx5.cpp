@@ -7,7 +7,7 @@ typedef HRESULT WINAPI DirectDrawCreate_fn(GUID FAR* lpGUID, LPDIRECTDRAW FAR* l
 typedef HRESULT WINAPI
 DirectInputCreateA_fn(HINSTANCE hinst, DWORD dwVersion, LPDIRECTINPUTA* ppDI, LPUNKNOWN punkOuter);
 
-// FUNCTION: CONFIG 0x004048f0
+// FUNCTION: CONFIG 0x4048f0
 BOOL DetectDirectX5()
 {
 	unsigned int version;
@@ -16,7 +16,7 @@ BOOL DetectDirectX5()
 	return version >= 0x500;
 }
 
-// FUNCTION: CONFIG 0x00404920
+// FUNCTION: CONFIG 0x404920
 void DetectDirectX(unsigned int* p_version, BOOL* p_found)
 {
 	OSVERSIONINFOA os_version;

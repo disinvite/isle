@@ -17,14 +17,14 @@ BEGIN_MESSAGE_MAP(CConfigApp, CWinApp)
 ON_COMMAND(ID_HELP, OnHelp)
 END_MESSAGE_MAP()
 
-// FUNCTION: CONFIG 0x00402c40
+// FUNCTION: CONFIG 0x402c40
 CConfigApp::CConfigApp()
 {
 }
 
 #define MiB (1024 * 1024)
 
-// FUNCTION: CONFIG 0x00402dc0
+// FUNCTION: CONFIG 0x402dc0
 BOOL CConfigApp::InitInstance()
 {
 	if (!IsLegoNotRunning()) {
@@ -102,7 +102,7 @@ BOOL CConfigApp::InitInstance()
 	return FALSE;
 }
 
-// FUNCTION: CONFIG 0x00403100
+// FUNCTION: CONFIG 0x403100
 BOOL CConfigApp::IsLegoNotRunning()
 {
 	HWND hWnd = FindWindowA("Lego Island MainNoM App", "LEGO\xae");
@@ -115,7 +115,7 @@ BOOL CConfigApp::IsLegoNotRunning()
 	return FALSE;
 }
 
-// FUNCTION: CONFIG 0x004031b0
+// FUNCTION: CONFIG 0x4031b0
 BOOL CConfigApp::WriteReg(const char* p_key, const char* p_value) const
 {
 	HKEY hKey;
@@ -144,7 +144,7 @@ BOOL CConfigApp::WriteReg(const char* p_key, const char* p_value) const
 	return FALSE;
 }
 
-// FUNCTION: CONFIG 0x00403240
+// FUNCTION: CONFIG 0x403240
 BOOL CConfigApp::ReadReg(LPCSTR p_key, LPCSTR p_value, DWORD p_size) const
 {
 	HKEY hKey;
@@ -162,7 +162,7 @@ BOOL CConfigApp::ReadReg(LPCSTR p_key, LPCSTR p_value, DWORD p_size) const
 	return out;
 }
 
-// FUNCTION: CONFIG 0x004032b0
+// FUNCTION: CONFIG 0x4032b0
 BOOL CConfigApp::ReadRegBool(LPCSTR p_key, BOOL* p_bool) const
 {
 	char buffer[256];
@@ -184,7 +184,7 @@ BOOL CConfigApp::ReadRegBool(LPCSTR p_key, BOOL* p_bool) const
 	return read;
 }
 
-// FUNCTION: CONFIG 0x00403380
+// FUNCTION: CONFIG 0x403380
 BOOL CConfigApp::ReadRegInt(LPCSTR p_key, int* p_value) const
 {
 	char buffer[256];
@@ -197,7 +197,7 @@ BOOL CConfigApp::ReadRegInt(LPCSTR p_key, int* p_value) const
 	return read;
 }
 
-// FUNCTION: CONFIG 0x004033d0
+// FUNCTION: CONFIG 0x4033d0
 BOOL CConfigApp::IsDeviceInBasicRGBMode() const
 {
 	/*
@@ -207,19 +207,19 @@ BOOL CConfigApp::IsDeviceInBasicRGBMode() const
 	return !GetHardwareDeviceColorModel() && m_device->m_HELDesc.dcmColorModel == D3DCOLOR_RGB;
 }
 
-// FUNCTION: CONFIG 0x00403400
+// FUNCTION: CONFIG 0x403400
 D3DCOLORMODEL CConfigApp::GetHardwareDeviceColorModel() const
 {
 	return m_device->m_HWDesc.dcmColorModel;
 }
 
-// FUNCTION: CONFIG 0x00403410
+// FUNCTION: CONFIG 0x403410
 BOOL CConfigApp::IsPrimaryDriver() const
 {
 	return m_driver == &m_device_enumerator->GetDriverList().front();
 }
 
-// FUNCTION: CONFIG 0x00403430
+// FUNCTION: CONFIG 0x403430
 BOOL CConfigApp::ReadRegisterSettings()
 {
 	char buffer[256];
@@ -277,7 +277,7 @@ BOOL CConfigApp::ReadRegisterSettings()
 	return is_modified;
 }
 
-// FUNCTION: CONFIG 0x00403630
+// FUNCTION: CONFIG 0x403630
 BOOL CConfigApp::ValidateSettings()
 {
 	BOOL is_modified = FALSE;
@@ -339,7 +339,7 @@ BOOL CConfigApp::ValidateSettings()
 	return is_modified;
 }
 
-// FUNCTION: CONFIG 0x004037a0
+// FUNCTION: CONFIG 0x4037a0
 DWORD CConfigApp::GetConditionalDeviceRenderBitDepth() const
 {
 	if (IsDeviceInBasicRGBMode()) {
@@ -351,7 +351,7 @@ DWORD CConfigApp::GetConditionalDeviceRenderBitDepth() const
 	return m_device->m_HELDesc.dwDeviceRenderBitDepth & 0x800;
 }
 
-// FUNCTION: CONFIG 0x004037e0
+// FUNCTION: CONFIG 0x4037e0
 DWORD CConfigApp::GetDeviceRenderBitStatus() const
 {
 	if (GetHardwareDeviceColorModel()) {
@@ -362,7 +362,7 @@ DWORD CConfigApp::GetDeviceRenderBitStatus() const
 	}
 }
 
-// FUNCTION: CONFIG 0x00403810
+// FUNCTION: CONFIG 0x403810
 BOOL CConfigApp::AdjustDisplayBitDepthBasedOnRenderStatus()
 {
 	if (m_display_bit_depth == 8) {
@@ -387,7 +387,7 @@ BOOL CConfigApp::AdjustDisplayBitDepthBasedOnRenderStatus()
 	return TRUE;
 }
 
-// FUNCTION: CONFIG 00403890
+// FUNCTION: CONFIG 0x403890
 void CConfigApp::WriteRegisterSettings() const
 
 {
@@ -420,7 +420,7 @@ void CConfigApp::WriteRegisterSettings() const
 #undef WriteRegInt
 }
 
-// FUNCTION: CONFIG 0x00403a90
+// FUNCTION: CONFIG 0x403a90
 int CConfigApp::ExitInstance()
 {
 	if (m_device_enumerator) {
@@ -430,5 +430,5 @@ int CConfigApp::ExitInstance()
 	return CWinApp::ExitInstance();
 }
 
-// GLOBAL: CONFIG 0x00408e50
+// GLOBAL: CONFIG 0x408e50
 CConfigApp g_theApp;

@@ -6,7 +6,7 @@
 #include "decomp.h"
 #include "res/resource.h"
 
-// VTABLE: CONFIG 0x004063e0
+// VTABLE: CONFIG 0x4063e0
 // SIZE 0x70
 class CMainDialog : public CDialog {
 public:
@@ -52,19 +52,19 @@ protected:
 	DECLARE_MESSAGE_MAP()
 };
 
-// SYNTHETIC: CONFIG 0x00403de0
+// SYNTHETIC: CONFIG 0x403de0
 // CMainDialog::`scalar deleting destructor'
 
-// FUNCTION: CONFIG 0x00403e60
+// FUNCTION: CONFIG 0x403e60
 // CMainDialog::_GetBaseMessageMap
 
-// FUNCTION: CONFIG 0x00403e70
+// FUNCTION: CONFIG 0x403e70
 // CMainDialog::GetMessageMap
 
-// GLOBAL: CONFIG 0x00406120
+// GLOBAL: CONFIG 0x406120
 // CMainDialog::messageMap
 
-// GLOBAL: CONFIG 0x00406128
+// GLOBAL: CONFIG 0x406128
 // CMainDialog::_messageEntries
 
 #endif // !defined(AFX_MAINDLG_H)
