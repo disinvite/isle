@@ -11,6 +11,8 @@
 class CConfigCommandLineInfo : public CCommandLineInfo {
 public:
 	CConfigCommandLineInfo();
+	// FUNCTION: CONFIG 0x403ba0
+	virtual ~CConfigCommandLineInfo() {}
 
 	void ParseParam(LPCSTR pszParam, BOOL bFlag, BOOL bLast) override;
 };

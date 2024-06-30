@@ -30,6 +30,9 @@ protected:
 // FUNCTION: CONFIG 0x403d40
 // CAboutDialog::GetMessageMap
 
+// SYNTHETIC: CONFIG 0x404100
+// CAboutDialog::~CAboutDialog
+
 // GLOBAL: CONFIG 0x406100
 // CAboutDialog::messageMap
 

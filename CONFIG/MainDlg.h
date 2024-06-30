@@ -52,6 +52,9 @@ protected:
 	DECLARE_MESSAGE_MAP()
 };
 
+// SYNTHETIC: CONFIG 0x403160
+// CMainDialog::~CMainDialog
+
 // SYNTHETIC: CONFIG 0x403de0
 // CMainDialog::`scalar deleting destructor'
 

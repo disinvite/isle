@@ -344,4 +344,8 @@ class LegoDeviceEnumerate : public MxDeviceEnumerate {};
 // TEMPLATE: BETA10 0x1011fa90
 // list<Direct3DDeviceInfo,allocator<Direct3DDeviceInfo> >::push_back
 
+// GLOBAL: CONFIG 0x406848
+// GLOBAL: LEGO1 0x100dd1b0
+// IID_IDirect3D2
+
 #endif // MXDIRECTXINFO_H

@@ -51,10 +51,11 @@ BOOL CMainDialog::OnInitDialog()
 	CMenu* system_menu = CMenu::FromHandle(::GetSystemMenu(m_hWnd, FALSE));
 	CString about_text;
 	about_text.LoadString(IDS_ABOUT);
-	if (system_menu) {
+	if (!about_text.IsEmpty()) {
 		AppendMenuA(system_menu->m_hMenu, MF_SEPARATOR, 0, NULL);
 		AppendMenuA(system_menu->m_hMenu, MF_STRING, 16, (LPCTSTR) about_text);
 	}
+
 	SendMessage(WM_SETICON, ICON_BIG, (LPARAM) m_icon);
 	SendMessage(WM_SETICON, ICON_SMALL, (LPARAM) m_icon);
 	MxDeviceEnumerate* enumerator = currentConfigApp->m_device_enumerator;
@@ -109,14 +110,13 @@ void CMainDialog::OnPaint()
 	if (IsIconic()) {
 		CPaintDC painter(this);
 		::SendMessage(m_hWnd, WM_ICONERASEBKGND, (WPARAM) painter.m_hDC, 0);
+		int sizex = GetSystemMetrics(SM_CXICON);
+		int sizey = GetSystemMetrics(SM_CYICON);
 		RECT dim;
 		GetClientRect(&dim);
-		DrawIcon(
-			painter.m_hDC,
-			(dim.right - dim.left - GetSystemMetrics(SM_CXICON) + 1) / 2,
-			(dim.bottom - dim.top - GetSystemMetrics(SM_CYICON) + 1) / 2,
-			m_icon
-		);
+		int iconx = (dim.right - dim.left - sizex + 1) / 2;
+		int icony = (dim.bottom - dim.top - sizey + 1) / 2;
+		DrawIcon(painter.m_hDC, iconx, icony, m_icon);
 	}
 	else {
 		Default();
@@ -167,19 +167,22 @@ void CMainDialog::OnButtonCancel()
 		currentConfigApp->WriteRegisterSettings();
 	}
 
-	OnCancel();
+	CDialog::OnCancel();
 }
 
 // FUNCTION: CONFIG 0x404360
 void CMainDialog::UpdateInterface()
 {
 	currentConfigApp->ValidateSettings();
+
+	BOOL flip_surfaces = currentConfigApp->m_flip_surfaces;
 	GetDlgItem(IDC_CHK_3D_VIDEO_MEMORY)
-		->EnableWindow(!currentConfigApp->m_flip_surfaces && !currentConfigApp->GetHardwareDeviceColorModel());
-	CheckDlgButton(IDC_CHK_FLIP_VIDEO_MEM_PAGES, currentConfigApp->m_flip_surfaces);
+		->EnableWindow(!flip_surfaces && !currentConfigApp->GetHardwareDeviceColorModel());
+	CheckDlgButton(IDC_CHK_FLIP_VIDEO_MEM_PAGES, flip_surfaces);
 	CheckDlgButton(IDC_CHK_3D_VIDEO_MEMORY, currentConfigApp->m_3d_video_ram);
 	BOOL full_screen = currentConfigApp->m_full_screen;
 	currentConfigApp->AdjustDisplayBitDepthBasedOnRenderStatus();
+
 	if (currentConfigApp->GetHardwareDeviceColorModel()) {
 		CheckDlgButton(IDC_CHK_DRAW_CURSOR, TRUE);
 	}
@@ -189,17 +192,18 @@ void CMainDialog::UpdateInterface()
 		GetDlgItem(IDC_CHK_DRAW_CURSOR)->EnableWindow(FALSE);
 	}
 
-	if (full_screen) {
-		CheckRadioButton(
-			IDC_RAD_PALETTE_256,
-			IDC_RAD_PALETTE_16BIT,
-			currentConfigApp->m_display_bit_depth == 8 ? IDC_RAD_PALETTE_256 : IDC_RAD_PALETTE_16BIT
-		);
-	}
-	else {
+	if (!full_screen) {
 		CheckDlgButton(IDC_RAD_PALETTE_256, 0);
 		CheckDlgButton(IDC_RAD_PALETTE_16BIT, 0);
 		currentConfigApp->m_display_bit_depth = 0;
+	}
+	else {
+		if (currentConfigApp->m_display_bit_depth == 8) {
+			CheckRadioButton(IDC_RAD_PALETTE_256, IDC_RAD_PALETTE_16BIT, IDC_RAD_PALETTE_256);
+		}
+		else {
+			CheckRadioButton(IDC_RAD_PALETTE_256, IDC_RAD_PALETTE_16BIT, IDC_RAD_PALETTE_16BIT);
+		}
 	}
 
 	GetDlgItem(IDC_RAD_PALETTE_256)
@@ -215,11 +219,14 @@ void CMainDialog::UpdateInterface()
 		CheckRadioButton(IDC_RAD_MODEL_QUALITY_LOW, IDC_RAD_MODEL_QUALITY_HIGH, IDC_RAD_MODEL_QUALITY_HIGH);
 		break;
 	}
-	CheckRadioButton(
-		IDC_RAD_TEXTURE_QUALITY_LOW,
-		IDC_RAD_TEXTURE_QUALITY_HIGH,
-		currentConfigApp->m_texture_quality == 0 ? IDC_RAD_TEXTURE_QUALITY_LOW : IDC_RAD_TEXTURE_QUALITY_HIGH
-	);
+
+	if (currentConfigApp->m_texture_quality == 0) {
+		CheckRadioButton(IDC_RAD_TEXTURE_QUALITY_LOW, IDC_RAD_TEXTURE_QUALITY_HIGH, IDC_RAD_TEXTURE_QUALITY_LOW);
+	}
+	else {
+		CheckRadioButton(IDC_RAD_TEXTURE_QUALITY_LOW, IDC_RAD_TEXTURE_QUALITY_HIGH, IDC_RAD_TEXTURE_QUALITY_HIGH);
+	}
+
 	CheckDlgButton(IDC_CHK_JOYSTICK, currentConfigApp->m_use_joystick);
 	CheckDlgButton(IDC_CHK_MUSIC, currentConfigApp->m_music);
 }
