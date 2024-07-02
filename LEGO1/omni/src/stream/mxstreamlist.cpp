@@ -6,6 +6,7 @@ DECOMP_SIZE_ASSERT(MxStreamListMxNextActionDataStart, 0x0c);
 DECOMP_SIZE_ASSERT(MxStreamListMxDSSubscriber, 0x0c);
 
 // FUNCTION: LEGO1 0x100b8450
+// FUNCTION: BETA10 0x10134c1d
 MxDSSubscriber* MxStreamListMxDSSubscriber::Find(MxDSObject* p_object)
 {
 	for (iterator it = begin(); it != end(); it++) {
