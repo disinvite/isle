@@ -102,7 +102,7 @@ MxLong MxStreamer::Close(const char* p_name)
 	for (list<MxStreamController*>::iterator it = m_openStreams.begin(); it != m_openStreams.end(); it++) {
 		MxStreamController* c = *it;
 
-		if (!p_name || !strcmp(p_name, c->GetAtom().GetInternal())) {
+		if (!p_name || c->GetAtom() == p_name) {
 			m_openStreams.erase(it);
 
 			if (c->IsStoped(&ds)) {
@@ -130,12 +130,8 @@ MxNotificationParam* MxStreamerNotification::Clone() const
 MxStreamController* MxStreamer::GetOpenStream(const char* p_name)
 {
 	for (list<MxStreamController*>::iterator it = m_openStreams.begin(); it != m_openStreams.end(); it++) {
-		MxStreamController* c = *it;
-		MxAtomId& atom = c->GetAtom();
-		if (p_name) {
-			if (!strcmp(atom.GetInternal(), p_name)) {
-				return *it;
-			}
+		if (((MxStreamController*) *it)->GetAtom() == p_name) {
+			return *it;
 		}
 	}
 

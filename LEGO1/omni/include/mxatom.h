@@ -74,6 +74,9 @@ public:
 	inline MxBool operator!=(const MxAtomId& p_atomId) const { return this->m_internal != p_atomId.m_internal; }
 #endif
 
+	// FUNCTION: BETA10 0x10146dd0
+	inline MxBool operator==(const char* p_str) const { return p_str && (strcmp(this->m_internal, p_str) == 0); }
+
 	// FUNCTION: BETA10 0x10025d40
 	MxAtomId() { this->m_internal = 0; }
 
