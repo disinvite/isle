@@ -460,7 +460,7 @@ MxLong LegoEntity::Notify(MxParam& p_param)
 		InvokeAction(m_actionType, MxAtomId(m_filename, e_lowerCase2), m_targetEntityId, this);
 	}
 	else {
-		switch (GameState()->GetActorId()) {
+		switch (GameState()->GetActorId(FALSE)) {
 		case LegoActor::c_pepper:
 			if (GameState()->GetCurrentAct() != LegoGameState::e_act2 &&
 				GameState()->GetCurrentAct() != LegoGameState::e_act3) {

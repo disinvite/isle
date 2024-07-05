@@ -97,7 +97,7 @@ MxLong DuneBuggy::HandleClick()
 	((Isle*) CurrentWorld())->SetDestLocation(LegoGameState::Area::e_dunecar);
 	TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, TRUE);
 
-	if (GameState()->GetActorId() != UserActor()->GetActorId()) {
+	if (GameState()->GetActorId(TRUE) != UserActor()->GetActorId()) {
 		((IslePathActor*) UserActor())->Exit();
 	}
 

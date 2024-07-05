@@ -160,15 +160,16 @@ public:
 	LegoState* GetState(const char* p_stateName);
 	LegoState* CreateState(const char* p_stateName);
 
-	void GetFileSavePath(MxString* p_outPath, MxU8 p_slotn);
+	void GetFileSavePath(MxString* p_outPath, MxS16 p_slotn);
 	void StopArea(Area p_area);
 	void SwitchArea(Area p_area);
 	void Init();
 
-	MxU8 GetActorId() { return m_actorId; }
+	// FUNCTION: BETA10 0x10083ff5
+	MxU8 GetActorId(MxBool p_unused) { return m_actorId; }
 
 	// FUNCTION: BETA10 0x1004a2d0
-	const char* GetActorName() { return g_actorNames[GetActorId()]; }
+	const char* GetActorName() { return g_actorNames[GetActorId(TRUE)]; }
 
 	Act GetCurrentAct() { return m_currentAct; }
 	Act GetLoadedAct() { return m_loadedAct; }

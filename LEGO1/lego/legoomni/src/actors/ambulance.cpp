@@ -380,7 +380,7 @@ MxLong Ambulance::HandleClick()
 	((Isle*) CurrentWorld())->SetDestLocation(LegoGameState::e_ambulance);
 	TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
 
-	if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+	if (UserActor()->GetActorId() != GameState()->GetActorId(TRUE)) {
 		((IslePathActor*) UserActor())->Exit();
 	}
 

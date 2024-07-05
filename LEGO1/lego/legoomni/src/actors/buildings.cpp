@@ -44,7 +44,7 @@ MxLong InfoCenterEntity::HandleClick(LegoEventNotificationParam& p_param)
 {
 	switch (GameState()->GetCurrentAct()) {
 	case LegoGameState::Act::e_act1: {
-		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+		if (UserActor()->GetActorId() != GameState()->GetActorId(TRUE)) {
 			((IslePathActor*) UserActor())->Exit();
 		}
 
@@ -86,7 +86,7 @@ MxLong GasStationEntity::HandleClick(LegoEventNotificationParam& p_param)
 		if (state->GetUnknown18() != 8) {
 			state->SetUnknown18(0);
 
-			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+			if (UserActor()->GetActorId() != GameState()->GetActorId(TRUE)) {
 				((IslePathActor*) UserActor())->Exit();
 			}
 
@@ -110,7 +110,7 @@ MxLong HospitalEntity::HandleClick(LegoEventNotificationParam& p_param)
 		if (act1State->GetUnknown18() != 10) {
 			act1State->SetUnknown18(0);
 
-			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+			if (UserActor()->GetActorId() != GameState()->GetActorId(TRUE)) {
 				((IslePathActor*) UserActor())->Exit();
 			}
 
@@ -134,7 +134,7 @@ MxLong PoliceEntity::HandleClick(LegoEventNotificationParam& p_param)
 		if (state->GetUnknown18() != 10) {
 			state->SetUnknown18(0);
 
-			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+			if (UserActor()->GetActorId() != GameState()->GetActorId(TRUE)) {
 				((IslePathActor*) UserActor())->Exit();
 			}
 
@@ -156,7 +156,7 @@ MxLong BeachHouseEntity::HandleClick(LegoEventNotificationParam& p_param)
 		Act1State* state = (Act1State*) GameState()->GetState("Act1State");
 		state->SetUnknown18(0);
 
-		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+		if (UserActor()->GetActorId() != GameState()->GetActorId(TRUE)) {
 			((IslePathActor*) UserActor())->Exit();
 		}
 
@@ -177,7 +177,7 @@ MxLong RaceStandsEntity::HandleClick(LegoEventNotificationParam& p_param)
 		Act1State* state = (Act1State*) GameState()->GetState("Act1State");
 		state->SetUnknown18(0);
 
-		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+		if (UserActor()->GetActorId() != GameState()->GetActorId(TRUE)) {
 			((IslePathActor*) UserActor())->Exit();
 		}
 

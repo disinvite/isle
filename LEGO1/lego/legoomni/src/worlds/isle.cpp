@@ -742,7 +742,7 @@ void Isle::Enable(MxBool p_enable)
 			if (raceState->GetUnknown0x28() == 2) {
 				IsleScript::Script script = IsleScript::c_noneIsle;
 
-				switch (raceState->GetState(GameState()->GetActorId())->GetUnknown0x02()) {
+				switch (raceState->GetState(GameState()->GetActorId(TRUE))->GetUnknown0x02()) {
 				case 1:
 					script = IsleScript::c_sjs014in_RunAnim;
 					break;
@@ -775,7 +775,7 @@ void Isle::Enable(MxBool p_enable)
 			if (raceState->GetUnknown0x28() == 2) {
 				IsleScript::Script script = IsleScript::c_noneIsle;
 
-				switch (raceState->GetState(GameState()->GetActorId())->GetUnknown0x02()) {
+				switch (raceState->GetState(GameState()->GetActorId(TRUE))->GetUnknown0x02()) {
 				case 1:
 					script = IsleScript::c_srt003in_RunAnim;
 					break;
@@ -1219,7 +1219,7 @@ MxBool Isle::Escape()
 	DeleteObjects(&m_atom, IsleScript::c_sba001bu_RunAnim, IsleScript::c_FNS018EN_Wav_518);
 
 	if (UserActor()) {
-		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+		if (UserActor()->GetActorId() != GameState()->GetActorId(TRUE)) {
 			((IslePathActor*) UserActor())->Exit();
 			m_skateboard->SetUnknown0x160(FALSE);
 		}
@@ -1265,7 +1265,7 @@ void Isle::FUN_10033350()
 	AnimationManager()->FUN_10061010(FALSE);
 
 	if (UserActor()) {
-		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+		if (UserActor()->GetActorId() != GameState()->GetActorId(TRUE)) {
 			((IslePathActor*) UserActor())->Exit();
 			m_skateboard->SetUnknown0x160(FALSE);
 		}

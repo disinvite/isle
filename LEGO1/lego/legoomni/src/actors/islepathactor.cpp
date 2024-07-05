@@ -544,7 +544,7 @@ void IslePathActor::SpawnPlayer(LegoGameState::Area p_area, MxBool p_enter, MxU8
 			g_spawnLocations[i].m_destScale
 		);
 
-		if (GameState()->GetActorId() != m_actorId) {
+		if (GameState()->GetActorId(TRUE) != m_actorId) {
 			m_world->Add(this);
 		}
 
@@ -621,7 +621,7 @@ void IslePathActor::VTable0xec(MxMatrix p_transform, LegoPathBoundary* p_boundar
 
 	m_world->PlaceActor(this);
 	p_boundary->AddActor(this);
-	if (m_actorId != GameState()->GetActorId()) {
+	if (m_actorId != GameState()->GetActorId(TRUE)) {
 		m_world->Add(this);
 	}
 

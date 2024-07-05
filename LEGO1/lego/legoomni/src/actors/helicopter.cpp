@@ -116,7 +116,7 @@ MxLong Helicopter::HandleClick()
 	AnimationManager()->FUN_1005f6d0(FALSE);
 
 	if (UserActor()) {
-		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+		if (UserActor()->GetActorId() != GameState()->GetActorId(TRUE)) {
 			((IslePathActor*) UserActor())->Exit();
 		}
 	}

@@ -120,7 +120,7 @@ void LegoRace::Enable(MxBool p_enable)
 	if (GetUnknown0xd0Empty() != p_enable && !p_enable) {
 		Remove(UserActor());
 
-		MxU8 oldActorId = GameState()->GetActorId();
+		MxU8 oldActorId = GameState()->GetActorId(TRUE);
 		GameState()->RemoveActor();
 		GameState()->SetActorId(oldActorId);
 	}

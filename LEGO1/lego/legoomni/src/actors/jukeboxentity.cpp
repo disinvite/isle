@@ -37,7 +37,7 @@ MxLong JukeBoxEntity::Notify(MxParam& p_param)
 			return 1;
 		}
 
-		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+		if (UserActor()->GetActorId() != GameState()->GetActorId(TRUE)) {
 			((IslePathActor*) UserActor())->Exit();
 		}
 

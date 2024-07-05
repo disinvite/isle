@@ -1047,7 +1047,7 @@ MxU8 Infocenter::HandleControl(LegoControlManagerNotificationParam& p_param)
 					InputManager()->SetUnknown336(TRUE);
 					break;
 				case LegoGameState::e_unk4:
-					if (state->GetActorId() != LegoActor::c_none) {
+					if (state->GetActorId(TRUE) != LegoActor::c_none) {
 						if (m_infocenterState->HasRegistered()) {
 							m_infocenterState->SetUnknown0x74(5);
 							m_destLocation = state->GetPreviousArea();
@@ -1335,7 +1335,7 @@ void Infocenter::UpdateFrameHot(MxBool p_display)
 	if (p_display) {
 		MxS32 x, y;
 
-		switch (GameState()->GetActorId()) {
+		switch (GameState()->GetActorId(TRUE)) {
 		case LegoActor::c_pepper:
 			x = 302;
 			y = 81;

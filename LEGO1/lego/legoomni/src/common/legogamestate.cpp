@@ -56,6 +56,7 @@
 #include "scripts.h"
 #include "sndanim_actions.h"
 
+#include <assert.h>
 #include <stdio.h>
 
 DECOMP_SIZE_ASSERT(LegoGameState::Username, 0x0e)
@@ -81,9 +82,12 @@ const char* g_historyGSI = "History.gsi";
 // TODO: make g_endOfVariables reference the actual end of the variable array.
 // GLOBAL: LEGO1 0x100f3e50
 // STRING: LEGO1 0x100f3e00
+// GLOBAL: BETA10 0x101ed5dc
+// STRING: BETA10 0x101ed768
 const char* g_endOfVariables = "END_OF_VARIABLES";
 
 // GLOBAL: LEGO1 0x100f3e58
+// GLOBAL: BETA10 0x101ed5e0
 ColorStringStruct g_colorSaveData[43] = {
 	{"c_dbbkfny0", "lego red"},    {"c_dbbkxly0", "lego white"}, // dunebuggy back fender, dunebuggy back axle
 	{"c_chbasey0", "lego black"},  {"c_chbacky0", "lego black"}, // copter base, copter back
@@ -222,6 +226,7 @@ void LegoGameState::ResetROI()
 }
 
 // FUNCTION: LEGO1 0x10039980
+// FUNCTION: BETA10 0x100840e4
 MxResult LegoGameState::Save(MxULong p_slot)
 {
 	InfocenterState* infocenterState = (InfocenterState*) GameState()->GetState("InfocenterState");
@@ -315,6 +320,7 @@ MxResult LegoGameState::DeleteState()
 }
 
 // FUNCTION: LEGO1 0x10039c60
+// FUNCTION: BETA10 0x10084329
 MxResult LegoGameState::Load(MxULong p_slot)
 {
 	MxResult result = FAILURE;
@@ -436,6 +442,7 @@ void LegoGameState::SetSavePath(char* p_savePath)
 }
 
 // FUNCTION: LEGO1 0x10039f70
+// FUNCTION: BETA10 0x1008483b
 MxResult LegoGameState::WriteVariable(LegoStorage* p_storage, MxVariableTable* p_from, const char* p_variableName)
 {
 	MxResult result = FAILURE;
@@ -443,16 +450,23 @@ MxResult LegoGameState::WriteVariable(LegoStorage* p_storage, MxVariableTable* p
 
 	if (variableValue) {
 		MxU8 length = strlen(p_variableName);
-		if (p_storage->Write(&length, sizeof(length)) == SUCCESS) {
-			if (p_storage->Write(p_variableName, length) == SUCCESS) {
-				length = strlen(variableValue);
-				if (p_storage->Write(&length, sizeof(length)) == SUCCESS) {
-					result = p_storage->Write(variableValue, length);
-				}
-			}
+		if (p_storage->Write(&length, sizeof(length)) != SUCCESS) {
+			goto done;
 		}
+
+		if (p_storage->Write(p_variableName, length) != SUCCESS) {
+			goto done;
+		}
+
+		length = strlen(variableValue);
+		if (p_storage->Write(&length, sizeof(length)) != SUCCESS) {
+			goto done;
+		}
+
+		result = p_storage->Write(variableValue, length);
 	}
 
+done:
 	return result;
 }
 
@@ -469,37 +483,51 @@ MxResult LegoGameState::WriteEndOfVariables(LegoStorage* p_storage)
 }
 
 // FUNCTION: LEGO1 0x1003a080
+// FUNCTION: BETA10 0x1008498b
 MxS32 LegoGameState::ReadVariable(LegoStorage* p_storage, MxVariableTable* p_to)
 {
+	char varName[256];
+	char value[256];
 	MxS32 result = 1;
-	MxU8 length;
+	MxU8 len;
 
-	if (p_storage->Read(&length, sizeof(length)) == SUCCESS) {
-		char nameBuffer[256];
-		if (p_storage->Read(nameBuffer, length) == SUCCESS) {
-			nameBuffer[length] = '\0';
-			if (strcmp(nameBuffer, g_endOfVariables) == 0) {
-				// 2 -> "This was the last entry, done reading."
-				result = 2;
-			}
-			else {
-				if (p_storage->Read(&length, sizeof(length)) == SUCCESS) {
-					char valueBuffer[256];
-					if (p_storage->Read(valueBuffer, length) == SUCCESS) {
-						valueBuffer[length] = '\0';
-						p_to->SetVariable(nameBuffer, valueBuffer);
-						result = SUCCESS;
-					}
-				}
-			}
-		}
+	if (p_storage->Read(&len, sizeof(len)) != SUCCESS) {
+		goto done;
 	}
 
+	assert(len < sizeof(varName));
+	if (p_storage->Read(varName, len) != SUCCESS) {
+		goto done;
+	}
+
+	varName[len] = '\0';
+	if (strcmp(varName, g_endOfVariables) == 0) {
+		// 2 -> "This was the last entry, done reading."
+		result = 2;
+		goto done;
+	}
+
+	if (p_storage->Read(&len, sizeof(len)) != SUCCESS) {
+		goto done;
+	}
+
+	assert(len < sizeof(value));
+
+	if (p_storage->Read(value, len) != SUCCESS) {
+		goto done;
+	}
+
+	value[len] = '\0';
+	p_to->SetVariable(varName, value);
+	result = SUCCESS;
+
+done:
 	return result;
 }
 
 // FUNCTION: LEGO1 0x1003a170
-void LegoGameState::GetFileSavePath(MxString* p_outPath, MxU8 p_slotn)
+// FUNCTION: BETA10 0x10084b45
+void LegoGameState::GetFileSavePath(MxString* p_outPath, MxS16 p_slotn)
 {
 	char baseForSlot[2] = "0";
 	char path[1024] = "";
@@ -543,6 +571,7 @@ void LegoGameState::SerializePlayersInfo(MxS16 p_flags)
 }
 
 // FUNCTION: LEGO1 0x1003a3f0
+// FUNCTION: BETA10 0x10084db7
 MxResult LegoGameState::AddPlayer(Username& p_player)
 {
 	MxString from, to;
@@ -571,6 +600,7 @@ MxResult LegoGameState::AddPlayer(Username& p_player)
 }
 
 // FUNCTION: LEGO1 0x1003a540
+// FUNCTION: BETA10 0x10084fc4
 void LegoGameState::SwitchPlayer(MxS16 p_playerId)
 {
 	if (p_playerId > 0) {
@@ -601,6 +631,7 @@ void LegoGameState::SwitchPlayer(MxS16 p_playerId)
 }
 
 // FUNCTION: LEGO1 0x1003a6e0
+// FUNCTION: BETA10 0x1008519b
 MxS16 LegoGameState::FindPlayer(Username& p_player)
 {
 	for (MxS16 i = 0; i < m_playerCount; i++) {
@@ -1156,6 +1187,7 @@ MxResult LegoGameState::Username::ReadWrite(LegoStorage* p_storage)
 }
 
 // FUNCTION: LEGO1 0x1003c710
+// FUNCTION: BETA10 0x10086d0c
 LegoGameState::Username& LegoGameState::Username::operator=(const Username& p_other)
 {
 	memcpy(m_letters, p_other.m_letters, sizeof(m_letters));
