@@ -33,12 +33,14 @@ LegoResult LegoMemory::Write(const void* p_buffer, LegoU32 p_size)
 }
 
 // FUNCTION: LEGO1 0x100991c0
+// FUNCTION: BETA10 0x101842e4
 LegoFile::LegoFile()
 {
 	m_file = NULL;
 }
 
 // FUNCTION: LEGO1 0x10099250
+// FUNCTION: BETA10 0x1018435d
 LegoFile::~LegoFile()
 {
 	if (m_file) {
@@ -47,6 +49,7 @@ LegoFile::~LegoFile()
 }
 
 // FUNCTION: LEGO1 0x100992c0
+// FUNCTION: BETA10 0x101843e1
 LegoResult LegoFile::Read(void* p_buffer, LegoU32 p_size)
 {
 	if (!m_file) {
@@ -59,6 +62,7 @@ LegoResult LegoFile::Read(void* p_buffer, LegoU32 p_size)
 }
 
 // FUNCTION: LEGO1 0x10099300
+// FUNCTION: BETA10 0x1018443e
 LegoResult LegoFile::Write(const void* p_buffer, LegoU32 p_size)
 {
 	if (!m_file) {
@@ -71,6 +75,7 @@ LegoResult LegoFile::Write(const void* p_buffer, LegoU32 p_size)
 }
 
 // FUNCTION: LEGO1 0x10099340
+// FUNCTION: BETA10 0x1018449b
 LegoResult LegoFile::GetPosition(LegoU32& p_position)
 {
 	if (!m_file) {
@@ -85,6 +90,7 @@ LegoResult LegoFile::GetPosition(LegoU32& p_position)
 }
 
 // FUNCTION: LEGO1 0x10099370
+// FUNCTION: BETA10 0x101844fa
 LegoResult LegoFile::SetPosition(LegoU32 p_position)
 {
 	if (!m_file) {
@@ -97,6 +103,7 @@ LegoResult LegoFile::SetPosition(LegoU32 p_position)
 }
 
 // FUNCTION: LEGO1 0x100993a0
+// FUNCTION: BETA10 0x10184552
 LegoResult LegoFile::Open(const char* p_name, LegoU32 p_mode)
 {
 	if (m_file) {

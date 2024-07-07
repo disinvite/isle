@@ -112,6 +112,7 @@ void LegoCharacterManager::ReleaseAllActors()
 }
 
 // FUNCTION: LEGO1 0x10083310
+// FUNCTION: BETA10 0x10073ec9
 MxResult LegoCharacterManager::Write(LegoStorage* p_storage)
 {
 	MxResult result = FAILURE;
