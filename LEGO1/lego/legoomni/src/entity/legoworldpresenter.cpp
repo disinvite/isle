@@ -27,6 +27,7 @@
 #include "mxstl/stlcompat.h"
 #include "mxutilities.h"
 
+#include <assert.h>
 #include <io.h>
 
 DECOMP_SIZE_ASSERT(LegoWorldPresenter, 0x54)
@@ -127,9 +128,12 @@ MxResult LegoWorldPresenter::StartAction(MxStreamController* p_controller, MxDSA
 }
 
 // FUNCTION: LEGO1 0x10066a50
+// FUNCTION: BETA10 0x100e26d1
 void LegoWorldPresenter::ReadyTickle()
 {
 	m_entity = (LegoEntity*) MxPresenter::CreateEntity("LegoWorld");
+	assert(m_entity);
+
 	if (m_entity) {
 		m_entity->Create(*m_action);
 		Lego()->AddWorld((LegoWorld*) m_entity);

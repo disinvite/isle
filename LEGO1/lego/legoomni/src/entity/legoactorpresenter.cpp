@@ -6,6 +6,7 @@
 DECOMP_SIZE_ASSERT(LegoActorPresenter, 0x50)
 
 // FUNCTION: LEGO1 0x10076c30
+// FUNCTION: BETA10 0x1003d980
 void LegoActorPresenter::ReadyTickle()
 {
 	if (CurrentWorld()) {

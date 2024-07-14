@@ -32,7 +32,10 @@ public:
 	float GetY() { return m_data[1]; }
 	float GetZ() { return m_data[2]; }
 
+	// FUNCTION: BETA10 0x10013460
 	float& operator[](int idx) { return m_data[idx]; }
+
+	// FUNCTION: BETA10 0x1001d170
 	const float& operator[](int idx) const { return m_data[idx]; }
 
 	// SYNTHETIC: LEGO1 0x10010c00

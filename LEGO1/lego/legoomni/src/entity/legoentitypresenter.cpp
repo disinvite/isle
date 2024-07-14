@@ -60,6 +60,7 @@ MxResult LegoEntityPresenter::StartAction(MxStreamController* p_controller, MxDS
 }
 
 // FUNCTION: LEGO1 0x100536c0
+// FUNCTION: BETA10 0x1008021b
 void LegoEntityPresenter::ReadyTickle()
 {
 	if (CurrentWorld()) {
