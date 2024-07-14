@@ -28,10 +28,6 @@ public:
 	// FUNCTION: LEGO1 0x10003c10
 	virtual void operator=(const Vector3& p_impl) { EqualsImpl(p_impl.m_data); } // vtable+0x88
 
-	float GetX() { return m_data[0]; }
-	float GetY() { return m_data[1]; }
-	float GetZ() { return m_data[2]; }
-
 	// FUNCTION: BETA10 0x10013460
 	float& operator[](int idx) { return m_data[idx]; }
 
