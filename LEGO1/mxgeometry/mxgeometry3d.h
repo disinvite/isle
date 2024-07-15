@@ -6,10 +6,13 @@
 #include "realtime/vector.h"
 
 // VTABLE: LEGO1 0x100d4488
+// VTABLE: BETA10 0x101b84d0
 // SIZE 0x14
 class Mx3DPointFloat : public Vector3 {
 public:
 	Mx3DPointFloat() : Vector3(m_elements) {}
+
+	// FUNCTION: BETA10 0x10011870
 	Mx3DPointFloat(float p_x, float p_y, float p_z) : Vector3(m_elements)
 	{
 		m_elements[0] = p_x;
@@ -62,7 +65,10 @@ public:
 	// FUNCTION: LEGO1 0x10003200
 	virtual void operator=(const Vector4& p_impl) { EqualsImpl(p_impl.m_data); } // vtable+0x98
 
+	// FUNCTION: BETA10 0x1004af10
 	float& operator[](int idx) { return m_data[idx]; }
+
+	// FUNCTION: BETA10 0x1001c950
 	const float& operator[](int idx) const { return m_data[idx]; }
 
 	// SYNTHETIC: LEGO1 0x10064b20

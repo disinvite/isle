@@ -154,7 +154,11 @@ public:
 		Vector2::SetVector(&p_other);
 		return *this;
 	}
+
+	// FUNCTION: BETA10 0x1001d140
 	float& operator[](int idx) { return m_data[idx]; }
+
+	// FUNCTION: BETA10 0x10010890
 	const float& operator[](int idx) const { return m_data[idx]; }
 
 protected:
