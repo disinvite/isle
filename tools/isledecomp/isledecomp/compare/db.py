@@ -8,7 +8,6 @@ from isledecomp.cvdump.demangler import get_vtordisp_name
 
 _SETUP_SQL = """
     DROP TABLE IF EXISTS `symbols`;
-    DROP TABLE IF EXISTS `match_options`;
 
     CREATE TABLE `symbols` (
         compare_type int,
@@ -18,13 +17,6 @@ _SETUP_SQL = """
         decorated_name text,
         size int
     );
-
-    CREATE TABLE `match_options` (
-        addr int not null,
-        name text not null,
-        value text,
-        primary key (addr, name)
-    ) without rowid;
 
     CREATE VIEW IF NOT EXISTS `match_info`
     (compare_type, orig_addr, recomp_addr, name, size) AS
@@ -83,6 +75,7 @@ class CompareDb:
     def __init__(self):
         self._db = sqlite3.connect(":memory:")
         self._db.executescript(_SETUP_SQL)
+        self._opt = {}
 
     def set_orig_symbol(
         self,
@@ -316,18 +309,10 @@ class CompareDb:
         return cur.rowcount > 0
 
     def _set_opt_bool(self, addr: int, option: str, enabled: bool = True):
-        if enabled:
-            self._db.execute(
-                """INSERT OR IGNORE INTO `match_options`
-                (addr, name)
-                VALUES (?, ?)""",
-                (addr, option),
-            )
-        else:
-            self._db.execute(
-                """DELETE FROM `match_options` WHERE addr = ? AND name = ?""",
-                (addr, option),
-            )
+        if addr not in self._opt:
+            self._opt[addr] = {}
+
+        self._opt[addr][option] = enabled
 
     def mark_stub(self, orig: int):
         self._set_opt_bool(orig, "stub")
@@ -336,14 +321,7 @@ class CompareDb:
         self._set_opt_bool(orig, "skip")
 
     def get_match_options(self, addr: int) -> Optional[dict[str, Any]]:
-        cur = self._db.execute(
-            """SELECT name, value FROM `match_options` WHERE addr = ?""", (addr,)
-        )
-
-        return {
-            option: value if value is not None else True
-            for (option, value) in cur.fetchall()
-        }
+        return self._opt.get(addr, {})
 
     def is_vtordisp(self, recomp_addr: int) -> bool:
         """Check whether this function is a vtordisp based on its
