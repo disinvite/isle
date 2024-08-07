@@ -53,6 +53,7 @@ public:
 // MxCollection<LegoPathController *>::Destroy
 
 // TEMPLATE: LEGO1 0x1001d330
+// TEMPLATE: BETA10 0x100dd450
 // MxList<LegoPathController *>::~MxList<LegoPathController *>
 
 // TEMPLATE: LEGO1 0x1001d3c0
@@ -93,5 +94,8 @@ public:
 
 // FUNCTION: LEGO1 0x1001fa20
 // LegoPathControllerListCursor::~LegoPathControllerListCursor
+
+// TEMPLATE: BETA10 0x100e1cb0
+// MxList<LegoPathController *>::DeleteAll
 
 #endif // LEGOPATHCONTROLLERLIST_H

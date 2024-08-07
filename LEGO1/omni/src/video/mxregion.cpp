@@ -7,6 +7,7 @@ DECOMP_SIZE_ASSERT(MxRegionTopBottom, 0x0c);
 DECOMP_SIZE_ASSERT(MxRegionLeftRight, 0x08);
 
 // FUNCTION: LEGO1 0x100c31c0
+// FUNCTION: BETA10 0x10148f00
 MxRegion::MxRegion()
 {
 	m_list = new MxRegionTopBottomList;
@@ -28,6 +29,7 @@ MxRegion::~MxRegion()
 }
 
 // FUNCTION: LEGO1 0x100c3700
+// FUNCTION: BETA10 0x1014907a
 void MxRegion::Reset()
 {
 	m_list->DeleteAll();

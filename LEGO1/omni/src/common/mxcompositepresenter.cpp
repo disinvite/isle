@@ -76,6 +76,7 @@ MxResult MxCompositePresenter::StartAction(MxStreamController* p_controller, MxD
 }
 
 // FUNCTION: LEGO1 0x100b65e0
+// FUNCTION: BETA10 0x101375bc
 void MxCompositePresenter::EndAction()
 {
 	AUTOLOCK(m_criticalSection);

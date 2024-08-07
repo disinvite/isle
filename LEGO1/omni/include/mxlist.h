@@ -139,24 +139,20 @@ MxList<T>::~MxList()
 template <class T>
 inline void MxList<T>::DeleteAll(MxBool p_destroy)
 {
-	for (MxListEntry<T>* t = m_first;;) {
-		if (!t) {
-			break;
-		}
+	MxListEntry<T>* next;
 
-		MxListEntry<T>* next = t->GetNext();
+	for (MxListEntry<T>* t = m_first; t; t = next) {
+		next = t->GetNext();
 
 		if (p_destroy) {
 			this->m_customDestructor(t->GetValue());
 		}
 
 		delete t;
-		t = next;
 	}
 
 	this->m_count = 0;
-	m_last = NULL;
-	m_first = NULL;
+	m_first = m_last = NULL;
 }
 
 template <class T>
