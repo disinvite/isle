@@ -4,7 +4,7 @@ import sqlite3
 import logging
 from typing import Any, List, Optional
 from isledecomp.types import SymbolType
-from isledecomp.cvdump.demangler import get_vtordisp_name
+from isledecomp.cvdump.demangler import get_vtordisp_name, get_function_arg_string
 
 _SETUP_SQL = """
     DROP TABLE IF EXISTS `symbols`;
@@ -363,6 +363,9 @@ class CompareDb:
         if "`vtordisp" in name:
             return True
 
+        if decorated_name is None:
+            return False
+
         new_name = get_vtordisp_name(decorated_name)
         if new_name is None:
             return False
@@ -457,6 +460,41 @@ class CompareDb:
         ).fetchone()
 
         return result[0] if result is not None else None
+
+    def unique_names_for_overloaded_functions(self):
+        """Our asm sanitize will use the "friendly" name of a function.
+        Overloaded functions will all have the same. This function detects those
+        cases and gives each one a unique name in the db. The main goal here is
+        readability, but this could expose a hidden diff."""
+        cur = self._db.execute(
+            "SELECT name FROM symbols WHERE compare_type = ? GROUP BY name HAVING COUNT(name) > 1",
+            (SymbolType.FUNCTION.value,),
+        )
+
+        for (name,) in cur:
+            # TODO: Thunk's link to the original function is lost once the record is created.
+            if "Thunk of" in name:
+                continue
+
+            dupes = self._db.execute(
+                "SELECT orig_addr, recomp_addr, decorated_name FROM symbols WHERE orig_addr IS NOT NULL AND name = ?",
+                (name,),
+            ).fetchall()
+            if len(dupes) < 2:
+                continue
+
+            for i, (orig_addr, _, symbol) in enumerate(dupes, start=1):
+                new_name = f"{name}({i})"
+
+                if symbol is not None:
+                    dm_args = get_function_arg_string(symbol)
+                    if dm_args is not None:
+                        new_name = f"{name}{dm_args}"
+
+                self._db.execute(
+                    "UPDATE symbols SET name = ? WHERE orig_addr = ?",
+                    (new_name, orig_addr),
+                )
 
     def match_function(self, addr: int, name: str) -> bool:
         did_match = self._match_on(SymbolType.FUNCTION, addr, name)

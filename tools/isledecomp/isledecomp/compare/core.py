@@ -89,6 +89,8 @@ class Compare:
         self._match_thunks()
         self._find_vtordisp()
 
+        self._db.unique_names_for_overloaded_functions()
+
     def _load_cvdump(self):
         logger.info("Parsing %s ...", self.pdb_file)
         self.cv = (
