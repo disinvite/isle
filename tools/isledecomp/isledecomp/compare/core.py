@@ -14,7 +14,7 @@ from isledecomp.dir import walk_source_dir
 from isledecomp.types import SymbolType
 from isledecomp.compare.asm import ParseAsm
 from isledecomp.compare.asm.fixes import find_effective_match
-from .db import CompareDb, MatchInfo
+from .nudb import CompareDb, MatchInfo
 from .diff import combined_diff
 from .lines import LinesDb
 
