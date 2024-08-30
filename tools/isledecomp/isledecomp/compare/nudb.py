@@ -130,7 +130,17 @@ class CompareDb:
                 yield record["name"]
 
     def get_all(self) -> Iterator[MatchInfo]:
-        for uid in [*iter(self._db)]:
+        """Ordered by orig addr (matched and unmatched).
+        Unmatched with recomp addr only appear last, in their order."""
+        # Get the uids that have only a recomp_addr
+        leftovers = [
+            self._tgt2uid[addr]
+            for addr in self._tgt_order
+            if "orig_addr" not in self._db[self._tgt2uid[addr]]
+        ]
+        uids = [*[self._src2uid[addr] for addr in self._src_order], *leftovers]
+
+        for uid in uids:
             yield self._uid_to_matchinfo(uid)
 
     def get_matches(self) -> Iterator[MatchInfo]:
