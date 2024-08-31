@@ -389,12 +389,16 @@ class CompareDb:
         # Only allow a match against "Class:`vftable'"
         # if this is the derived class.
         if base_class is None or base_class == name:
-            name_options = (for_vftable, bare_vftable)
+            uids = [
+                *self._name2uids.get(for_vftable, []),
+                *self._name2uids.get(bare_vftable, []),
+            ]
         else:
-            name_options = (for_vftable, for_vftable)
+            uids = [*self._name2uids.get(for_vftable, [])]
 
-        for _, record in self._db.items():
-            if "orig_addr" not in record and record.get("name", None) in name_options:
+        for uid in uids:
+            record = self._db[uid]
+            if "orig_addr" not in record:
                 return self.set_pair(addr, record["recomp_addr"], SymbolType.VTABLE)
 
         logger.error("Failed to find vtable for class: %s", name)
