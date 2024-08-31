@@ -48,6 +48,7 @@ class CompareDb:
         self._name2uids: dict[str, set[UIDType]] = {}
 
         self._opt: dict[int, dict[str, Any]] = {}
+        self._matched_uid: set[UIDType] = set()
 
         self._src_order: list[int] = []
         self._tgt_order: list[int] = []
@@ -122,10 +123,10 @@ class CompareDb:
 
     def get_unmatched_strings(self) -> Iterator[str]:
         """Return any strings not already identified by STRING markers."""
-        for _, record in self._db.items():
+        for uid, record in self._db.items():
             if (
                 record.get("type", None) == SymbolType.STRING
-                and "orig_addr" not in record
+                and uid not in self._matched_uid
             ):
                 yield record["name"]
 
@@ -136,7 +137,7 @@ class CompareDb:
         leftovers = [
             self._tgt2uid[addr]
             for addr in self._tgt_order
-            if "orig_addr" not in self._db[self._tgt2uid[addr]]
+            if self._tgt2uid[addr] not in self._matched_uid
         ]
         uids = [*[self._src2uid[addr] for addr in self._src_order], *leftovers]
 
@@ -212,6 +213,7 @@ class CompareDb:
 
         self._db[uid]["orig_addr"] = orig
         self._src2uid[orig] = uid
+        self._matched_uid.add(uid)
         # if compare_type is not None:
         # TODO: old db forces a clear on the compare type here.
         # This seems odd but we'll preserve it for now.
@@ -312,8 +314,8 @@ class CompareDb:
         """Name lookup"""
         match_decorate = compare_type != SymbolType.STRING and name.startswith("?")
         if match_decorate:
-            for _, record in self._db.items():
-                if "orig_addr" in record:
+            for uid, record in self._db.items():
+                if uid in self._matched_uid:
                     continue
 
                 if record.get("symbol", None) == name:
@@ -321,13 +323,15 @@ class CompareDb:
             return None
 
         uids = self._name2uids.get(name, [])
-        matches = [self._db[uid] for uid in uids]
-        matches.sort(key=itemgetter("recomp_addr"))
+        candidates = [self._db[uid] for uid in uids if uid not in self._matched_uid]
+        # We use sets for the indices which do not guarantee order.
+        # Revert to "insertion order" which is most likely by recomp-addr
+        # because we are reading from a PDB or MAP file in order.
+        # Any order will do. It just needs to be consistent so matches of
+        # non-unique names are stable.
+        candidates.sort(key=itemgetter("recomp_addr"))
 
-        for record in matches:
-            if "orig_addr" in record:
-                continue
-
+        for record in candidates:
             type_ = record.get("type", None)
             if type_ is None or type_ == compare_type:
                 return record["recomp_addr"]
@@ -397,9 +401,11 @@ class CompareDb:
             uids = [*self._name2uids.get(for_vftable, [])]
 
         for uid in uids:
+            if uid in self._matched_uid:
+                continue
+
             record = self._db[uid]
-            if "orig_addr" not in record:
-                return self.set_pair(addr, record["recomp_addr"], SymbolType.VTABLE)
+            return self.set_pair(addr, record["recomp_addr"], SymbolType.VTABLE)
 
         logger.error("Failed to find vtable for class: %s", name)
         return False
