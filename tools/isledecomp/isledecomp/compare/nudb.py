@@ -61,11 +61,11 @@ class CompareDb:
     def _uid_to_matchinfo(self, uid: UIDType) -> MatchInfo:
         record = self._db[uid]
         return MatchInfo(
-            compare_type=record.get("type", None),
-            orig_addr=record.get("orig_addr", None),
-            recomp_addr=record.get("recomp_addr", None),
-            name=record.get("name", None),
-            size=record.get("size", None),
+            compare_type=record["type"],
+            orig_addr=record["orig_addr"],
+            recomp_addr=record["recomp_addr"],
+            name=record["name"],
+            size=record["size"],
         )
 
     def _name_change(self, uid: UIDType, name: Optional[str]):
@@ -90,8 +90,10 @@ class CompareDb:
         uid = self._next_uid()
         self._db[uid] = {
             "orig_addr": addr,
+            "recomp_addr": None,
             "type": compare_type,
             "name": name,
+            "symbol": None,
             "size": size,
         }
         self._src2uid[addr] = uid
@@ -111,6 +113,7 @@ class CompareDb:
 
         uid = self._next_uid()
         self._db[uid] = {
+            "orig_addr": None,
             "recomp_addr": addr,
             "type": compare_type,
             "name": name,
@@ -124,10 +127,7 @@ class CompareDb:
     def get_unmatched_strings(self) -> Iterator[str]:
         """Return any strings not already identified by STRING markers."""
         for uid, record in self._db.items():
-            if (
-                record.get("type", None) == SymbolType.STRING
-                and uid not in self._matched_uid
-            ):
+            if record["type"] == SymbolType.STRING and uid not in self._matched_uid:
                 yield record["name"]
 
     def get_all(self) -> Iterator[MatchInfo]:
@@ -294,10 +294,10 @@ class CompareDb:
             return False
 
         record = self._db[uid]
-        if "`vtordisp" in record.get("name"):
+        if "`vtordisp" in record["name"]:
             return True
 
-        if "symbol" not in record:
+        if record["symbol"] is None:
             # happens in debug builds, e.g. for "Thunk of 'LegoAnimActor::ClassName'"
             return False
 
@@ -318,7 +318,7 @@ class CompareDb:
                 if uid in self._matched_uid:
                     continue
 
-                if record.get("symbol", None) == name:
+                if record["symbol"] == name:
                     return record["recomp_addr"]
             return None
 
@@ -332,7 +332,7 @@ class CompareDb:
         candidates.sort(key=itemgetter("recomp_addr"))
 
         for record in candidates:
-            type_ = record.get("type", None)
+            type_ = record["type"]
             if type_ is None or type_ == compare_type:
                 return record["recomp_addr"]
 
@@ -418,12 +418,17 @@ class CompareDb:
             return False
 
         func = self._db[func_uid]
+        if func["symbol"] is None:
+            return False
+
         for _, record in self._db.items():
-            symbol = record.get("symbol", "")
+            if record["symbol"] is None:
+                continue
+
             if (
-                record.get("type") != SymbolType.FUNCTION
-                and name in symbol
-                and func.get("symbol", "") in symbol
+                record["type"] != SymbolType.FUNCTION
+                and name in record["symbol"]
+                and func["symbol"] in record["symbol"]
             ):
                 return self.set_pair(addr, record["recomp_addr"], SymbolType.DATA)
 
