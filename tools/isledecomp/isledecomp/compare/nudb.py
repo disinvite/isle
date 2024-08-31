@@ -1,5 +1,6 @@
 import bisect
 import logging
+from collections import defaultdict
 from dataclasses import dataclass
 from operator import itemgetter
 from typing import Any, Iterator, NewType, Optional
@@ -36,6 +37,43 @@ class MatchInfo:
         return f"{self.name}+{ofs} (OFFSET)"
 
 
+class JITSortedList:
+    def __init__(self):
+        self._list: list[int] = []
+        self._sorted: bool = False
+
+    def _sort(self):
+        if not self._sorted:
+            self._list.sort()
+            self._sorted = True
+
+    def __iter__(self) -> Iterator[int]:
+        self._sort()
+        return iter(self._list)
+
+    def prev(self, addr: int) -> Optional[int]:
+        self._sort()
+        i = bisect.bisect_left(self._list, addr)
+        if i == 0:
+            return None
+
+        return self._list[i - 1]
+
+    def next(self, addr: int) -> Optional[int]:
+        self._sort()
+        i = bisect.bisect_right(self._list, addr)
+        if i == len(self._list):
+            return None
+
+        return self._list[i]
+
+    def add(self, addr: int):
+        if self._sorted:
+            bisect.insort(self._list, addr)
+        else:
+            self._list.append(addr)
+
+
 class CompareDb:
     # pylint: disable=too-many-public-methods
     # pylint: disable=too-many-instance-attributes
@@ -45,13 +83,13 @@ class CompareDb:
         self._db: dict[UIDType, dict[str, Any]] = {}
         self._src2uid: dict[int, UIDType] = {}
         self._tgt2uid: dict[int, UIDType] = {}
-        self._name2uids: dict[str, set[UIDType]] = {}
+        self._name2uids: dict[str, set[UIDType]] = defaultdict(set)
 
         self._opt: dict[int, dict[str, Any]] = {}
         self._matched_uid: set[UIDType] = set()
 
-        self._src_order: list[int] = []
-        self._tgt_order: list[int] = []
+        self._src_order: Iterable[int] = JITSortedList()
+        self._tgt_order: Iterable[int] = JITSortedList()
 
     def _next_uid(self) -> UIDType:
         uid = self._cur_uid
@@ -69,13 +107,8 @@ class CompareDb:
         )
 
     def _name_change(self, uid: UIDType, name: Optional[str]):
-        if name is None:
-            return
-
-        if name not in self._name2uids:
-            self._name2uids[name] = set()
-
-        self._name2uids[name].add(uid)
+        if name is not None:
+            self._name2uids[name].add(uid)
 
     def set_orig_symbol(
         self,
@@ -97,7 +130,7 @@ class CompareDb:
             "size": size,
         }
         self._src2uid[addr] = uid
-        bisect.insort(self._src_order, addr)
+        self._src_order.add(addr)
         self._name_change(uid, name)
 
     def set_recomp_symbol(
@@ -121,7 +154,7 @@ class CompareDb:
             "size": size,
         }
         self._tgt2uid[addr] = uid
-        bisect.insort(self._tgt_order, addr)
+        self._tgt_order.add(addr)
         self._name_change(uid, name)
 
     def get_unmatched_strings(self) -> Iterator[str]:
@@ -157,18 +190,10 @@ class CompareDb:
         return None
 
     def _get_closest_orig(self, addr: int) -> Optional[int]:
-        i = bisect.bisect_left(self._src_order, addr)
-        if i == 0:
-            return None
-
-        return self._src_order[i - 1]
+        return self._src_order.prev(addr)
 
     def _get_closest_recomp(self, addr: int) -> Optional[int]:
-        i = bisect.bisect_left(self._tgt_order, addr)
-        if i == 0:
-            return None
-
-        return self._tgt_order[i - 1]
+        return self._tgt_order.prev(addr)
 
     def get_by_orig(self, addr: int, exact: bool = True) -> Optional[MatchInfo]:
         uid = self._src2uid.get(addr, None)
@@ -221,8 +246,7 @@ class CompareDb:
         # This is important so we don't try to compare each individual data offset.
         # It also comes into play when checking size of elements with intentional NULL size.
         self._db[uid]["type"] = compare_type
-
-        bisect.insort(self._src_order, orig)
+        self._src_order.add(orig)
         return True
 
     def set_pair_tentative(
@@ -369,11 +393,7 @@ class CompareDb:
         """Return the original address (matched or not) that follows
         the one given. If our recomp function size would cause us to read
         too many bytes for the original function, we can adjust it."""
-        i = bisect.bisect_right(self._src_order, addr)
-        if i == len(self._src_order):
-            return None
-
-        return self._src_order[i]
+        return self._src_order.next(addr)
 
     def match_function(self, addr: int, name: str) -> bool:
         did_match = self._match_on(SymbolType.FUNCTION, addr, name)
