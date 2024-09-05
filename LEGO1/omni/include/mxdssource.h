@@ -10,9 +10,7 @@ class MxDSBuffer;
 class MxDSSource : public MxCore {
 public:
 	MxDSSource() : m_lengthInDWords(0), m_pBuffer(NULL), m_position(-1) {}
-
-	// FUNCTION: LEGO1 0x100bff60
-	~MxDSSource() override { delete[] m_pBuffer; }
+	~MxDSSource() override;
 
 	// FUNCTION: LEGO1 0x100c0010
 	const char* ClassName() const override // vtable+0x0c

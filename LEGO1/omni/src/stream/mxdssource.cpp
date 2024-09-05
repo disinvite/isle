@@ -4,6 +4,13 @@
 
 DECOMP_SIZE_ASSERT(MxDSSource, 0x14)
 
+// FUNCTION: LEGO1 0x100bff60
+// FUNCTION: BETA10 0x10148b70
+MxDSSource::~MxDSSource()
+{
+	delete[] m_pBuffer;
+}
+
 // FUNCTION: LEGO1 0x100bffd0
 MxResult MxDSSource::ReadToBuffer(MxDSBuffer* p_buffer)
 {
