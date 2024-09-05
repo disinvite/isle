@@ -28,3 +28,18 @@ MxU32* MxDSSource::GetBuffer()
 {
 	return m_pBuffer;
 }
+
+// FUNCTION: LEGO1 0x100c0010
+// FUNCTION: BETA10 0x10148cc0
+const char* MxDSSource::ClassName() const
+{
+	// STRING: LEGO1 0x10102588
+	return "MxDSSource";
+}
+
+// FUNCTION: LEGO1 0x100c0020
+// FUNCTION: BETA10 0x10148ce0
+MxBool MxDSSource::IsA(const char* p_name) const
+{
+	return !strcmp(p_name, MxDSSource::ClassName()) || MxCore::IsA(p_name);
+}

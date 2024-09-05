@@ -6,25 +6,15 @@
 class MxDSBuffer;
 
 // VTABLE: LEGO1 0x100dc8c8
+// VTABLE: BETA10 0x101c2450
 // SIZE 0x14
 class MxDSSource : public MxCore {
 public:
 	MxDSSource() : m_lengthInDWords(0), m_pBuffer(NULL), m_position(-1) {}
 	~MxDSSource() override;
 
-	// FUNCTION: LEGO1 0x100c0010
-	const char* ClassName() const override // vtable+0x0c
-	{
-		// STRING: LEGO1 0x10102588
-		return "MxDSSource";
-	}
-
-	// FUNCTION: LEGO1 0x100c0020
-	MxBool IsA(const char* p_name) const override // vtable+0x10
-	{
-		return !strcmp(p_name, MxDSSource::ClassName()) || MxCore::IsA(p_name);
-	}
-
+	const char* ClassName() const override;              // vtable+0x0c
+	MxBool IsA(const char* p_name) const override;       // vtable+0x10
 	virtual MxLong Open(MxULong) = 0;                    // vtable+0x14
 	virtual MxLong Close() = 0;                          // vtable+0x18
 	virtual MxResult ReadToBuffer(MxDSBuffer* p_buffer); // vtable+0x1c
@@ -43,6 +33,7 @@ protected:
 };
 
 // SYNTHETIC: LEGO1 0x100c00a0
+// SYNTHETIC: BETA10 0x10148d40
 // MxDSSource::`scalar deleting destructor'
 
 #endif // MXDSSOURCE_H
