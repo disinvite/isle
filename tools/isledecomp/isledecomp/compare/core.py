@@ -458,7 +458,7 @@ class Compare:
                 # Bail out if there's a problem with struct.unpack
                 continue
 
-            if self._db.set_pair_tentative(orig_addr, recomp_addr):
+            if self._db.set_pair(orig_addr, recomp_addr, SymbolType.FUNCTION):
                 logger.debug("Matched export %s", repr(export_name))
 
     def _find_vtordisp(self):

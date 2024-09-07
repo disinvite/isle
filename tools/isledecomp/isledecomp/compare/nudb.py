@@ -260,6 +260,7 @@ class CompareDb:
         The purpose here is to set matches found via some automated analysis
         but to not overwrite a match provided by the human operator."""
         # TODO: I forget why this was necessary
+        # Hey I remembered. This is so we don't overwrite symboltype.function in match_imports
         return self.set_pair(orig, recomp, compare_type)
 
     def set_function_pair(self, orig: int, recomp: int) -> bool:
