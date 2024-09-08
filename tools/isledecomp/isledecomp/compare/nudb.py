@@ -38,7 +38,10 @@ class MatchInfo:
 
 
 class JITSortedList:
-    def __init__(self):
+    """Just In Time sorted list. Throw items on the pile until we invoke one
+    of the iterators. From then on, protect the order with bisect.insort"""
+
+    def __init__(self) -> None:
         self._list: list[int] = []
         self._sorted: bool = False
 
@@ -77,8 +80,8 @@ class JITSortedList:
 class CompareDb:
     # pylint: disable=too-many-public-methods
     # pylint: disable=too-many-instance-attributes
-    def __init__(self):
-        self._cur_uid = UIDType(10000)
+    def __init__(self) -> None:
+        self._cur_uid: int = 10000
 
         self._db: dict[UIDType, dict[str, Any]] = {}
         self._src2uid: dict[int, UIDType] = {}
@@ -88,13 +91,13 @@ class CompareDb:
         self._opt: dict[int, dict[str, Any]] = {}
         self._matched_uid: set[UIDType] = set()
 
-        self._src_order: Iterable[int] = JITSortedList()
-        self._tgt_order: Iterable[int] = JITSortedList()
+        self._src_order = JITSortedList()
+        self._tgt_order = JITSortedList()
 
     def _next_uid(self) -> UIDType:
         uid = self._cur_uid
         self._cur_uid += 1
-        return uid
+        return UIDType(uid)
 
     def _uid_to_matchinfo(self, uid: UIDType) -> MatchInfo:
         record = self._db[uid]
@@ -183,6 +186,7 @@ class CompareDb:
                 yield match
 
     def get_one_match(self, addr: int) -> Optional[MatchInfo]:
+        """Source addr used. This is for reccmp verbose mode."""
         uid = self._src2uid[addr]
         if uid is not None:
             return self._uid_to_matchinfo(uid)
@@ -347,7 +351,7 @@ class CompareDb:
                     return record["recomp_addr"]
             return None
 
-        uids = self._name2uids.get(name, [])
+        uids = self._name2uids[name]  # defaultdict(set)
         candidates = [self._db[uid] for uid in uids if uid not in self._matched_uid]
         # We use sets for the indices which do not guarantee order.
         # Revert to "insertion order" which is most likely by recomp-addr
@@ -415,11 +419,11 @@ class CompareDb:
         # if this is the derived class.
         if base_class is None or base_class == name:
             uids = [
-                *self._name2uids.get(for_vftable, []),
-                *self._name2uids.get(bare_vftable, []),
+                *self._name2uids[for_vftable],
+                *self._name2uids[bare_vftable],
             ]
         else:
-            uids = [*self._name2uids.get(for_vftable, [])]
+            uids = list(self._name2uids[for_vftable])
 
         for uid in uids:
             if uid in self._matched_uid:
