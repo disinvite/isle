@@ -2,7 +2,6 @@ import bisect
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from operator import itemgetter
 from typing import Any, Iterator, NewType, Optional
 from isledecomp.types import SymbolType
 from isledecomp.cvdump.demangler import get_vtordisp_name
@@ -35,6 +34,25 @@ class MatchInfo:
             return None
 
         return f"{self.name}+{ofs} (OFFSET)"
+
+
+class MyIndex:
+    def __init__(self) -> None:
+        self._idx: dict[str, set[UIDType]] = defaultdict(set)
+        self._rev: dict[UIDType, str] = {}
+
+    def __getitem__(self, key: str) -> set[UIDType]:
+        return self._idx[key]
+
+    def set(self, uid: UIDType, key: Optional[str]):
+        if (old_key := self._rev.get(uid)) is not None:
+            if old_key == key:
+                return
+
+            self._idx[old_key].discard(uid)
+
+        if key is not None:
+            self._idx[key].add(uid)
 
 
 class JITSortedList:
@@ -86,18 +104,28 @@ class CompareDb:
         self._db: dict[UIDType, dict[str, Any]] = {}
         self._src2uid: dict[int, UIDType] = {}
         self._tgt2uid: dict[int, UIDType] = {}
-        self._name2uids: dict[str, set[UIDType]] = defaultdict(set)
+        self._name2uids = MyIndex()
 
-        self._opt: dict[int, dict[str, Any]] = {}
+        self._opt: dict[UIDType, dict[str, Any]] = defaultdict(dict)
         self._matched_uid: set[UIDType] = set()
 
         self._src_order = JITSortedList()
         self._tgt_order = JITSortedList()
 
     def _next_uid(self) -> UIDType:
-        uid = self._cur_uid
+        uid = UIDType(self._cur_uid)
         self._cur_uid += 1
-        return UIDType(uid)
+        # todo: Establish obj here?
+        self._db[uid] = {
+            "orig_addr": None,
+            "recomp_addr": None,
+            "type": None,
+            "name": None,
+            "symbol": None,
+            "size": None,
+        }
+
+        return uid
 
     def _uid_to_matchinfo(self, uid: UIDType) -> MatchInfo:
         record = self._db[uid]
@@ -109,9 +137,62 @@ class CompareDb:
             size=record["size"],
         )
 
-    def _name_change(self, uid: UIDType, name: Optional[str]):
-        if name is not None:
-            self._name2uids[name].add(uid)
+    def set_source(self, uid: UIDType, addr: int):
+        if addr not in self._src2uid:
+            self._src2uid[addr] = uid
+            self._src_order.add(addr)
+            self._db[uid]["orig_addr"] = addr
+            if self._db[uid]["recomp_addr"] is not None:
+                self._matched_uid.add(uid)
+
+    def set_target(self, uid: UIDType, addr: int):
+        if addr not in self._tgt2uid:
+            self._tgt2uid[addr] = uid
+            self._tgt_order.add(addr)
+            self._db[uid]["recomp_addr"] = addr
+            if self._db[uid]["orig_addr"] is not None:
+                self._matched_uid.add(uid)
+
+    def set_size(self, uid: UIDType, size: Optional[int]):
+        # todo: maybe more here.
+        self._db[uid]["size"] = size
+
+    def set_symbol(self, uid: UIDType, symbol: Optional[str]):
+        # todo: index
+        self._db[uid]["symbol"] = symbol
+
+    def set_name(self, uid: UIDType, name: Optional[str]):
+        self._name2uids.set(uid, name)
+        self._db[uid]["name"] = name
+
+    def set_type(self, uid: UIDType, type_: Optional[SymbolType]):
+        # todo: index
+        self._db[uid]["type"] = type_
+
+    def set_option(self, uid: UIDType, key: str, value: Any):
+        # todo
+        raise NotImplementedError
+
+    ####
+
+    def get_symbol(self, symbol: str) -> Optional[UIDType]:
+        # todo
+        for uid, record in self._db.items():
+            if record["symbol"] == symbol:
+                return uid
+
+        return None
+
+    def get_name(self, name: str) -> Iterator[UIDType]:
+        # Caution here: we use sets for the indices which do not guarantee order.
+        # Revert to "insertion order" which should be the same as UID order.
+        # Any order will do. It just needs to be consistent so matches of
+        # non-unique names are stable.
+        uids = list(self._name2uids[name])
+        uids.sort()
+        return iter(uids)
+
+    ####
 
     def set_orig_symbol(
         self,
@@ -124,17 +205,10 @@ class CompareDb:
             return
 
         uid = self._next_uid()
-        self._db[uid] = {
-            "orig_addr": addr,
-            "recomp_addr": None,
-            "type": compare_type,
-            "name": name,
-            "symbol": None,
-            "size": size,
-        }
-        self._src2uid[addr] = uid
-        self._src_order.add(addr)
-        self._name_change(uid, name)
+        self.set_source(uid, addr)
+        self.set_name(uid, name)
+        self.set_size(uid, size)
+        self.set_type(uid, compare_type)
 
     def set_recomp_symbol(
         self,
@@ -148,17 +222,13 @@ class CompareDb:
             return
 
         uid = self._next_uid()
-        self._db[uid] = {
-            "orig_addr": None,
-            "recomp_addr": addr,
-            "type": compare_type,
-            "name": name,
-            "symbol": decorated_name,
-            "size": size,
-        }
-        self._tgt2uid[addr] = uid
-        self._tgt_order.add(addr)
-        self._name_change(uid, name)
+        self.set_target(uid, addr)
+        self.set_name(uid, name)
+        self.set_symbol(uid, decorated_name)
+        self.set_size(uid, size)
+        self.set_type(uid, compare_type)
+
+    ####
 
     def get_unmatched_strings(self) -> Iterator[str]:
         """Return any strings not already identified by STRING markers."""
@@ -233,6 +303,7 @@ class CompareDb:
     def set_pair(
         self, orig: int, recomp: int, compare_type: Optional[SymbolType] = None
     ) -> bool:
+        # todo: create new entry here if neither addr is set?
         if orig in self._src2uid:
             return False
 
@@ -240,17 +311,13 @@ class CompareDb:
         if uid is None:
             return False
 
-        self._db[uid]["orig_addr"] = orig
-        self._src2uid[orig] = uid
-        self._matched_uid.add(uid)
-        # if compare_type is not None:
+        self.set_source(uid, orig)
         # TODO: old db forces a clear on the compare type here.
         # This seems odd but we'll preserve it for now.
         # Most consequential in _add_match_in_array where the type is immediately cleared.
         # This is important so we don't try to compare each individual data offset.
         # It also comes into play when checking size of elements with intentional NULL size.
-        self._db[uid]["type"] = compare_type
-        self._src_order.add(orig)
+        self.set_type(uid, compare_type)
         return True
 
     def set_pair_tentative(
@@ -299,10 +366,7 @@ class CompareDb:
         self.set_recomp_symbol(addr, SymbolType.FUNCTION, thunk_name, None, 5)
 
     def _set_opt_bool(self, addr: int, option: str, enabled: bool = True):
-        if addr not in self._opt:
-            self._opt[addr] = {}
-
-        self._opt[addr][option] = enabled
+        self._opt[self._src2uid[addr]][option] = enabled
 
     def mark_stub(self, orig: int):
         self._set_opt_bool(orig, "stub")
@@ -311,7 +375,7 @@ class CompareDb:
         self._set_opt_bool(orig, "skip")
 
     def get_match_options(self, addr: int) -> dict[str, Any]:
-        return self._opt.get(addr, {})
+        return self._opt[self._src2uid[addr]]
 
     def is_vtordisp(self, recomp_addr: int) -> bool:
         """Check whether this function is a vtordisp based on its
@@ -334,7 +398,7 @@ class CompareDb:
         if new_name is None:
             return False
 
-        self._db[uid]["name"] = new_name
+        self.set_name(uid, new_name)
         return True
 
     def _find_potential_match(
@@ -343,26 +407,19 @@ class CompareDb:
         """Name lookup"""
         match_decorate = compare_type != SymbolType.STRING and name.startswith("?")
         if match_decorate:
-            for uid, record in self._db.items():
-                if uid in self._matched_uid:
-                    continue
+            uid = self.get_symbol(name)
+            if uid is not None and uid not in self._matched_uid:
+                record = self._db[uid]
+                return record["recomp_addr"]
 
-                if record["symbol"] == name:
-                    return record["recomp_addr"]
             return None
 
-        uids = self._name2uids[name]  # defaultdict(set)
-        candidates = [self._db[uid] for uid in uids if uid not in self._matched_uid]
-        # We use sets for the indices which do not guarantee order.
-        # Revert to "insertion order" which is most likely by recomp-addr
-        # because we are reading from a PDB or MAP file in order.
-        # Any order will do. It just needs to be consistent so matches of
-        # non-unique names are stable.
-        candidates.sort(key=itemgetter("recomp_addr"))
+        for uid in self.get_name(name):
+            if uid in self._matched_uid:
+                continue
 
-        for record in candidates:
-            type_ = record["type"]
-            if type_ is None or type_ == compare_type:
+            record = self._db[uid]
+            if record["type"] is None or record["type"] == compare_type:
                 return record["recomp_addr"]
 
         return None
