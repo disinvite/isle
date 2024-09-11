@@ -73,7 +73,7 @@ class CompareDb(CompareCore):
 
     def describe_orig(self, addr: int, exact: bool):
         actual = addr
-        uid = self._src2uid.get(actual, None)
+        uid = self._src2uid.get(actual)
 
         if not exact and uid is None:
             actual = self._get_closest_orig(actual)
@@ -89,7 +89,7 @@ class CompareDb(CompareCore):
 
     def describe_recomp(self, addr: int, exact: bool):
         actual = addr
-        uid = self._tgt2uid.get(actual, None)
+        uid = self._tgt2uid.get(actual)
 
         if not exact and uid is None:
             actual = self._get_closest_recomp(actual)
@@ -129,13 +129,13 @@ class CompareDb(CompareCore):
         return None
 
     def _get_closest_orig(self, addr: int) -> Optional[int]:
-        return self._src_order.prev(addr)
+        return self._src2uid.prev(addr)
 
     def _get_closest_recomp(self, addr: int) -> Optional[int]:
-        return self._tgt_order.prev(addr)
+        return self._tgt2uid.prev(addr)
 
     def get_by_orig(self, addr: int, exact: bool = True) -> Optional[MatchInfo]:
-        uid = self._src2uid.get(addr, None)
+        uid = self._src2uid.get(addr)
 
         if not exact and uid is None:
             prev = self._get_closest_orig(addr)
@@ -148,7 +148,7 @@ class CompareDb(CompareCore):
         return self._uid_to_matchinfo(uid)
 
     def get_by_recomp(self, addr: int, exact: bool = True) -> Optional[MatchInfo]:
-        uid = self._tgt2uid.get(addr, None)
+        uid = self._tgt2uid.get(addr)
 
         if not exact and uid is None:
             prev = self._get_closest_recomp(addr)
@@ -172,7 +172,7 @@ class CompareDb(CompareCore):
         if orig in self._src2uid:
             return False
 
-        uid = self._tgt2uid.get(recomp, None)
+        uid = self._tgt2uid.get(recomp)
         if uid is None:
             return False
 
@@ -320,7 +320,7 @@ class CompareDb(CompareCore):
         """Return the original address (matched or not) that follows
         the one given. If our recomp function size would cause us to read
         too many bytes for the original function, we can adjust it."""
-        return self._src_order.next(addr)
+        return self._src2uid.next(addr)
 
     def match_function(self, addr: int, name: str) -> bool:
         did_match = self._match_on(SymbolType.FUNCTION, addr, name)
@@ -360,7 +360,7 @@ class CompareDb(CompareCore):
     def match_static_variable(self, addr: int, name: str, function_addr: int) -> bool:
         """Matching a static function variable by combining the variable name
         with the decorated (mangled) name of its parent function."""
-        func_uid = self._src2uid.get(function_addr, None)
+        func_uid = self._src2uid.get(function_addr)
         if func_uid is None:
             return False
 

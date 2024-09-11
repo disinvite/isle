@@ -25,22 +25,42 @@ class MyIndex:
             self._idx[key].add(uid)
 
 
-class JITSortedList:
-    """Just In Time sorted list. Throw items on the pile until we invoke one
-    of the iterators. From then on, protect the order with bisect.insort"""
+class AddrMap:
+    """Virtual address to UID. Combination dict and ordered list (by addr).
+    Address order is maintained by bisect.insort, but we defer this until we
+    need to iterate over the list."""
 
     def __init__(self) -> None:
+        self._map: dict[int, UIDType] = {}
         self._list: list[int] = []
-        self._sorted: bool = False
+        self._sorted = False
+
+    def __contains__(self, addr: int) -> bool:
+        return addr in self._map
+
+    def __setitem__(self, addr: int, uid: UIDType):
+        if addr in self._map:
+            return
+
+        self._map[addr] = uid
+        if self._sorted:
+            bisect.insort(self._list, addr)
+
+    def __getitem__(self, addr: int) -> UIDType:
+        return self._map[addr]
+
+    def get(self, addr: int) -> Optional[UIDType]:
+        return self._map.get(addr)
 
     def _sort(self):
         if not self._sorted:
-            self._list.sort()
+            self._list = sorted(self._map.keys())
             self._sorted = True
 
-    def __iter__(self) -> Iterator[int]:
+    def __iter__(self) -> Iterator[tuple[int, UIDType]]:
         self._sort()
-        return iter(self._list)
+        for addr in self._list:
+            yield (addr, self._map[addr])
 
     def prev(self, addr: int) -> Optional[int]:
         self._sort()
@@ -58,12 +78,6 @@ class JITSortedList:
 
         return self._list[i]
 
-    def add(self, addr: int):
-        if self._sorted:
-            bisect.insort(self._list, addr)
-        else:
-            self._list.append(addr)
-
 
 class CompareCore:
     # pylint: disable=too-many-public-methods
@@ -72,15 +86,12 @@ class CompareCore:
         self._cur_uid: int = 10000
 
         self._db: dict[UIDType, dict[str, Any]] = {}
-        self._src2uid: dict[int, UIDType] = {}
-        self._tgt2uid: dict[int, UIDType] = {}
+        self._src2uid = AddrMap()
+        self._tgt2uid = AddrMap()
         self._name2uids = MyIndex()
 
         self._opt: dict[UIDType, dict[str, Any]] = defaultdict(dict)
         self._matched_uid: set[UIDType] = set()
-
-        self._src_order = JITSortedList()
-        self._tgt_order = JITSortedList()
 
     def _next_uid(self) -> UIDType:
         uid = UIDType(self._cur_uid)
@@ -109,7 +120,6 @@ class CompareCore:
     def set_source(self, uid: UIDType, addr: int):
         if addr not in self._src2uid:
             self._src2uid[addr] = uid
-            self._src_order.add(addr)
             self._db[uid]["orig_addr"] = addr
             if self._db[uid]["recomp_addr"] is not None:
                 self._matched_uid.add(uid)
@@ -117,7 +127,6 @@ class CompareCore:
     def set_target(self, uid: UIDType, addr: int):
         if addr not in self._tgt2uid:
             self._tgt2uid[addr] = uid
-            self._tgt_order.add(addr)
             self._db[uid]["recomp_addr"] = addr
             if self._db[uid]["orig_addr"] is not None:
                 self._matched_uid.add(uid)
@@ -207,8 +216,7 @@ class CompareCore:
 
     def in_order(self, matched_only: bool = False) -> Iterator[UIDType]:
         """Iterator of uids ordered by source addr, nulls last."""
-        for addr in self._src_order:
-            uid = self._src2uid[addr]
+        for _, uid in self._src2uid:
             if not matched_only or uid in self._matched_uid:
                 yield uid
 
@@ -216,8 +224,7 @@ class CompareCore:
         if matched_only:
             return
 
-        for addr in self._tgt_order:
-            uid = self._tgt2uid[addr]
+        for _, uid in self._tgt2uid:
             if uid not in self._matched_uid:
                 yield uid
 
