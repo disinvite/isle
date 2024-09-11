@@ -611,32 +611,10 @@ class Compare:
             pass
 
         def orig_lookup(addr: int, exact: bool) -> Optional[str]:
-            m = self._db.get_by_orig(addr, exact)
-            if m is None:
-                return None
-
-            if m.orig_addr == addr:
-                return m.match_name()
-
-            offset = addr - m.orig_addr
-            if m.compare_type != SymbolType.DATA or offset >= m.size:
-                return None
-
-            return m.offset_name(offset)
+            return self._db.describe_orig(addr, exact)
 
         def recomp_lookup(addr: int, exact: bool) -> Optional[str]:
-            m = self._db.get_by_recomp(addr, exact)
-            if m is None:
-                return None
-
-            if m.recomp_addr == addr:
-                return m.match_name()
-
-            offset = addr - m.recomp_addr
-            if m.compare_type != SymbolType.DATA or offset >= m.size:
-                return None
-
-            return m.offset_name(offset)
+            return self._db.describe_recomp(addr, exact)
 
         orig_should_replace = create_reloc_lookup(self.orig_bin)
         recomp_should_replace = create_reloc_lookup(self.recomp_bin)

@@ -220,3 +220,17 @@ class CompareCore:
             uid = self._tgt2uid[addr]
             if uid not in self._matched_uid:
                 yield uid
+
+    def describe(self, uid: UIDType, offset: int = 0) -> Optional[str]:
+        """Return a string representation of this item. If an offset is given,
+        add it to the item name. (This may be a struct member or array element.)
+        Subclasses should override this to add custom behavior."""
+        record = self._db[uid]
+        name = record["name"]
+        if name is None:
+            return None
+
+        if offset > 0:
+            return f"{name}+{offset}"
+
+        return name

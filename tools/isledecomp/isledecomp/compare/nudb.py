@@ -46,6 +46,63 @@ class CompareDb(CompareCore):
             size=record["size"],
         )
 
+    def describe(self, uid: UIDType, offset: int = 0) -> Optional[str]:
+        record = self.get(uid)
+
+        if record["name"] is None:
+            return None
+
+        # Check whether the item we have is big enough to contain this offset
+        # TODO: How to handle items with null size?
+        if record["size"] is not None and offset >= record["size"]:
+            return None
+
+        # Stringify SymbolType enum
+        ctype = record["type"].name if record["type"] is not None else "UNK"
+
+        # repr adds quotes around the string value, which is nice, but the real
+        # reason is to escape newlines; they will break asm sanitize.
+        name = repr(record["name"]) if ctype == "STRING" else record["name"]
+        if offset == 0:
+            return f"{name} ({ctype})"
+
+        if record["type"] == SymbolType.DATA:
+            return f"{name}+{offset} (OFFSET)"
+
+        return None
+
+    def describe_orig(self, addr: int, exact: bool):
+        actual = addr
+        uid = self._src2uid.get(actual, None)
+
+        if not exact and uid is None:
+            actual = self._get_closest_orig(actual)
+            if actual is None:
+                return None
+
+            uid = self._src2uid[actual]
+
+        if uid is None:
+            return None
+
+        return self.describe(uid, addr - actual)
+
+    def describe_recomp(self, addr: int, exact: bool):
+        actual = addr
+        uid = self._tgt2uid.get(actual, None)
+
+        if not exact and uid is None:
+            actual = self._get_closest_recomp(actual)
+            if actual is None:
+                return None
+
+            uid = self._tgt2uid[actual]
+
+        if uid is None:
+            return None
+
+        return self.describe(uid, addr - actual)
+
     def get_unmatched_strings(self) -> Iterator[str]:
         """Return any strings not already identified by STRING markers."""
         for uid in self.get_type(SymbolType.STRING):
