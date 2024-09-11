@@ -79,13 +79,79 @@ class AddrMap:
         return self._list[i]
 
 
+class DbObjectBase:
+    _uid: UIDType
+    _orig_addr: Optional[int] = None
+    _recomp_addr: Optional[int] = None
+    _name: Optional[str] = None
+    _symbol: Optional[str] = None
+    _ctype: Optional[SymbolType] = None
+    size: Optional[int] = None
+
+    def __init__(self, uid: UIDType, backref) -> None:
+        self._uid = uid
+        self._backref = backref
+
+    @property
+    def uid(self):
+        return self._uid
+
+    @property
+    def orig_addr(self):
+        return self._orig_addr
+
+    @orig_addr.setter
+    def orig_addr(self, value):
+        self._backref.set_source(self._uid, value)
+        self._orig_addr = value
+
+    @property
+    def recomp_addr(self):
+        return self._recomp_addr
+
+    @recomp_addr.setter
+    def recomp_addr(self, value):
+        self._backref.set_target(self._uid, value)
+        self._recomp_addr = value
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._backref.set_name(self._uid, value)
+        self._name = value
+
+    @property
+    def symbol(self):
+        return self._symbol
+
+    @symbol.setter
+    def symbol(self, value):
+        self._symbol = value
+
+    @property
+    def type(self):
+        return self._ctype
+
+    @type.setter
+    def type(self, value):
+        self._ctype = value
+
+    @property
+    def compare_type(self):
+        # TODO: double alias for compatibility with MatchInfo
+        return self._ctype
+
+
 class CompareCore:
     # pylint: disable=too-many-public-methods
     # pylint: disable=too-many-instance-attributes
     def __init__(self) -> None:
         self._cur_uid: int = 10000
 
-        self._db: dict[UIDType, dict[str, Any]] = {}
+        self._db: dict[UIDType, DbObjectBase] = {}
         self._src2uid = AddrMap()
         self._tgt2uid = AddrMap()
         self._name2uids = MyIndex()
@@ -93,22 +159,15 @@ class CompareCore:
         self._opt: dict[UIDType, dict[str, Any]] = defaultdict(dict)
         self._matched_uid: set[UIDType] = set()
 
-    def _next_uid(self) -> UIDType:
+    def _next_uid(self) -> DbObjectBase:
         uid = UIDType(self._cur_uid)
         self._cur_uid += 1
-        # todo: Establish obj here?
-        self._db[uid] = {
-            "orig_addr": None,
-            "recomp_addr": None,
-            "type": None,
-            "name": None,
-            "symbol": None,
-            "size": None,
-        }
 
-        return uid
+        self._db[uid] = DbObjectBase(uid, self)
 
-    def get(self, uid: UIDType) -> dict[str, Any]:
+        return self._db[uid]
+
+    def get(self, uid: UIDType) -> DbObjectBase:
         return self._db[uid]
 
     def get_source(self, addr: int) -> Optional[UIDType]:
@@ -120,43 +179,24 @@ class CompareCore:
     def set_source(self, uid: UIDType, addr: int):
         if addr not in self._src2uid:
             self._src2uid[addr] = uid
-            self._db[uid]["orig_addr"] = addr
-            if self._db[uid]["recomp_addr"] is not None:
+            if self._db[uid].recomp_addr is not None:
                 self._matched_uid.add(uid)
 
     def set_target(self, uid: UIDType, addr: int):
         if addr not in self._tgt2uid:
             self._tgt2uid[addr] = uid
-            self._db[uid]["recomp_addr"] = addr
-            if self._db[uid]["orig_addr"] is not None:
+            if self._db[uid].orig_addr is not None:
                 self._matched_uid.add(uid)
-
-    def set_size(self, uid: UIDType, size: Optional[int]):
-        # todo: maybe more here.
-        self._db[uid]["size"] = size
-
-    def set_symbol(self, uid: UIDType, symbol: Optional[str]):
-        # todo: index
-        self._db[uid]["symbol"] = symbol
 
     def set_name(self, uid: UIDType, name: Optional[str]):
         self._name2uids.set(uid, name)
-        self._db[uid]["name"] = name
-
-    def set_type(self, uid: UIDType, type_: Optional[SymbolType]):
-        # todo: index
-        self._db[uid]["type"] = type_
-
-    def set_option(self, uid: UIDType, key: str, value: Any):
-        # todo
-        raise NotImplementedError
 
     ####
 
     def get_symbol(self, symbol: str) -> Optional[UIDType]:
         # todo
         for uid, record in self._db.items():
-            if record["symbol"] == symbol:
+            if record.symbol == symbol:
                 return uid
 
         return None
@@ -173,7 +213,7 @@ class CompareCore:
     def get_type(self, type_: SymbolType) -> Iterator[UIDType]:
         # todo
         for uid, record in self._db.items():
-            if record["type"] == type_:
+            if record.type == type_:
                 yield uid
 
     ####
@@ -188,11 +228,11 @@ class CompareCore:
         if addr in self._src2uid:
             return
 
-        uid = self._next_uid()
-        self.set_source(uid, addr)
-        self.set_name(uid, name)
-        self.set_size(uid, size)
-        self.set_type(uid, compare_type)
+        obj = self._next_uid()
+        obj.orig_addr = addr
+        obj.name = name
+        obj.size = size
+        obj.type = compare_type
 
     def set_recomp_symbol(
         self,
@@ -205,12 +245,12 @@ class CompareCore:
         if addr in self._tgt2uid:
             return
 
-        uid = self._next_uid()
-        self.set_target(uid, addr)
-        self.set_name(uid, name)
-        self.set_symbol(uid, decorated_name)
-        self.set_size(uid, size)
-        self.set_type(uid, compare_type)
+        obj = self._next_uid()
+        obj.recomp_addr = addr
+        obj.name = name
+        obj.symbol = decorated_name
+        obj.size = size
+        obj.type = compare_type
 
     ####
 
@@ -233,11 +273,10 @@ class CompareCore:
         add it to the item name. (This may be a struct member or array element.)
         Subclasses should override this to add custom behavior."""
         record = self._db[uid]
-        name = record["name"]
-        if name is None:
+        if record.name is None:
             return None
 
         if offset > 0:
-            return f"{name}+{offset}"
+            return f"{record.name}+{offset}"
 
-        return name
+        return record.name

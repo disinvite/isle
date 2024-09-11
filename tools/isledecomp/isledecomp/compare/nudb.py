@@ -1,72 +1,42 @@
 import logging
-from dataclasses import dataclass
 from typing import Any, Iterator, Optional
 from isledecomp.types import SymbolType
 from isledecomp.cvdump.demangler import get_vtordisp_name
-from .nu_base import UIDType, CompareCore
+from .nu_base import UIDType, CompareCore, DbObjectBase
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class MatchInfo:
-    orig_addr: Optional[int]
-    recomp_addr: Optional[int]
-    name: Optional[str]
-    size: Optional[int]
-    compare_type: Optional[SymbolType]
-
-    def match_name(self) -> Optional[str]:
-        """Combination of the name and compare type.
-        Intended for name substitution in the diff. If there is a diff,
-        it will be more obvious what this symbol indicates."""
-        if self.name is None:
-            return None
-
-        ctype = self.compare_type.name if self.compare_type is not None else "UNK"
-        name = repr(self.name) if ctype == "STRING" else self.name
-        return f"{name} ({ctype})"
-
-    def offset_name(self, ofs: int) -> Optional[str]:
-        if self.name is None:
-            return None
-
-        return f"{self.name}+{ofs} (OFFSET)"
+class MatchInfo(DbObjectBase):
+    pass
 
 
 class CompareDb(CompareCore):
     # pylint: disable=too-many-public-methods
     def _uid_to_matchinfo(self, uid: UIDType) -> MatchInfo:
-        record = self.get(uid)
-        return MatchInfo(
-            compare_type=record["type"],
-            orig_addr=record["orig_addr"],
-            recomp_addr=record["recomp_addr"],
-            name=record["name"],
-            size=record["size"],
-        )
+        return self.get(uid)
 
     def describe(self, uid: UIDType, offset: int = 0) -> Optional[str]:
         record = self.get(uid)
 
-        if record["name"] is None:
+        if record.name is None:
             return None
 
         # Check whether the item we have is big enough to contain this offset
         # TODO: How to handle items with null size?
-        if record["size"] is not None and offset >= record["size"]:
+        if record.size is not None and offset >= record.size:
             return None
 
         # Stringify SymbolType enum
-        ctype = record["type"].name if record["type"] is not None else "UNK"
+        ctype = record.type.name if record.type is not None else "UNK"
 
         # repr adds quotes around the string value, which is nice, but the real
         # reason is to escape newlines; they will break asm sanitize.
-        name = repr(record["name"]) if ctype == "STRING" else record["name"]
+        name = repr(record.name) if ctype == "STRING" else record.name
         if offset == 0:
             return f"{name} ({ctype})"
 
-        if record["type"] == SymbolType.DATA:
+        if record.type == SymbolType.DATA:
             return f"{name}+{offset} (OFFSET)"
 
         return None
@@ -108,7 +78,7 @@ class CompareDb(CompareCore):
         for uid in self.get_type(SymbolType.STRING):
             if uid not in self._matched_uid:
                 record = self.get(uid)
-                yield record["name"]
+                yield record.name
 
     def get_all(self) -> Iterator[MatchInfo]:
         """Ordered by orig addr (matched and unmatched).
@@ -162,7 +132,7 @@ class CompareDb(CompareCore):
 
     def get_matches_by_type(self, compare_type: SymbolType) -> Iterator[MatchInfo]:
         for match in self.get_matches():
-            if match.compare_type == compare_type:
+            if match.type == compare_type:
                 yield match
 
     def set_pair(
@@ -176,13 +146,15 @@ class CompareDb(CompareCore):
         if uid is None:
             return False
 
-        self.set_source(uid, orig)
+        record = self.get(uid)
+        record.orig_addr = orig
+
         # TODO: old db forces a clear on the compare type here.
         # This seems odd but we'll preserve it for now.
         # Most consequential in _add_match_in_array where the type is immediately cleared.
         # This is important so we don't try to compare each individual data offset.
         # It also comes into play when checking size of elements with intentional NULL size.
-        self.set_type(uid, compare_type)
+        record.type = compare_type
         return True
 
     def set_pair_tentative(
@@ -252,30 +224,29 @@ class CompareDb(CompareCore):
             return False
 
         record = self._db[uid]
-        if "`vtordisp" in record["name"]:
+        if "`vtordisp" in record.name:
             return True
 
-        if record["symbol"] is None:
+        if record.symbol is None:
             # happens in debug builds, e.g. for "Thunk of 'LegoAnimActor::ClassName'"
             return False
 
-        new_name = get_vtordisp_name(record["symbol"])
+        new_name = get_vtordisp_name(record.symbol)
         if new_name is None:
             return False
 
-        self.set_name(uid, new_name)
+        record.name = new_name
         return True
 
     def _find_potential_match(
         self, name: str, compare_type: SymbolType
-    ) -> Optional[int]:
+    ) -> Optional[DbObjectBase]:
         """Name lookup"""
         match_decorate = compare_type != SymbolType.STRING and name.startswith("?")
         if match_decorate:
             uid = self.get_symbol(name)
             if uid is not None and uid not in self._matched_uid:
-                record = self._db[uid]
-                return record["recomp_addr"]
+                return self.get(uid)
 
             return None
 
@@ -284,8 +255,8 @@ class CompareDb(CompareCore):
                 continue
 
             record = self._db[uid]
-            if record["type"] is None or record["type"] == compare_type:
-                return record["recomp_addr"]
+            if record.type is None or record.type == compare_type:
+                return record
 
         return None
 
@@ -310,11 +281,13 @@ class CompareDb(CompareCore):
         name = name[:255]
 
         logger.debug("Looking for %s %s", compare_type.name.lower(), name)
-        recomp_addr = self._find_potential_match(name, compare_type)
-        if recomp_addr is None:
+        record = self._find_potential_match(name, compare_type)
+        if record is None:
             return False
 
-        return self.set_pair(addr, recomp_addr, compare_type)
+        record.orig_addr = addr
+        record.type = compare_type
+        return True
 
     def get_next_orig_addr(self, addr: int) -> Optional[int]:
         """Return the original address (matched or not) that follows
@@ -352,7 +325,9 @@ class CompareDb(CompareCore):
                 continue
 
             record = self._db[uid]
-            return self.set_pair(addr, record["recomp_addr"], SymbolType.VTABLE)
+            record.orig_addr = addr
+            record.type = SymbolType.VTABLE
+            return True
 
         logger.error("Failed to find vtable for class: %s", name)
         return False
@@ -365,19 +340,21 @@ class CompareDb(CompareCore):
             return False
 
         func = self._db[func_uid]
-        if func["symbol"] is None:
+        if func.symbol is None:
             return False
 
         for _, record in self._db.items():
-            if record["symbol"] is None:
+            if record.symbol is None:
                 continue
 
             if (
-                record["type"] != SymbolType.FUNCTION
-                and name in record["symbol"]
-                and func["symbol"] in record["symbol"]
+                record.type != SymbolType.FUNCTION
+                and name in record.symbol
+                and func.symbol in record.symbol
             ):
-                return self.set_pair(addr, record["recomp_addr"], SymbolType.DATA)
+                record.orig_addr = addr
+                record.type = SymbolType.DATA
+                return True
 
         return False
 
