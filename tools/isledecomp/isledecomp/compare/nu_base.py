@@ -78,6 +78,12 @@ class AddrMap:
 
         return self._list[i]
 
+    def prev_or_cur(self, addr: int) -> Optional[int]:
+        if addr in self._map:
+            return addr
+
+        return self.prev(addr)
+
 
 class DbObjectBase:
     _uid: UIDType
@@ -143,6 +149,10 @@ class DbObjectBase:
     def compare_type(self):
         # TODO: double alias for compatibility with MatchInfo
         return self._ctype
+
+    def match_name(self) -> Optional[str]:
+        # TODO: for compatibility with MatchInfo
+        return self._backref.describe(self.uid)
 
 
 class CompareCore:

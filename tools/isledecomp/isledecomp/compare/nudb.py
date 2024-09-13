@@ -42,35 +42,27 @@ class CompareDb(CompareCore):
         return None
 
     def describe_orig(self, addr: int, exact: bool):
-        actual = addr
-        uid = self._src2uid.get(actual)
-
-        if not exact and uid is None:
-            actual = self._get_closest_orig(actual)
-            if actual is None:
-                return None
-
-            uid = self._src2uid[actual]
-
-        if uid is None:
+        actual = self._src2uid.prev_or_cur(addr)
+        if actual is None:
             return None
 
+        if exact and actual != addr:
+            return None
+
+        uid = self.get_source(actual)
+        assert uid is not None  # todo
         return self.describe(uid, addr - actual)
 
     def describe_recomp(self, addr: int, exact: bool):
-        actual = addr
-        uid = self._tgt2uid.get(actual)
-
-        if not exact and uid is None:
-            actual = self._get_closest_recomp(actual)
-            if actual is None:
-                return None
-
-            uid = self._tgt2uid[actual]
-
-        if uid is None:
+        actual = self._tgt2uid.prev_or_cur(addr)
+        if actual is None:
             return None
 
+        if exact and actual != addr:
+            return None
+
+        uid = self.get_target(actual)
+        assert uid is not None  # todo
         return self.describe(uid, addr - actual)
 
     def get_unmatched_strings(self) -> Iterator[str]:
