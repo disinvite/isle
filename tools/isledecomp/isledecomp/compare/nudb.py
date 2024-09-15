@@ -215,7 +215,7 @@ class CompareDb(CompareCore):
         if uid is None:
             return False
 
-        record = self._db[uid]
+        record = self.get(uid)
         if "`vtordisp" in record.name:
             return True
 
@@ -246,7 +246,7 @@ class CompareDb(CompareCore):
             if uid in self._matched_uid:
                 continue
 
-            record = self._db[uid]
+            record = self.get(uid)
             if record.type is None or record.type == compare_type:
                 return record
 
@@ -316,7 +316,7 @@ class CompareDb(CompareCore):
             if uid in self._matched_uid:
                 continue
 
-            record = self._db[uid]
+            record = self.get(uid)
             record.orig_addr = addr
             record.type = SymbolType.VTABLE
             return True
@@ -331,11 +331,11 @@ class CompareDb(CompareCore):
         if func_uid is None:
             return False
 
-        func = self._db[func_uid]
+        func = self.get(func_uid)
         if func.symbol is None:
             return False
 
-        for _, record in self._db.items():
+        for record in self.items():  # TODO: better method here
             if record.symbol is None:
                 continue
 
