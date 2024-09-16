@@ -87,6 +87,12 @@ class AddrMap:
 
 class DbObjectBase:
     _uid: UIDType
+    _orig_addr: Optional[int] = None
+    _recomp_addr: Optional[int] = None
+    _name: Optional[str] = None
+    _symbol: Optional[str] = None
+    _ctype: Optional[SymbolType] = None
+    size: Optional[int] = None
 
     def __init__(self, uid: UIDType, backref) -> None:
         self._uid = uid
@@ -98,56 +104,51 @@ class DbObjectBase:
 
     @property
     def orig_addr(self):
-        return self._backref.abc_source(self._uid)
+        return self._orig_addr
 
     @orig_addr.setter
     def orig_addr(self, value):
         self._backref.set_source(self._uid, value)
+        self._orig_addr = value
 
     @property
     def recomp_addr(self):
-        return self._backref.abc_target(self._uid)
+        return self._recomp_addr
 
     @recomp_addr.setter
     def recomp_addr(self, value):
         self._backref.set_target(self._uid, value)
+        self._recomp_addr = value
 
     @property
     def name(self):
-        return self._backref.abc_name(self._uid)
+        return self._name
 
     @name.setter
     def name(self, value):
         self._backref.set_name(self._uid, value)
+        self._name = value
 
     @property
     def symbol(self):
-        return self._backref.abc_symbol(self._uid)
+        return self._symbol
 
     @symbol.setter
     def symbol(self, value):
-        self._backref.set_symbol(self._uid, value)
+        self._symbol = value
 
     @property
     def type(self):
-        return self._backref.abc_type(self._uid)
+        return self._ctype
 
     @type.setter
     def type(self, value):
-        self._backref.set_type(self._uid, value)
-
-    @property
-    def size(self):
-        return self._backref.abc_size(self._uid)
-
-    @size.setter
-    def size(self, value):
-        self._backref.set_size(self._uid, value)
+        self._ctype = value
 
     @property
     def compare_type(self):
         # TODO: double alias for compatibility with MatchInfo
-        return self.type
+        return self._ctype
 
     def match_name(self) -> Optional[str]:
         # TODO: for compatibility with MatchInfo
@@ -160,12 +161,7 @@ class CompareCore:
     def __init__(self) -> None:
         self._cur_uid: int = 10000
 
-        # SOT
-        self._db: dict[UIDType, dict[str, Any]] = {}
-
-        # Amortize cost of creating the dumb objects
-        self._proxies: dict[UIDType, DbObjectBase] = {}
-
+        self._db: dict[UIDType, DbObjectBase] = {}
         self._src2uid = AddrMap()
         self._tgt2uid = AddrMap()
         self._name2uids = MyIndex()
@@ -177,20 +173,12 @@ class CompareCore:
         uid = UIDType(self._cur_uid)
         self._cur_uid += 1
 
-        self._db[uid] = {
-            "orig_addr": None,
-            "recomp_addr": None,
-            "size": None,
-            "type": None,
-            "name": None,
-            "symbol": None,
-        }
-        self._proxies[uid] = DbObjectBase(uid, self)
+        self._db[uid] = DbObjectBase(uid, self)
 
-        return self._proxies[uid]
+        return self._db[uid]
 
     def get(self, uid: UIDType) -> DbObjectBase:
-        return self._proxies[uid]
+        return self._db[uid]
 
     def get_source(self, addr: int) -> Optional[UIDType]:
         return self._src2uid.get(addr)
@@ -198,62 +186,26 @@ class CompareCore:
     def get_target(self, addr: int) -> Optional[UIDType]:
         return self._tgt2uid.get(addr)
 
-    ####
-    def abc_source(self, uid: UIDType) -> Optional[int]:
-        return self._db[uid]["orig_addr"]
-
-    def abc_target(self, uid: UIDType) -> Optional[int]:
-        return self._db[uid]["recomp_addr"]
-
-    def abc_name(self, uid: UIDType) -> Optional[str]:
-        return self._db[uid]["name"]
-
-    def abc_symbol(self, uid: UIDType) -> Optional[str]:
-        return self._db[uid]["symbol"]
-
-    def abc_size(self, uid: UIDType) -> Optional[int]:
-        return self._db[uid]["size"]
-
-    def abc_type(self, uid: UIDType) -> Optional[SymbolType]:
-        return self._db[uid]["type"]
-
-    def abc_option(self, uid: UIDType, key: str) -> Any:
-        raise NotImplementedError
-
-    ####
-
     def set_source(self, uid: UIDType, addr: int):
         if addr not in self._src2uid:
-            self._db[uid]["orig_addr"] = addr
             self._src2uid[addr] = uid
-            if self.abc_target(uid) is not None:
+            if self._db[uid].recomp_addr is not None:
                 self._matched_uid.add(uid)
 
     def set_target(self, uid: UIDType, addr: int):
         if addr not in self._tgt2uid:
-            self._db[uid]["recomp_addr"] = addr
             self._tgt2uid[addr] = uid
-            if self.abc_source(uid) is not None:
+            if self._db[uid].orig_addr is not None:
                 self._matched_uid.add(uid)
 
     def set_name(self, uid: UIDType, name: Optional[str]):
-        self._db[uid]["name"] = name
         self._name2uids.set(uid, name)
-
-    def set_size(self, uid: UIDType, size: int):
-        self._db[uid]["size"] = size
-
-    def set_symbol(self, uid: UIDType, symbol: str):
-        self._db[uid]["symbol"] = symbol
-
-    def set_type(self, uid: UIDType, type_: Optional[SymbolType]):
-        self._db[uid]["type"] = type_
 
     ####
 
     def get_symbol(self, symbol: str) -> Optional[UIDType]:
         # todo
-        for uid, record in self._proxies.items():
+        for uid, record in self._db.items():
             if record.symbol == symbol:
                 return uid
 
@@ -270,7 +222,7 @@ class CompareCore:
 
     def get_type(self, type_: SymbolType) -> Iterator[UIDType]:
         # todo
-        for uid, record in self._proxies.items():
+        for uid, record in self._db.items():
             if record.type == type_:
                 yield uid
 
@@ -312,10 +264,6 @@ class CompareCore:
 
     ####
 
-    def items(self) -> Iterator[DbObjectBase]:
-        for _, p in self._proxies.items():
-            yield p
-
     def in_order(self, matched_only: bool = False) -> Iterator[UIDType]:
         """Iterator of uids ordered by source addr, nulls last."""
         for _, uid in self._src2uid:
@@ -334,7 +282,7 @@ class CompareCore:
         """Return a string representation of this item. If an offset is given,
         add it to the item name. (This may be a struct member or array element.)
         Subclasses should override this to add custom behavior."""
-        record = self.get(uid)
+        record = self._db[uid]
         if record.name is None:
             return None
 
