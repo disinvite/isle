@@ -238,30 +238,35 @@ class DudyCore:
     ):
         # pylint: disable=protected-access
         self._sql.execute("BEGIN")
-        uid = nummy._uid
-        if source or target or symbol:
-            new_source, new_target, new_symbol = self._sql.execute(
-                """UPDATE uniball set 
-                source = coalesce(?, source),
-                target = coalesce(?, target),
-                symbol = coalesce(?, symbol)
-                where uid = ?
-                returning source, target, symbol""",
-                (source, target, symbol, uid),
-            ).fetchone()
+        try:
+            uid = nummy._uid
+            if source or target or symbol:
+                new_source, new_target, new_symbol = self._sql.execute(
+                    """UPDATE uniball set
+                    source = coalesce(source, ?),
+                    target = coalesce(target, ?),
+                    symbol = coalesce(symbol, ?)
+                    where uid = ?
+                    returning source, target, symbol""",
+                    (source, target, symbol, uid),
+                ).fetchone()
 
-            nummy._source = new_source
-            nummy._target = new_target
-            nummy._symbol = new_symbol
+                nummy._source = new_source
+                nummy._target = new_target
+                nummy._symbol = new_symbol
 
-        values = [(uid, k, v) for k, v in kwargs.items()]
-        self._sql.executemany(
-            "INSERT or replace into extras (uid, optkey, optval) values (?,?,?)", values
-        )
+            values = [(uid, k, v) for k, v in kwargs.items()]
+            self._sql.executemany(
+                "INSERT or replace into extras (uid, optkey, optval) values (?,?,?)",
+                values,
+            )
 
-        for k, v in kwargs.items():
-            if v is None and k in nummy._extras:
-                del nummy._extras[k]
-            else:
-                nummy._extras[k] = v
-        self._sql.execute("COMMIT")
+            for k, v in kwargs.items():
+                if v is None and k in nummy._extras:
+                    del nummy._extras[k]
+                else:
+                    nummy._extras[k] = v
+
+            self._sql.execute("COMMIT")
+        except sqlite3.Error:
+            self._sql.execute("ROLLBACK")
