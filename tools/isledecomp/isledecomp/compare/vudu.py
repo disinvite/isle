@@ -221,10 +221,28 @@ class DudyCore:
                 yield nummy
 
     def iter_source(self, source: int, reverse: bool = False) -> Iterator[int]:
-        raise NotImplementedError
+        # todo: hack
+        if source in self._sources:
+            yield source
+
+        if reverse:
+            yield self._sources.prev(source)
+        else:
+            yield self._sources.next(source)
+
+        raise StopIteration
 
     def iter_target(self, target: int, reverse: bool = False) -> Iterator[int]:
-        raise NotImplementedError
+        # todo: hack
+        if target in self._targets:
+            yield target
+
+        if reverse:
+            yield self._targets.prev(target)
+        else:
+            yield self._targets.next(target)
+
+        raise StopIteration
 
     def search_type(self, type_: int, unmatched: bool = True) -> Iterator[Nummy]:
         return self._opt_search("type", type_, unmatched=unmatched)
