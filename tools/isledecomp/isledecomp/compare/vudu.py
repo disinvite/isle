@@ -230,8 +230,6 @@ class DudyCore:
         else:
             yield self._sources.next(source)
 
-        raise StopIteration
-
     def iter_target(self, target: int, reverse: bool = False) -> Iterator[int]:
         # todo: hack
         if target in self._targets:
@@ -241,8 +239,6 @@ class DudyCore:
             yield self._targets.prev(target)
         else:
             yield self._targets.next(target)
-
-        raise StopIteration
 
     def search_type(self, type_: int, unmatched: bool = True) -> Iterator[Nummy]:
         return self._opt_search("type", type_, unmatched=unmatched)
