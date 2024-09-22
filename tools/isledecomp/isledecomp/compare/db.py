@@ -259,7 +259,7 @@ class CompareDb:
         match_decorate = compare_type != SymbolType.STRING and name.startswith("?")
         if match_decorate:
             obj = self._core.get(symbol=name)
-            if obj is not None:
+            if obj is not None and obj.source is None:
                 return obj.target
 
             return None
