@@ -123,7 +123,7 @@ class CompareDb:
 
     def get_by_orig(self, source: int, exact: bool = True) -> Optional[MatchInfo]:
         addr = self._get_closest_orig(source)
-        if addr is None or not exact and addr != source:
+        if addr is None or (exact and addr != source):
             return None
 
         nummy = self._core.get(source=addr)
@@ -134,7 +134,7 @@ class CompareDb:
 
     def get_by_recomp(self, target: int, exact: bool = True) -> Optional[MatchInfo]:
         addr = self._get_closest_recomp(target)
-        if addr is None or not exact and addr != target:
+        if addr is None or (exact and addr != target):
             return None
 
         nummy = self._core.get(target=addr)
