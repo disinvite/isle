@@ -1,5 +1,5 @@
 import pytest
-from isledecomp.compare.dudu import Nummy, DudyCore
+from isledecomp.compare.dudu import DudyCore
 
 
 @pytest.fixture(name="db")

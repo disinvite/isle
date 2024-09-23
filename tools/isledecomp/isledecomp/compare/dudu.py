@@ -87,7 +87,7 @@ class Nummy:
 
 class DudyCore:
     def __init__(self) -> None:
-        self._sql = sqlite3.connect(":memory:", isolation_level=None)
+        self._sql = sqlite3.connect(":memory:")
         self._sql.executescript(_SETUP_SQL)
         # self._sql.set_trace_callback(print)
 
@@ -240,20 +240,26 @@ class DudyCore:
         try:
             with self._sql:
                 uid = nummy._uid
-                if source or target or symbol:
-                    new_source, new_target, new_symbol = self._sql.execute(
-                        """UPDATE uniball set
-                        source = coalesce(source, ?),
-                        target = coalesce(target, ?),
-                        symbol = coalesce(symbol, ?)
-                        where uid = ?
-                        returning source, target, symbol""",
-                        (source, target, symbol, uid),
-                    ).fetchone()
+                if source is not None:
+                    self._sql.execute(
+                        "UPDATE uniball set source = ? where source is null and uid = ?",
+                        (source, uid),
+                    )
+                    nummy._source = nummy._source or source
 
-                    nummy._source = new_source
-                    nummy._target = new_target
-                    nummy._symbol = new_symbol
+                if target is not None:
+                    self._sql.execute(
+                        "UPDATE uniball set target = ? where target is null and uid = ?",
+                        (target, uid),
+                    )
+                    nummy._target = nummy._target or target
+
+                if symbol is not None:
+                    self._sql.execute(
+                        "UPDATE uniball set symbol = ? where symbol is null and uid = ?",
+                        (symbol, uid),
+                    )
+                    nummy._symbol = nummy._symbol or symbol
 
                 values = [(uid, k, v) for k, v in kwargs.items()]
                 self._sql.executemany(
@@ -268,4 +274,4 @@ class DudyCore:
                         nummy._extras[k] = v
 
         except sqlite3.Error:
-            pass # todo
+            pass  # todo
