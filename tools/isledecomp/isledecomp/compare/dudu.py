@@ -136,6 +136,31 @@ class DudyCore:
 
         return self._uids[res[0]]
 
+    def get_covering(
+        self, source: Optional[int] = None, target: Optional[int] = None
+    ) -> Optional[Nummy]:
+        """For the given source or target addr, find the record that most likely `contains` the address.
+        Meaning: if the address is a jump label in a function, get the parent function.
+        If it is an offset of a struct/array, get the main address."""
+        # TODO: For the moment we are just getting the previous address.
+        res = None
+
+        if source is not None:
+            res = self._sql.execute(
+                "SELECT uid from uniball where source <= ? order by source desc limit 1",
+                (source,),
+            ).fetchone()
+        elif target is not None:
+            res = self._sql.execute(
+                "SELECT uid from uniball where target <= ? order by target desc limit 1",
+                (target,),
+            ).fetchone()
+
+        if res is None:
+            return None
+
+        return self._uids[res[0]]
+
     def at_source(self, source: int) -> Nummy:
         num = self.get(source=source)
         if num is None:

@@ -24,6 +24,37 @@ def test_at_without_side_effect(db):
 
 
 def test_collision(db):
+    """Merging of records is not yet possible."""
     db.at_source(0x1234).set(test=100)
     db.at_target(0x5555).set(source=0x1234, test=200)
+    # Should fail and rollback the pending transaction. source=0x1234 retains its "test" value of 100.
     assert db.get(source=0x1234).get("test") == 100
+
+
+def test_anchor_param_override(db):
+    """at() specifies the "anchor" param that will uniquely identify this entry if it is unset.
+    What happens if we override that value in the call to set()?"""
+    db.at_source(0x1234).set(source=0x5555)
+    # The anchor value is preferred over the new value.
+    # This is the same behavior as if we tried to reassign the source addr later.
+    assert db.get(source=0x1234) is not None
+    assert db.get(source=0x5555) is None
+
+
+def test_get_param_precedence(db):
+    """If multiple params are provided to get(), we check in this order: source, target, symbol."""
+    # Set up three distinct entries
+    db.at_source(1).set()
+    db.at_target(2).set()
+    db.at_symbol("test").set()
+
+    # Source over target
+    assert db.get(source=1, target=2).source == 1
+    # Order of params does not matter
+    assert db.get(target=2, source=1).source == 1
+    # Source over any
+    assert db.get(source=1, target=2, symbol="test").source == 1
+    # Target over symbol
+    assert db.get(target=2, symbol="test").target == 2
+    # Symbol on its own
+    assert db.get(symbol="test").symbol == "test"
