@@ -33,16 +33,16 @@ CREATE index options on extras (optkey, optval)
 
 class Nummy:
     # pylint: disable=R0801
-    _uid: int
-    _source: Optional[int] = None
-    _target: Optional[int] = None
-    _symbol: Optional[str] = None
+    _uid: Optional[int]
+    _source: Optional[int]
+    _target: Optional[int]
+    _symbol: Optional[str]
     _extras: dict[str, Any]
 
     def __init__(
         self,
         backref,
-        uid: int,
+        uid: Optional[int] = None,
         source: Optional[int] = None,
         target: Optional[int] = None,
         symbol: Optional[str] = None,
@@ -139,33 +139,21 @@ class DudyCore:
     def at_source(self, source: int) -> Nummy:
         num = self.get(source=source)
         if num is None:
-            (uid,) = self._sql.execute(
-                "INSERT into uniball (source) values (?) returning uid", (source,)
-            ).fetchone()
-            num = Nummy(self, uid=uid, source=source)
-            self._uids[uid] = num
+            num = Nummy(self, source=source)
 
         return num
 
     def at_target(self, target: int) -> Nummy:
         num = self.get(target=target)
         if num is None:
-            (uid,) = self._sql.execute(
-                "INSERT into uniball (target) values (?) returning uid", (target,)
-            ).fetchone()
-            num = Nummy(self, uid=uid, target=target)
-            self._uids[uid] = num
+            num = Nummy(self, target=target)
 
         return num
 
     def at_symbol(self, symbol: str) -> Nummy:
         num = self.get(symbol=symbol)
         if num is None:
-            (uid,) = self._sql.execute(
-                "INSERT into uniball (symbol) values (?) returning uid", (symbol,)
-            ).fetchone()
-            num = Nummy(self, uid=uid, symbol=symbol)
-            self._uids[uid] = num
+            num = Nummy(self, symbol=symbol)
 
         return num
 
@@ -239,27 +227,43 @@ class DudyCore:
         # pylint: disable=protected-access
         try:
             with self._sql:
-                uid = nummy._uid
-                if source is not None:
-                    self._sql.execute(
-                        "UPDATE uniball set source = ? where source is null and uid = ?",
-                        (source, uid),
-                    )
+                if nummy._uid is None:
+                    (uid,) = self._sql.execute(
+                        "INSERT into uniball (source, target, symbol) values (?,?,?) returning uid",
+                        (
+                            nummy._source or source,
+                            nummy._target or target,
+                            nummy._symbol or symbol,
+                        ),
+                    ).fetchone()
+                    nummy._uid = uid
+                    self._uids[uid] = nummy
                     nummy._source = nummy._source or source
-
-                if target is not None:
-                    self._sql.execute(
-                        "UPDATE uniball set target = ? where target is null and uid = ?",
-                        (target, uid),
-                    )
                     nummy._target = nummy._target or target
-
-                if symbol is not None:
-                    self._sql.execute(
-                        "UPDATE uniball set symbol = ? where symbol is null and uid = ?",
-                        (symbol, uid),
-                    )
                     nummy._symbol = nummy._symbol or symbol
+
+                else:
+                    uid = nummy._uid
+                    if source is not None:
+                        self._sql.execute(
+                            "UPDATE uniball set source = ? where source is null and uid = ?",
+                            (source, uid),
+                        )
+                        nummy._source = nummy._source or source
+
+                    if target is not None:
+                        self._sql.execute(
+                            "UPDATE uniball set target = ? where target is null and uid = ?",
+                            (target, uid),
+                        )
+                        nummy._target = nummy._target or target
+
+                    if symbol is not None:
+                        self._sql.execute(
+                            "UPDATE uniball set symbol = ? where symbol is null and uid = ?",
+                            (symbol, uid),
+                        )
+                        nummy._symbol = nummy._symbol or symbol
 
                 values = [(uid, k, v) for k, v in kwargs.items()]
                 self._sql.executemany(

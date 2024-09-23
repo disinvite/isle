@@ -7,13 +7,19 @@ def fixture_db() -> DudyCore:
     yield DudyCore()
 
 
-def test_at_side_effect(db):
-    """The at() methods cause a record to be inserted immediately,
-    even if you don't call set() on the object. get() does not insert."""
-    assert db.get(source=0x1234) is None
+def test_at_without_side_effect(db):
+    """The at() methods will not cause a record to be inserted immediately,
+    unless you call set() on the object. get() does not insert."""
     # Ensure that get() does not insert a record
     assert db.get(source=0x1234) is None
+    assert db.get(source=0x1234) is None
+
+    # Still no record after calling at()
     db.at_source(0x1234)
+    assert db.get(source=0x1234) is None
+
+    # Record saved if we call set()
+    db.at_source(0x1234).set()
     assert db.get(source=0x1234) is not None
 
 
