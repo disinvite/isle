@@ -240,7 +240,7 @@ class DudyCore:
         # This is required so that matches on identical name/value will be stable between runs.
         for uid in sorted(self._index[optkey][optval]):
             nummy = self._uids[uid]
-            if not unmatched or (nummy.source is None or nummy.target is None):
+            if unmatched ^ (nummy.source is not None and nummy.target is not None):
                 yield nummy
 
     def iter_source(self, source: int, reverse: bool = False) -> Iterator[int]:
