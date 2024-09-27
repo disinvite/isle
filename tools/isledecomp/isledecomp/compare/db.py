@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Iterator, List, Optional
 from isledecomp.types import SymbolType
 from isledecomp.cvdump.demangler import get_vtordisp_name
-from .dudu import Nummy, DudyCore
+from .vudu import Nummy, DudyCore
 
 
 @dataclass

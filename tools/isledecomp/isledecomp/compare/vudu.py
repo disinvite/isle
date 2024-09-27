@@ -73,11 +73,15 @@ class AddrMap:
 
         return self._list[i]
 
-    def prev_or_cur(self, addr: int) -> Optional[int]:
+    def prev_or_cur(self, addr: int) -> Optional[UIDType]:
         if addr in self._map:
-            return addr
+            return self._map[addr]
 
-        return self.prev(addr)
+        prev = self.prev(addr)
+        if prev is not None:
+            return self._map[prev]
+
+        return None
 
 
 class Nummy:
@@ -176,6 +180,25 @@ class DudyCore:
             return self._uids[uid]
 
         return None
+
+    def get_covering(
+        self, source: Optional[int] = None, target: Optional[int] = None
+    ) -> Optional[Nummy]:
+        """For the given source or target addr, find the record that most likely `contains` the address.
+        Meaning: if the address is a jump label in a function, get the parent function.
+        If it is an offset of a struct/array, get the main address."""
+        # TODO: For the moment we are just getting the previous address.
+        uid = None
+
+        if source is not None:
+            uid = self._sources.prev_or_cur(source)
+        elif target is not None:
+            uid = self._targets.prev_or_cur(target)
+
+        if uid is None:
+            return None
+
+        return self._uids[uid]
 
     def at_source(self, source: int) -> Nummy:
         uid = self._sources.get(source)
