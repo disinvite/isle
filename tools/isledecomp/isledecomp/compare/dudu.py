@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 _SETUP_SQL = """
 CREATE table uniball (
-    uid integer not null primary key autoincrement,
+    uid integer primary key,
     source int unique,
     target int unique,
     symbol text unique
@@ -25,7 +25,7 @@ CREATE table extras (
     optval,
     foreign key (uid) references uniball (uid),
     primary key (uid, optkey)
-);
+) without rowid;
 
 CREATE index options on extras (optkey, optval)
 """
