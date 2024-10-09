@@ -12,7 +12,7 @@ CREATE table uniball (
     source int unique,
     target int unique,
     symbol text unique,
-    kwstore text not null default '{}'
+    kwstore text
 );
 
 CREATE view matched (uid, source, target, symbol, kwstore) as
@@ -21,6 +21,18 @@ select uid, source, target, symbol, kwstore from uniball where source is not nul
 CREATE view unmatched (uid, source, target, symbol, kwstore) as
 select uid, source, target, symbol, kwstore from uniball where source is null or target is null order by source nulls last;
 """
+
+_BIGASS_QUERY = " ".join(
+    [
+        "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?)",
+        "ON CONFLICT (source) DO UPDATE",
+        "SET target = coalesce(target, excluded.target), symbol = coalesce(symbol,excluded.symbol), kwstore=json_patch(kwstore, excluded.kwstore) where source = excluded.source",
+        "ON CONFLICT (target) DO UPDATE",
+        "SET source = coalesce(source, excluded.source), symbol = coalesce(symbol,excluded.symbol), kwstore=json_patch(kwstore, excluded.kwstore) where target = excluded.target",
+        "ON CONFLICT (symbol) DO UPDATE",
+        "SET source = coalesce(source, excluded.source), target = coalesce(target,excluded.target), kwstore=json_patch(kwstore, excluded.kwstore) where symbol = excluded.symbol",
+    ]
+)
 
 
 class MissingAnchorError(Exception):
@@ -312,38 +324,20 @@ class DudyCore:
         # pylint: disable=protected-access
         try:
             kwstore = json_input(frozenset(kwargs.items()))
+            # TODO: hack?
+            # We need to plug in the anchor field here. We also need to replace the value if you did something funny:
+            # e.g. at_source(123).set(source=555)
+            uniques = {"source": source, "target": target, "symbol": symbol}
+            uniques[anchor.column] = anchor.value
 
-            res = self._sql.execute(
-                f"SELECT uid from uniball WHERE {anchor.column} = ?", (anchor.value,)
-            ).fetchone()
-
-            if res is None:
-                # TODO: hack?
-                # We need to plug in the anchor field here. We also need to replace the value if you did something funny:
-                # e.g. at_source(123).set(source=555)
-                uniques = {"source": source, "target": target, "symbol": symbol}
-                uniques[anchor.column] = anchor.value
-
-                self._sql.execute(
-                    "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?)",
-                    (
-                        uniques["source"],
-                        uniques["target"],
-                        uniques["symbol"],
-                        kwstore,
-                    ),
-                )
-                return
-
-            (uid,) = res
             self._sql.execute(
-                """UPDATE uniball SET
-                source = coalesce(source, ?),
-                target = coalesce(target, ?),
-                symbol = coalesce(symbol, ?),
-                kwstore = json_patch(kwstore, ?)
-                where uid = ?""",
-                (source, target, symbol, kwstore, uid),
+                _BIGASS_QUERY,
+                (
+                    uniques["source"],
+                    uniques["target"],
+                    uniques["symbol"],
+                    kwstore,
+                ),
             )
 
         except sqlite3.Error as ex:
