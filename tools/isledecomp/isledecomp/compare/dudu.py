@@ -20,9 +20,6 @@ select uid, source, target, symbol, kwstore from uniball where source is not nul
 
 CREATE view unmatched (uid, source, target, symbol, kwstore) as
 select uid, source, target, symbol, kwstore from uniball where source is null or target is null order by source nulls last;
-
-CREATE index names ON uniball(JSON_EXTRACT(kwstore, '$.name'));
-CREATE index types ON uniball(JSON_EXTRACT(kwstore, '$.type'));
 """
 
 
@@ -61,10 +58,6 @@ class Anchor:
             raise MissingAnchorError
 
     def set(self, **kwargs):
-        # TODO: hack?
-        if self.column not in kwargs:
-            kwargs[self.column] = self.value
-
         self._backref.set(self, **kwargs)
 
 
@@ -129,6 +122,8 @@ class DudyCore:
         self._sql = sqlite3.connect(":memory:")
         self._sql.executescript(_SETUP_SQL)
         # self._sql.set_trace_callback(print)
+
+        self._indexed: set[str] = set()
 
     def orig_used(self, addr: int) -> bool:
         return (
@@ -244,8 +239,13 @@ class DudyCore:
     def _opt_search(
         self, optkey: str, optval: Any, unmatched: bool = True
     ) -> Iterator[Nummy]:
-        # TODO: add index here.
         # TODO: lol sql injection
+        if optkey not in self._indexed:
+            self._sql.execute(
+                f"CREATE index kv_idx_{optkey} ON uniball(JSON_EXTRACT(kwstore, '$.{optkey}'))"
+            )
+            self._indexed.add(optkey)
+
         for source, target, symbol, extras in self._sql.execute(
             f"SELECT source, target, symbol, kwstore from uniball where json_extract(kwstore, '$.{optkey}') = ?",
             (optval,),
@@ -318,12 +318,18 @@ class DudyCore:
             ).fetchone()
 
             if res is None:
+                # TODO: hack?
+                # We need to plug in the anchor field here. We also need to replace the value if you did something funny:
+                # e.g. at_source(123).set(source=555)
+                uniques = {"source": source, "target": target, "symbol": symbol}
+                uniques[anchor.column] = anchor.value
+
                 self._sql.execute(
                     "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?)",
                     (
-                        source,
-                        target,
-                        symbol,
+                        uniques["source"],
+                        uniques["target"],
+                        uniques["symbol"],
                         kwstore,
                     ),
                 )

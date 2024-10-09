@@ -1,4 +1,5 @@
 import pytest
+import sqlite3
 from isledecomp.compare.dudu import DudyCore
 
 
@@ -26,8 +27,9 @@ def test_at_without_side_effect(db):
 def test_collision(db):
     """Merging of records is not yet possible."""
     db.at_source(0x1234).set(test=100)
-    db.at_target(0x5555).set(source=0x1234, test=200)
-    # Should fail and rollback the pending transaction. source=0x1234 retains its "test" value of 100.
+    with pytest.raises(sqlite3.IntegrityError):
+        db.at_target(0x5555).set(source=0x1234, test=200)
+    # Should fail and not update the non-unique values. source=0x1234 retains its "test" value of 100.
     assert db.get(source=0x1234).get("test") == 100
 
 
