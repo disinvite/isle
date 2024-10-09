@@ -80,6 +80,7 @@ class Compare:
         self._lines_db = LinesDb(code_dir)
         self._db = CompareDb()
 
+        # with self._db._core._sql:
         self._load_cvdump()
         self._load_markers()
         # Detect floats first to eliminate potential overlap with string data
@@ -259,6 +260,8 @@ class Compare:
         def _add_match_in_array(
             name: str, type_id: str, orig_addr: int, recomp_addr: int
         ):
+            # self._db._core.at_target(recomp_addr).set(name=name, source=orig_addr)
+            # return
             self._db.set_recomp_symbol(
                 recomp_addr,
                 SymbolType.POINTER if scalar_type_pointer(type_id) else SymbolType.DATA,

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Iterator, List, Optional
 from isledecomp.types import SymbolType
 from isledecomp.cvdump.demangler import get_vtordisp_name
-from .vudu import Nummy, DudyCore
+from .dudu import Nummy, DudyCore
 
 
 @dataclass
@@ -40,8 +40,9 @@ logger = logging.getLogger(__name__)
 
 def nummy_to_matchinfo(nummy: Nummy) -> MatchInfo:
     # todo: meh
+    ctype = nummy.get("type")
     return MatchInfo(
-        compare_type=nummy.get("type"),
+        compare_type=SymbolType(ctype) if ctype is not None else None,
         orig_addr=nummy.source,
         recomp_addr=nummy.target,
         name=nummy.get("name"),
@@ -165,9 +166,10 @@ class CompareDb:
             # Probable and expected situation. Just ignore it.
             return False
 
-        n = self._core.at_target(recomp)
-        n.set(source=orig)
+        # TODO: meh
+        self._core.at_target(recomp).set(source=orig)
 
+        n = self._core.get(target=recomp)
         if n.get("type") is None:
             n.set(type=compare_type)
 
