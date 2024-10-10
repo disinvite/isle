@@ -78,10 +78,10 @@ class CompareDb:
     ):
         # Ignore collisions here. The same recomp address can have
         # multiple names (e.g. _strlwr and __strlwr)
-        if self._core.recomp_used(addr):
-            return
+        # if self._core.recomp_used(addr):
+        #    return
 
-        self._core.at_target(addr).set(
+        self._core.at_target(addr).insert(
             symbol=decorated_name, type=compare_type, name=name, size=size
         )
 

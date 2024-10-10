@@ -1,7 +1,6 @@
 import sqlite3
 import logging
 import json
-from functools import cache
 from typing import Any, Iterator, Optional
 
 logger = logging.getLogger(__name__)
@@ -22,55 +21,183 @@ CREATE view unmatched (uid, source, target, symbol, kwstore) as
 select uid, source, target, symbol, kwstore from uniball where source is null or target is null order by source nulls last;
 """
 
-_BIGASS_QUERY = " ".join(
-    [
-        "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?)",
-        "ON CONFLICT (source) DO UPDATE",
-        "SET target = coalesce(target, excluded.target), symbol = coalesce(symbol,excluded.symbol), kwstore=json_patch(kwstore, excluded.kwstore) where source = excluded.source",
-        "ON CONFLICT (target) DO UPDATE",
-        "SET source = coalesce(source, excluded.source), symbol = coalesce(symbol,excluded.symbol), kwstore=json_patch(kwstore, excluded.kwstore) where target = excluded.target",
-        "ON CONFLICT (symbol) DO UPDATE",
-        "SET source = coalesce(source, excluded.source), target = coalesce(target,excluded.target), kwstore=json_patch(kwstore, excluded.kwstore) where symbol = excluded.symbol",
-    ]
-)
-
 
 class MissingAnchorError(Exception):
     """Tried to create an Anchor reference without any unique id"""
 
 
-@cache
-def json_input(arg: frozenset) -> str:
-    return json.dumps(dict(arg))
+class AnchorSource:
+    # pylint: disable=unused-argument
+    def __init__(self, sql: sqlite3.Connection, source: int) -> None:
+        self._sql = sql
+        self._source = source
 
+    def _exists(self) -> bool:
+        return (
+            self._sql.execute(
+                "SELECT 1 from uniball WHERE source = ?", (self._source,)
+            ).fetchone()
+            is not None
+        )
 
-class Anchor:
-    column: str
-    value: Any
-
-    def __init__(
+    def _insert(
         self,
-        backref,
         source: Optional[int] = None,
         target: Optional[int] = None,
         symbol: Optional[str] = None,
-    ) -> None:
-        self._backref = backref
+        **kwargs,
+    ):
+        self._sql.execute(
+            "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?)",
+            (self._source, target, symbol, json.dumps(kwargs)),
+        )
 
-        if source is not None:
-            self.column = "source"
-            self.value = source
-        elif target is not None:
-            self.column = "target"
-            self.value = target
-        elif symbol is not None:
-            self.column = "symbol"
-            self.value = symbol
-        else:
-            raise MissingAnchorError
+    def _update(
+        self,
+        source: Optional[int] = None,
+        target: Optional[int] = None,
+        symbol: Optional[str] = None,
+        **kwargs,
+    ):
+        self._sql.execute(
+            "UPDATE uniball SET target = coalesce(target, ?), symbol = coalesce(symbol, ?), kwstore = json_patch(kwstore,?) where source = ?",
+            (target, symbol, json.dumps(kwargs), self._source),
+        )
+
+    def insert(
+        self,
+        source: Optional[int] = None,
+        target: Optional[int] = None,
+        symbol: Optional[str] = None,
+        **kwargs,
+    ):
+        self._sql.execute(
+            "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?) ON CONFLICT(source) do nothing",
+            (self._source, target, symbol, json.dumps(kwargs)),
+        )
 
     def set(self, **kwargs):
-        self._backref.set(self, **kwargs)
+        if not self._exists():
+            self._insert(**kwargs)
+            return
+
+        self._update(**kwargs)
+
+
+class AnchorTarget:
+    # pylint: disable=unused-argument
+    def __init__(self, sql: sqlite3.Connection, target: int) -> None:
+        self._sql = sql
+        self._target = target
+
+    def _exists(self) -> bool:
+        return (
+            self._sql.execute(
+                "SELECT 1 from uniball WHERE target = ?", (self._target,)
+            ).fetchone()
+            is not None
+        )
+
+    def _insert(
+        self,
+        source: Optional[int] = None,
+        target: Optional[int] = None,
+        symbol: Optional[str] = None,
+        **kwargs,
+    ):
+        self._sql.execute(
+            "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?)",
+            (source, self._target, symbol, json.dumps(kwargs)),
+        )
+
+    def _update(
+        self,
+        source: Optional[int] = None,
+        target: Optional[int] = None,
+        symbol: Optional[str] = None,
+        **kwargs,
+    ):
+        self._sql.execute(
+            "UPDATE uniball SET source = coalesce(source, ?), symbol = coalesce(symbol, ?), kwstore = json_patch(kwstore,?) where target = ?",
+            (source, symbol, json.dumps(kwargs), self._target),
+        )
+
+    def insert(
+        self,
+        source: Optional[int] = None,
+        target: Optional[int] = None,
+        symbol: Optional[str] = None,
+        **kwargs,
+    ):
+        self._sql.execute(
+            "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?) ON CONFLICT(target) do nothing",
+            (source, self._target, symbol, json.dumps(kwargs)),
+        )
+
+    def set(self, **kwargs):
+        if not self._exists():
+            self._insert(**kwargs)
+            return
+
+        self._update(**kwargs)
+
+
+class AnchorSymbol:
+    # pylint: disable=unused-argument
+    def __init__(self, sql: sqlite3.Connection, symbol: str) -> None:
+        self._sql = sql
+        self._symbol = symbol
+
+    def _exists(self) -> bool:
+        return (
+            self._sql.execute(
+                "SELECT 1 from uniball WHERE symbol = ?", (self._symbol,)
+            ).fetchone()
+            is not None
+        )
+
+    def _insert(
+        self,
+        source: Optional[int] = None,
+        target: Optional[int] = None,
+        symbol: Optional[str] = None,
+        **kwargs,
+    ):
+        self._sql.execute(
+            "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?)",
+            (source, target, self._symbol, json.dumps(kwargs)),
+        )
+
+    def _update(
+        self,
+        source: Optional[int] = None,
+        target: Optional[int] = None,
+        symbol: Optional[str] = None,
+        **kwargs,
+    ):
+        self._sql.execute(
+            "UPDATE uniball SET source = coalesce(source, ?), target = coalesce(target, ?), kwstore = json_patch(kwstore,?) where symbol = ?",
+            (source, target, json.dumps(kwargs), self._symbol),
+        )
+
+    def insert(
+        self,
+        source: Optional[int] = None,
+        target: Optional[int] = None,
+        symbol: Optional[str] = None,
+        **kwargs,
+    ):
+        self._sql.execute(
+            "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?) ON CONFLICT(symbol) do nothing",
+            (source, target, self._symbol, json.dumps(kwargs)),
+        )
+
+    def set(self, **kwargs):
+        if not self._exists():
+            self._insert(**kwargs)
+            return
+
+        self._update(**kwargs)
 
 
 class Nummy:
@@ -125,8 +252,16 @@ class Nummy:
         return self._extras.get(key)
 
     def set(self, **kwargs):
-        anchor = Anchor(self._backref, self._source, self._target, self._symbol)
-        self._backref.set(anchor, **kwargs)
+        # pylint: disable=protected-access
+        # TODO: woof
+        if self._source is not None:
+            AnchorSource(self._backref._sql, self._source).set(**kwargs)
+        elif self._target is not None:
+            AnchorTarget(self._backref._sql, self._target).set(**kwargs)
+        elif self._symbol is not None:
+            AnchorSymbol(self._backref._sql, self._symbol).set(**kwargs)
+        else:
+            raise NotImplementedError
 
 
 class DudyCore:
@@ -239,14 +374,14 @@ class DudyCore:
         # TODO: hack
         return Nummy(self, *res)
 
-    def at_source(self, source: int) -> Anchor:
-        return Anchor(self, source=source)
+    def at_source(self, source: int) -> AnchorSource:
+        return AnchorSource(self._sql, source)
 
-    def at_target(self, target: int) -> Anchor:
-        return Anchor(self, target=target)
+    def at_target(self, target: int) -> AnchorTarget:
+        return AnchorTarget(self._sql, target)
 
-    def at_symbol(self, symbol: str) -> Anchor:
-        return Anchor(self, symbol=symbol)
+    def at_symbol(self, symbol: str) -> AnchorSymbol:
+        return AnchorSymbol(self._sql, symbol)
 
     def _opt_search(
         self, optkey: str, optval: Any, unmatched: bool = True
@@ -312,33 +447,3 @@ class DudyCore:
     ):
         """Generic `at` using optional args"""
         raise NotImplementedError
-
-    def set(
-        self,
-        anchor: Anchor,
-        source: Optional[int] = None,
-        target: Optional[int] = None,
-        symbol: Optional[str] = None,
-        **kwargs,
-    ):
-        # pylint: disable=protected-access
-        try:
-            kwstore = json_input(frozenset(kwargs.items()))
-            # TODO: hack?
-            # We need to plug in the anchor field here. We also need to replace the value if you did something funny:
-            # e.g. at_source(123).set(source=555)
-            uniques = {"source": source, "target": target, "symbol": symbol}
-            uniques[anchor.column] = anchor.value
-
-            self._sql.execute(
-                _BIGASS_QUERY,
-                (
-                    uniques["source"],
-                    uniques["target"],
-                    uniques["symbol"],
-                    kwstore,
-                ),
-            )
-
-        except sqlite3.Error as ex:
-            raise ex  # todo

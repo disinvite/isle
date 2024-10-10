@@ -260,7 +260,7 @@ class Compare:
         def _add_match_in_array(
             name: str, type_id: str, orig_addr: int, recomp_addr: int
         ):
-            # self._db._core.at_target(recomp_addr).set(name=name, source=orig_addr)
+            # self._db._core.at_target(recomp_addr).insert(name=name, source=orig_addr)
             # return
             self._db.set_recomp_symbol(
                 recomp_addr,
