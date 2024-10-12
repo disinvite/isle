@@ -1,5 +1,5 @@
-import pytest
 import sqlite3
+import pytest
 from isledecomp.compare.dudu import DudyCore
 
 
