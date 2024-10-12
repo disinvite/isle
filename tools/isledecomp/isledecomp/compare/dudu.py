@@ -383,19 +383,26 @@ class DudyCore:
     def at_symbol(self, symbol: str) -> AnchorSymbol:
         return AnchorSymbol(self._sql, symbol)
 
-    def _opt_search(
-        self, optkey: str, optval: Any, unmatched: bool = True
-    ) -> Iterator[Nummy]:
+    def _opt_search(self, unmatched: bool = True, **kwargs) -> Iterator[Nummy]:
+        # TODO
+        assert len(kwargs) > 0
+
         # TODO: lol sql injection
-        if optkey not in self._indexed:
-            self._sql.execute(
-                f"CREATE index kv_idx_{optkey} ON uniball(JSON_EXTRACT(kwstore, '$.{optkey}'))"
-            )
-            self._indexed.add(optkey)
+        for optkey, _ in kwargs.items():
+            if optkey not in self._indexed:
+                self._sql.execute(
+                    f"CREATE index kv_idx_{optkey} ON uniball(JSON_EXTRACT(kwstore, '$.{optkey}'))"
+                )
+                self._indexed.add(optkey)
+
+        search_terms = " and ".join(
+            [f"json_extract(kwstore, '$.{optkey}')=?" for optkey, _ in kwargs.items()]
+        )
+        q_params = [v for _, v in kwargs.items()]
 
         for source, target, symbol, extras in self._sql.execute(
-            f"SELECT source, target, symbol, kwstore from uniball where json_extract(kwstore, '$.{optkey}') = ?",
-            (optval,),
+            "SELECT source, target, symbol, kwstore from uniball where " + search_terms,
+            q_params,
         ):
             if unmatched ^ (source is not None and target is not None):
                 yield Nummy(self, source, target, symbol, extras)
@@ -419,10 +426,10 @@ class DudyCore:
             yield addr
 
     def search_type(self, type_: int, unmatched: bool = True) -> Iterator[Nummy]:
-        return self._opt_search("type", type_, unmatched=unmatched)
+        return self._opt_search(type=type_, unmatched=unmatched)
 
     def search_name(self, name: str, unmatched: bool = True) -> Iterator[Nummy]:
-        return self._opt_search("name", name, unmatched=unmatched)
+        return self._opt_search(name=name, unmatched=unmatched)
 
     def search_symbol(self, query: str, unmatched: bool = True) -> Iterator[Nummy]:
         """Partial string search on symbol."""
