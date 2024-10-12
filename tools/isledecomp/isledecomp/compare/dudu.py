@@ -11,6 +11,7 @@ CREATE table uniball (
     source int unique,
     target int unique,
     symbol text unique,
+    matched int generated always as (source is not null and target is not null) virtual,
     kwstore text
 );
 
@@ -265,6 +266,8 @@ class Nummy:
 
 
 class DudyCore:
+    SPECIAL_COLS = frozenset({"rowid", "uid", "source", "target", "matched", "kwstore"})
+
     def __init__(self) -> None:
         self._sql = sqlite3.connect(":memory:")
         self._sql.executescript(_SETUP_SQL)
@@ -383,29 +386,32 @@ class DudyCore:
     def at_symbol(self, symbol: str) -> AnchorSymbol:
         return AnchorSymbol(self._sql, symbol)
 
-    def _opt_search(self, unmatched: bool = True, **kwargs) -> Iterator[Nummy]:
+    def _opt_search(self, matched: Optional[bool] = None, **kwargs) -> Iterator[Nummy]:
         # TODO
         assert len(kwargs) > 0
 
         # TODO: lol sql injection
         for optkey, _ in kwargs.items():
-            if optkey not in self._indexed:
+            if optkey not in self.SPECIAL_COLS and optkey not in self._indexed:
                 self._sql.execute(
                     f"CREATE index kv_idx_{optkey} ON uniball(JSON_EXTRACT(kwstore, '$.{optkey}'))"
                 )
                 self._indexed.add(optkey)
 
-        search_terms = " and ".join(
-            [f"json_extract(kwstore, '$.{optkey}')=?" for optkey, _ in kwargs.items()]
-        )
+        search_terms = [
+            f"json_extract(kwstore, '$.{optkey}')=?" for optkey, _ in kwargs.items()
+        ]
+        if matched is not None:
+            search_terms.append(f"matched = {'true' if matched else 'false'}")
+
         q_params = [v for _, v in kwargs.items()]
 
         for source, target, symbol, extras in self._sql.execute(
-            "SELECT source, target, symbol, kwstore from uniball where " + search_terms,
+            "SELECT source, target, symbol, kwstore from uniball where "
+            + " and ".join(search_terms),
             q_params,
         ):
-            if unmatched ^ (source is not None and target is not None):
-                yield Nummy(self, source, target, symbol, extras)
+            yield Nummy(self, source, target, symbol, extras)
 
     def iter_source(self, source: int, reverse: bool = False) -> Iterator[int]:
         if reverse:
@@ -425,11 +431,13 @@ class DudyCore:
         for (addr,) in self._sql.execute(sql, (target,)):
             yield addr
 
-    def search_type(self, type_: int, unmatched: bool = True) -> Iterator[Nummy]:
-        return self._opt_search(type=type_, unmatched=unmatched)
+    def search_type(
+        self, type_: int, matched: Optional[bool] = None
+    ) -> Iterator[Nummy]:
+        return self._opt_search(type=type_, matched=matched)
 
-    def search_name(self, name: str, unmatched: bool = True) -> Iterator[Nummy]:
-        return self._opt_search(name=name, unmatched=unmatched)
+    def search_name(self, name: str, matched: Optional[bool] = None) -> Iterator[Nummy]:
+        return self._opt_search(name=name, matched=matched)
 
     def search_symbol(self, query: str, unmatched: bool = True) -> Iterator[Nummy]:
         """Partial string search on symbol."""
@@ -440,10 +448,19 @@ class DudyCore:
         ):
             yield Nummy(self, source, target, symbol, extras)
 
-    def all(self, matched: bool = False) -> Iterator[Nummy]:
-        for source, target, symbol, extras in self._sql.execute(
-            f"SELECT source, target, symbol, kwstore FROM {'matched' if matched else 'uniball'} order by source nulls last"
-        ):
+    def all(self, matched: Optional[bool] = None) -> Iterator[Nummy]:
+        query = "".join(
+            [
+                "SELECT source, target, symbol, kwstore FROM uniball",
+                (
+                    ""
+                    if matched is None
+                    else f" where matched = {'true' if matched else 'false'} "
+                ),
+                "order by source nulls last",
+            ]
+        )
+        for source, target, symbol, extras in self._sql.execute(query):
             yield Nummy(self, source, target, symbol, extras)
 
     def at(

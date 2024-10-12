@@ -87,7 +87,7 @@ class CompareDb:
 
     def get_unmatched_strings(self) -> Iterator[str]:
         """Return any strings not already identified by STRING markers."""
-        for x in self._core.search_type(SymbolType.STRING, unmatched=True):
+        for x in self._core.search_type(SymbolType.STRING, matched=False):
             if x.get("name") is not None:
                 yield x.get("name")
 
@@ -139,7 +139,7 @@ class CompareDb:
     def get_matches_by_type(self, compare_type: SymbolType) -> List[MatchInfo]:
         return [
             nummy_to_matchinfo(nummy)
-            for nummy in self._core.search_type(compare_type, unmatched=False)
+            for nummy in self._core.search_type(compare_type, matched=True)
         ]
 
     def set_pair(
@@ -258,7 +258,7 @@ class CompareDb:
 
             return None
 
-        for obj in self._core.search_name(name, unmatched=True):
+        for obj in self._core.search_name(name, matched=False):
             if obj.get("type") is None or obj.get("type") == compare_type:
                 return obj.target
 
@@ -306,13 +306,13 @@ class CompareDb:
         for_vftable = f"{name}::`vftable'{{for `{for_name}'}}"
 
         # Try to match on the "vftable for X first"
-        for row in self._core.search_name(for_vftable, unmatched=True):
+        for row in self._core.search_name(for_vftable, matched=False):
             return self.set_pair(addr, row.target, SymbolType.VTABLE)
 
         # Only allow a match against "Class:`vftable'"
         # if this is the derived class.
         if base_class is None or base_class == name:
-            for row in self._core.search_name(bare_vftable, unmatched=True):
+            for row in self._core.search_name(bare_vftable, matched=False):
                 return self.set_pair(addr, row.target, SymbolType.VTABLE)
 
         logger.error("Failed to find vtable for class: %s", name)
