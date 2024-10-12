@@ -157,10 +157,12 @@ class Compare:
                     decoded_string = raw.decode("latin1")
                     rstrip_string = decoded_string.rstrip("\x00")
 
-                    if decoded_string != "" and rstrip_string != "":
-                        sym.friendly_name = rstrip_string
-                    else:
-                        sym.friendly_name = decoded_string
+                    sym.friendly_name = rstrip_string
+
+                    # if decoded_string != "" and rstrip_string != "":
+                    #    sym.friendly_name = rstrip_string
+                    # else:
+                    #    sym.friendly_name = decoded_string
 
                 except UnicodeDecodeError:
                     pass
