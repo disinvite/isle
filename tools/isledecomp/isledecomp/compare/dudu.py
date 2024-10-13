@@ -449,13 +449,13 @@ class DudyCore:
             yield Nummy(self, source, target, symbol, extras)
 
     def all(self, matched: Optional[bool] = None) -> Iterator[Nummy]:
-        query = "".join(
+        query = " ".join(
             [
                 "SELECT source, target, symbol, kwstore FROM uniball",
                 (
                     ""
                     if matched is None
-                    else f" where matched = {'true' if matched else 'false'} "
+                    else f"where matched = {'true' if matched else 'false'}"
                 ),
                 "order by source nulls last",
             ]
