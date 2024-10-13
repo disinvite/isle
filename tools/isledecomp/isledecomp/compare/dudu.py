@@ -322,35 +322,6 @@ class DudyCore:
         # TODO: hack
         return Nummy(self, *res)
 
-    def _get_uid(
-        self,
-        source: Optional[int] = None,
-        target: Optional[int] = None,
-        symbol: Optional[str] = None,
-    ) -> Optional[int]:
-        """TODO: hack but this keeps the uid internal and establishes our priority for unique ids"""
-        res = None
-
-        if source is not None:
-            res = self._sql.execute(
-                "SELECT uid from uniball where source = ?", (source,)
-            ).fetchone()
-
-        if res is None and target is not None:
-            res = self._sql.execute(
-                "SELECT uid from uniball where target = ?", (target,)
-            ).fetchone()
-
-        if res is None and symbol is not None:
-            res = self._sql.execute(
-                "SELECT uid from uniball where symbol = ?", (symbol,)
-            ).fetchone()
-
-        if res is None:
-            return None
-
-        return res[0]
-
     def get_covering(
         self, source: Optional[int] = None, target: Optional[int] = None
     ) -> Optional[Nummy]:
@@ -386,7 +357,7 @@ class DudyCore:
     def at_symbol(self, symbol: str) -> AnchorSymbol:
         return AnchorSymbol(self._sql, symbol)
 
-    def _opt_search(self, matched: Optional[bool] = None, **kwargs) -> Iterator[Nummy]:
+    def search(self, matched: Optional[bool] = None, **kwargs) -> Iterator[Nummy]:
         # TODO
         assert len(kwargs) > 0
 
@@ -430,14 +401,6 @@ class DudyCore:
 
         for (addr,) in self._sql.execute(sql, (target,)):
             yield addr
-
-    def search_type(
-        self, type_: int, matched: Optional[bool] = None
-    ) -> Iterator[Nummy]:
-        return self._opt_search(type=type_, matched=matched)
-
-    def search_name(self, name: str, matched: Optional[bool] = None) -> Iterator[Nummy]:
-        return self._opt_search(name=name, matched=matched)
 
     def search_symbol(self, query: str, unmatched: bool = True) -> Iterator[Nummy]:
         """Partial string search on symbol."""
