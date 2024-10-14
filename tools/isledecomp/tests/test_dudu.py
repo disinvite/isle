@@ -9,6 +9,40 @@ def fixture_db() -> ReversiDb:
     yield ReversiDb()
 
 
+def test_fundamentals(db):
+    """Demonstrate the basic functionality"""
+
+    # To add data to the db, use an "anchor" to one of the three unique fields:
+    db.at_source(100).set(name="some_function")
+    db.at_target(500).set(name="abs")
+    db.at_symbol("_printf").set(is_library=True)
+
+    # Check identity properties:
+    assert db.get_source(100).source == 100
+    assert db.get_source(100).target is None
+    assert db.get_target(500).target == 500
+    assert db.get_symbol("_printf").symbol == "_printf"
+
+    # Access non-unique fields with get()
+    assert db.get_source(100).get("name") == "some_function"
+    assert db.get_target(500).get("name") == "abs"
+    assert db.get_symbol("_printf").get("is_library") is True
+
+    # Can set other unique fields to establish a link
+    db.at_source(100).set(target=999)
+    assert db.get_target(999).source == 100
+
+    db.at_target(500).set(symbol="__absolute_value")
+    assert db.get_symbol("__absolute_value").target == 500
+
+    db.at_symbol("_printf").set(source=321)
+    assert db.get_source(321).symbol == "_printf"
+
+    # Property 'matched' is True if source and target are both set
+    assert db.get_source(100).matched is True
+    assert db.get_target(500).matched is False
+
+
 def test_uniques_immutable(db):
     """A unique column, once set, cannot be changed by calling set()"""
     # Establish link between source=123 and symbol="test"

@@ -329,31 +329,23 @@ class ReversiDb:
 
         return ReversiThing(self, *res)
 
-    def get_covering(
-        self, source: Optional[int] = None, target: Optional[int] = None
-    ) -> Optional[ReversiThing]:
-        """For the given source or target addr, find the record that most likely `contains` the address.
-        Meaning: if the address is a jump label in a function, get the parent function.
-        If it is an offset of a struct/array, get the main address."""
-        # TODO: For the moment we are just getting the previous address.
-        res = None
+    def get_closest_source(self, source: int) -> Optional[ReversiThing]:
+        for res in self._sql.execute(
+            "SELECT source, target, symbol, kwstore from reversi where source <= ? order by source desc limit 1",
+            (source,),
+        ):
+            return ReversiThing(self, *res)
 
-        if source is not None:
-            res = self._sql.execute(
-                "SELECT source, target, symbol, kwstore from reversi where source <= ? order by source desc limit 1",
-                (source,),
-            ).fetchone()
-        elif target is not None:
-            res = self._sql.execute(
-                "SELECT source, target, symbol, kwstore from reversi where target <= ? order by target desc limit 1",
-                (target,),
-            ).fetchone()
+        return None
 
-        if res is None:
-            return None
+    def get_closest_target(self, target: int) -> Optional[ReversiThing]:
+        for res in self._sql.execute(
+            "SELECT source, target, symbol, kwstore from reversi where target <= ? order by target desc limit 1",
+            (target,),
+        ):
+            return ReversiThing(self, *res)
 
-        # TODO: hack
-        return ReversiThing(self, *res)
+        return None
 
     def at_source(self, source: int) -> AnchorSource:
         return AnchorSource(self._sql, source)

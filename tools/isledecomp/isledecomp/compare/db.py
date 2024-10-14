@@ -107,14 +107,14 @@ class CompareDb:
         return reversi_to_matchinfo(obj)
 
     def get_by_orig(self, source: int, exact: bool = True) -> Optional[MatchInfo]:
-        obj = self._core.get_covering(source=source)
+        obj = self._core.get_closest_source(source)
         if obj is None or exact and obj.source != source:
             return None
 
         return reversi_to_matchinfo(obj)
 
     def get_by_recomp(self, target: int, exact: bool = True) -> Optional[MatchInfo]:
-        obj = self._core.get_covering(target=target)
+        obj = self._core.get_closest_target(target)
         if obj is None or exact and obj.target != target:
             return None
 
@@ -267,12 +267,7 @@ class CompareDb:
         """Return the original address (matched or not) that follows
         the one given. If our recomp function size would cause us to read
         too many bytes for the original function, we can adjust it."""
-        # pylint: disable=protected-access
-        # return self._core._sources.next(addr)
-        try:
-            return next(self._core.iter_source(addr + 1))
-        except StopIteration:
-            return None
+        return next(self._core.iter_source(addr + 1), None)
 
     def match_function(self, addr: int, name: str) -> bool:
         did_match = self._match_on(SymbolType.FUNCTION, addr, name)
