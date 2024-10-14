@@ -106,22 +106,6 @@ class CompareDb:
 
         return nummy_to_matchinfo(nummy)
 
-    def _get_closest_orig(self, source: int) -> Optional[int]:
-        # pylint: disable=protected-access
-        # return self._core._sources.prev_or_cur(source)
-        try:
-            return next(self._core.iter_source(source, reverse=True))
-        except StopIteration:
-            return None
-
-    def _get_closest_recomp(self, target: int) -> Optional[int]:
-        # pylint: disable=protected-access
-        # return self._core._targets.prev_or_cur(target)
-        try:
-            return next(self._core.iter_target(target, reverse=True))
-        except StopIteration:
-            return None
-
     def get_by_orig(self, source: int, exact: bool = True) -> Optional[MatchInfo]:
         nummy = self._core.get_covering(source=source)
         if nummy is None or exact and nummy.source != source:

@@ -358,9 +358,6 @@ class DudyCore:
         return AnchorSymbol(self._sql, symbol)
 
     def search(self, matched: Optional[bool] = None, **kwargs) -> Iterator[Nummy]:
-        # TODO
-        assert len(kwargs) > 0
-
         # TODO: lol sql injection
         for optkey, _ in kwargs.items():
             if optkey not in self.SPECIAL_COLS and optkey not in self._indexed:
@@ -377,9 +374,13 @@ class DudyCore:
 
         q_params = [v for _, v in kwargs.items()]
 
+        # Hide WHERE clause if mached is None and there are no kwargs
+        where_clause = (
+            "" if len(search_terms) == 0 else (" where " + " and ".join(search_terms))
+        )
+
         for source, target, symbol, extras in self._sql.execute(
-            "SELECT source, target, symbol, kwstore from uniball where "
-            + " and ".join(search_terms),
+            "SELECT source, target, symbol, kwstore from uniball" + where_clause,
             q_params,
         ):
             yield Nummy(self, source, target, symbol, extras)
@@ -412,6 +413,8 @@ class DudyCore:
             yield Nummy(self, source, target, symbol, extras)
 
     def all(self, matched: Optional[bool] = None) -> Iterator[Nummy]:
+        # TODO: apart from the 'order by', this is identical to a search with no kwargs.
+        # consolidate the two functions?
         query = " ".join(
             [
                 "SELECT source, target, symbol, kwstore FROM uniball",

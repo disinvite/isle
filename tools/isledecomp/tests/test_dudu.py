@@ -8,6 +8,19 @@ def fixture_db() -> DudyCore:
     yield DudyCore()
 
 
+def test_uniques_immutable(db):
+    """A unique column, once set, cannot be changed by calling set()"""
+    # Establish link between source=123 and symbol="test"
+    db.at_source(123).set(symbol="test")
+
+    # Try to change symbol
+    db.at_source(123).set(symbol="hello")
+
+    # Symbol unchanged and no new symbol added
+    assert db.get(source=123).symbol == "test"
+    assert db.get(symbol="hello") is None
+
+
 def test_at_without_side_effect(db):
     """The at() methods will not cause a record to be inserted immediately,
     unless you call set() on the object. get() does not insert."""
@@ -25,11 +38,17 @@ def test_at_without_side_effect(db):
 
 
 def test_collision(db):
-    """Merging of records is not yet possible."""
+    """Cannot merge two records by calling set()."""
     db.at_source(0x1234).set(test=100)
+
+    # Try to merge a new target=0x5555 record with the existing source=0x1234:
     with pytest.raises(sqlite3.IntegrityError):
         db.at_target(0x5555).set(source=0x1234, test=200)
-    # Should fail and not update the non-unique values. source=0x1234 retains its "test" value of 100.
+
+    # Should fail and not save anything.
+    assert db.get(target=0x5555) is None
+
+    # source=0x1234 retains its "test" value of 100.
     assert db.get(source=0x1234).get("test") == 100
 
 
@@ -60,3 +79,49 @@ def test_get_param_precedence(db):
     assert db.get(target=2, symbol="test").target == 2
     # Symbol on its own
     assert db.get(symbol="test").symbol == "test"
+
+
+def test_basic_search(db):
+    """Test simple searches for a single value, including the calculated 'matched' field
+    and searches with multiple key value pairs."""
+    db.at_source(100).set(name="hello")
+    db.at_source(200).set(name="hello", group=1)
+    db.at_source(300).set(name="hey", group=1)
+
+    assert len([*db.search(name="hello")]) == 2
+    assert len([*db.search(group=1)]) == 2
+
+    # Should search on both fields
+    assert len([*db.search(name="hello", group=1)]) == 1
+
+    # Using special 'matched' column
+    assert len([*db.search(matched=False)]) == 3
+    assert len([*db.search(matched=True)]) == 0
+
+    # Now add an entry with both source and target set.
+    db.at_source(100).set(name="howdy", target=555)
+
+    assert len([*db.search(matched=True)]) == 1
+    assert len([*db.search(name="hello", matched=True)]) == 0
+
+
+@pytest.mark.skip(reason="todo")
+def test_complex_search(db):
+    """Test searches that include NULL checks and sequences of allowed values."""
+    db.at_source(100).set(name="hello")
+
+    # "name" is set on the only record we have, so none are null
+    assert len([*db.search(name=None)]) == 0
+
+    # But "group" is not set on any records
+    assert len([*db.search(group=None)]) == 1
+
+    # Sequence of one is equivalent to matching the value alone
+    assert len([*db.search(name=("hello"))]) == 1
+
+    # Sequence of possible matches should include both records
+    db.at_source(200).set(name="hey", group=1)
+    assert len([*db.search(name=("hello", "hey"))]) == 2
+
+    # NULL as possible match
+    assert len([*db.search(group=(None, 1))]) == 2
