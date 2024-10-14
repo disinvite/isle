@@ -23,6 +23,10 @@ select uid, source, target, symbol, kwstore from uniball where source is null or
 """
 
 
+class InvalidItemKeyError(Exception):
+    """Key used in search() or set() failed validation"""
+
+
 class MissingAnchorError(Exception):
     """Tried to create an Anchor reference without any unique id"""
 
@@ -275,6 +279,12 @@ class DudyCore:
 
         self._indexed: set[str] = set()
 
+    @classmethod
+    def check_kwargs(cls, kwargs):
+        for key, _ in kwargs.items():
+            if not key.isascii() or not key.isidentifier():
+                raise InvalidItemKeyError(key)
+
     def orig_used(self, addr: int) -> bool:
         return (
             self._sql.execute(
@@ -358,13 +368,27 @@ class DudyCore:
         return AnchorSymbol(self._sql, symbol)
 
     def search(self, matched: Optional[bool] = None, **kwargs) -> Iterator[Nummy]:
-        # TODO: lol sql injection
-        for optkey, _ in kwargs.items():
-            if optkey not in self.SPECIAL_COLS and optkey not in self._indexed:
-                self._sql.execute(
-                    f"CREATE index kv_idx_{optkey} ON uniball(JSON_EXTRACT(kwstore, '$.{optkey}'))"
-                )
-                self._indexed.add(optkey)
+        """Search the database for each of the key-value pairs in kwargs.
+        The virtual column 'matched' is handled separately from kwargs because we do
+        not use the json functions.
+
+        TODO:
+        If the given key argument is None, check the value for NULL.
+        If the given key argument is a sequence, use an IN condition to check multiple values.
+        """
+
+        # To create and use an index on the json_extract() expression, we cannot
+        # parameterize the key name in the query text. This of course leaves us vulnerable
+        # to a SQL injection attack. However: we restrict the allowed kwarg keys to
+        # ASCII strings that are valid python identifiers, so this should eliminate the risk.
+        self.check_kwargs(kwargs)
+
+        # Foreach kwarg without an index, create one
+        for optkey in kwargs.keys() - self.SPECIAL_COLS - self._indexed:
+            self._sql.execute(
+                f"CREATE index kv_idx_{optkey} ON uniball(JSON_EXTRACT(kwstore, '$.{optkey}'))"
+            )
+            self._indexed.add(optkey)
 
         search_terms = [
             f"json_extract(kwstore, '$.{optkey}')=?" for optkey, _ in kwargs.items()

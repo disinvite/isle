@@ -1,6 +1,7 @@
 import sqlite3
 import pytest
 from isledecomp.compare.dudu import DudyCore
+from isledecomp.compare.dudu import InvalidItemKeyError as BadKeyError
 
 
 @pytest.fixture(name="db")
@@ -117,7 +118,7 @@ def test_complex_search(db):
     assert len([*db.search(group=None)]) == 1
 
     # Sequence of one is equivalent to matching the value alone
-    assert len([*db.search(name=("hello"))]) == 1
+    assert len([*db.search(name=("hello",))]) == 1
 
     # Sequence of possible matches should include both records
     db.at_source(200).set(name="hey", group=1)
@@ -125,3 +126,15 @@ def test_complex_search(db):
 
     # NULL as possible match
     assert len([*db.search(group=(None, 1))]) == 2
+
+
+def test_kwargs_restrict(db):
+    """Ensure that kwargs for set() and search() methods
+    are restricted to lower case letters, numbers, underscore.
+    i.e. r"^[a-z_][0-9a-z_]+$"""
+
+    with pytest.raises(BadKeyError):
+        db.check_kwargs({"0test": 1})
+
+    with pytest.raises(BadKeyError):
+        db.check_kwargs({"' drop table program; --": None})
