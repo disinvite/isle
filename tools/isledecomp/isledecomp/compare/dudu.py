@@ -6,7 +6,7 @@ from typing import Any, Iterator, Optional
 logger = logging.getLogger(__name__)
 
 _SETUP_SQL = """
-CREATE table uniball (
+CREATE table reversi (
     uid integer primary key,
     source int unique,
     target int unique,
@@ -34,7 +34,7 @@ class AnchorSource:
     def _exists(self) -> bool:
         return (
             self._sql.execute(
-                "SELECT 1 from uniball WHERE source = ?", (self._source,)
+                "SELECT 1 from reversi WHERE source = ?", (self._source,)
             ).fetchone()
             is not None
         )
@@ -47,7 +47,7 @@ class AnchorSource:
         **kwargs,
     ):
         self._sql.execute(
-            "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?)",
+            "INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?)",
             (self._source, target, symbol, json.dumps(kwargs)),
         )
 
@@ -59,7 +59,7 @@ class AnchorSource:
         **kwargs,
     ):
         self._sql.execute(
-            "UPDATE uniball SET target = coalesce(target, ?), symbol = coalesce(symbol, ?), kwstore = json_patch(kwstore,?) where source = ?",
+            "UPDATE reversi SET target = coalesce(target, ?), symbol = coalesce(symbol, ?), kwstore = json_patch(kwstore,?) where source = ?",
             (target, symbol, json.dumps(kwargs), self._source),
         )
 
@@ -71,7 +71,7 @@ class AnchorSource:
         **kwargs,
     ):
         self._sql.execute(
-            "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?) ON CONFLICT(source) do nothing",
+            "INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?) ON CONFLICT(source) do nothing",
             (self._source, target, symbol, json.dumps(kwargs)),
         )
 
@@ -92,7 +92,7 @@ class AnchorTarget:
     def _exists(self) -> bool:
         return (
             self._sql.execute(
-                "SELECT 1 from uniball WHERE target = ?", (self._target,)
+                "SELECT 1 from reversi WHERE target = ?", (self._target,)
             ).fetchone()
             is not None
         )
@@ -105,7 +105,7 @@ class AnchorTarget:
         **kwargs,
     ):
         self._sql.execute(
-            "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?)",
+            "INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?)",
             (source, self._target, symbol, json.dumps(kwargs)),
         )
 
@@ -117,7 +117,7 @@ class AnchorTarget:
         **kwargs,
     ):
         self._sql.execute(
-            "UPDATE uniball SET source = coalesce(source, ?), symbol = coalesce(symbol, ?), kwstore = json_patch(kwstore,?) where target = ?",
+            "UPDATE reversi SET source = coalesce(source, ?), symbol = coalesce(symbol, ?), kwstore = json_patch(kwstore,?) where target = ?",
             (source, symbol, json.dumps(kwargs), self._target),
         )
 
@@ -129,7 +129,7 @@ class AnchorTarget:
         **kwargs,
     ):
         self._sql.execute(
-            "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?) ON CONFLICT(target) do nothing",
+            "INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?) ON CONFLICT(target) do nothing",
             (source, self._target, symbol, json.dumps(kwargs)),
         )
 
@@ -150,7 +150,7 @@ class AnchorSymbol:
     def _exists(self) -> bool:
         return (
             self._sql.execute(
-                "SELECT 1 from uniball WHERE symbol = ?", (self._symbol,)
+                "SELECT 1 from reversi WHERE symbol = ?", (self._symbol,)
             ).fetchone()
             is not None
         )
@@ -163,7 +163,7 @@ class AnchorSymbol:
         **kwargs,
     ):
         self._sql.execute(
-            "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?)",
+            "INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?)",
             (source, target, self._symbol, json.dumps(kwargs)),
         )
 
@@ -175,7 +175,7 @@ class AnchorSymbol:
         **kwargs,
     ):
         self._sql.execute(
-            "UPDATE uniball SET source = coalesce(source, ?), target = coalesce(target, ?), kwstore = json_patch(kwstore,?) where symbol = ?",
+            "UPDATE reversi SET source = coalesce(source, ?), target = coalesce(target, ?), kwstore = json_patch(kwstore,?) where symbol = ?",
             (source, target, json.dumps(kwargs), self._symbol),
         )
 
@@ -187,7 +187,7 @@ class AnchorSymbol:
         **kwargs,
     ):
         self._sql.execute(
-            "INSERT into uniball (source, target, symbol, kwstore) values (?,?,?,?) ON CONFLICT(symbol) do nothing",
+            "INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?) ON CONFLICT(symbol) do nothing",
             (source, target, self._symbol, json.dumps(kwargs)),
         )
 
@@ -199,7 +199,7 @@ class AnchorSymbol:
         self._update(**kwargs)
 
 
-class Nummy:
+class ReversiThing:
     # pylint: disable=R0801
     _source: Optional[int]
     _target: Optional[int]
@@ -228,7 +228,7 @@ class Nummy:
         (src, tgt, sym) = (self._source, self._target, self._symbol)
         return ", ".join(
             [
-                f"Nummy(name={self.get('name') or 'None'}",
+                f"ReversiThing(name={self.get('name') or 'None'}",
                 f"src={hex(src) if src is not None else 'None'}",
                 f"tgt={hex(tgt) if tgt is not None else 'None'}",
                 f"sym={sym or 'None'})",
@@ -267,7 +267,7 @@ class Nummy:
             raise NotImplementedError
 
 
-class DudyCore:
+class ReversiDb:
     SPECIAL_COLS = frozenset({"rowid", "uid", "source", "target", "matched", "kwstore"})
 
     def __init__(self) -> None:
@@ -286,7 +286,7 @@ class DudyCore:
     def orig_used(self, addr: int) -> bool:
         return (
             self._sql.execute(
-                "SELECT 1 from uniball where source = ?", (addr,)
+                "SELECT 1 from reversi where source = ?", (addr,)
             ).fetchone()
             is not None
         )
@@ -294,7 +294,7 @@ class DudyCore:
     def recomp_used(self, addr: int) -> bool:
         return (
             self._sql.execute(
-                "SELECT 1 from uniball where target = ?", (addr,)
+                "SELECT 1 from reversi where target = ?", (addr,)
             ).fetchone()
             is not None
         )
@@ -304,23 +304,23 @@ class DudyCore:
         source: Optional[int] = None,
         target: Optional[int] = None,
         symbol: Optional[str] = None,
-    ) -> Optional[Nummy]:
+    ) -> Optional[ReversiThing]:
         """This only returns an object; it does not create one"""
         res = None
 
         if source is not None:
             res = self._sql.execute(
-                "SELECT source, target, symbol, kwstore from uniball where source = ?",
+                "SELECT source, target, symbol, kwstore from reversi where source = ?",
                 (source,),
             ).fetchone()
         elif target is not None:
             res = self._sql.execute(
-                "SELECT source, target, symbol, kwstore from uniball where target = ?",
+                "SELECT source, target, symbol, kwstore from reversi where target = ?",
                 (target,),
             ).fetchone()
         elif symbol is not None:
             res = self._sql.execute(
-                "SELECT source, target, symbol, kwstore from uniball where symbol = ?",
+                "SELECT source, target, symbol, kwstore from reversi where symbol = ?",
                 (symbol,),
             ).fetchone()
 
@@ -328,11 +328,11 @@ class DudyCore:
             return None
 
         # TODO: hack
-        return Nummy(self, *res)
+        return ReversiThing(self, *res)
 
     def get_covering(
         self, source: Optional[int] = None, target: Optional[int] = None
-    ) -> Optional[Nummy]:
+    ) -> Optional[ReversiThing]:
         """For the given source or target addr, find the record that most likely `contains` the address.
         Meaning: if the address is a jump label in a function, get the parent function.
         If it is an offset of a struct/array, get the main address."""
@@ -341,12 +341,12 @@ class DudyCore:
 
         if source is not None:
             res = self._sql.execute(
-                "SELECT source, target, symbol, kwstore from uniball where source <= ? order by source desc limit 1",
+                "SELECT source, target, symbol, kwstore from reversi where source <= ? order by source desc limit 1",
                 (source,),
             ).fetchone()
         elif target is not None:
             res = self._sql.execute(
-                "SELECT source, target, symbol, kwstore from uniball where target <= ? order by target desc limit 1",
+                "SELECT source, target, symbol, kwstore from reversi where target <= ? order by target desc limit 1",
                 (target,),
             ).fetchone()
 
@@ -354,7 +354,7 @@ class DudyCore:
             return None
 
         # TODO: hack
-        return Nummy(self, *res)
+        return ReversiThing(self, *res)
 
     def at_source(self, source: int) -> AnchorSource:
         return AnchorSource(self._sql, source)
@@ -365,7 +365,9 @@ class DudyCore:
     def at_symbol(self, symbol: str) -> AnchorSymbol:
         return AnchorSymbol(self._sql, symbol)
 
-    def search(self, matched: Optional[bool] = None, **kwargs) -> Iterator[Nummy]:
+    def search(
+        self, matched: Optional[bool] = None, **kwargs
+    ) -> Iterator[ReversiThing]:
         """Search the database for each of the key-value pairs in kwargs.
         The virtual column 'matched' is handled separately from kwargs because we do
         not use the json functions.
@@ -384,7 +386,7 @@ class DudyCore:
         # Foreach kwarg without an index, create one
         for optkey in kwargs.keys() - self.SPECIAL_COLS - self._indexed:
             self._sql.execute(
-                f"CREATE index kv_idx_{optkey} ON uniball(JSON_EXTRACT(kwstore, '$.{optkey}'))"
+                f"CREATE index kv_idx_{optkey} ON reversi(JSON_EXTRACT(kwstore, '$.{optkey}'))"
             )
             self._indexed.add(optkey)
 
@@ -402,25 +404,25 @@ class DudyCore:
         )
 
         for source, target, symbol, extras in self._sql.execute(
-            "SELECT source, target, symbol, kwstore from uniball" + where_clause,
+            "SELECT source, target, symbol, kwstore from reversi" + where_clause,
             q_params,
         ):
-            yield Nummy(self, source, target, symbol, extras)
+            yield ReversiThing(self, source, target, symbol, extras)
 
     def iter_source(self, source: int, reverse: bool = False) -> Iterator[int]:
         if reverse:
-            sql = "SELECT source from uniball where source <= ? order by source desc"
+            sql = "SELECT source from reversi where source <= ? order by source desc"
         else:
-            sql = "SELECT source from uniball where source >= ? order by source"
+            sql = "SELECT source from reversi where source >= ? order by source"
 
         for (addr,) in self._sql.execute(sql, (source,)):
             yield addr
 
     def iter_target(self, target: int, reverse: bool = False) -> Iterator[int]:
         if reverse:
-            sql = "SELECT target from uniball where target <= ? order by target desc"
+            sql = "SELECT target from reversi where target <= ? order by target desc"
         else:
-            sql = "SELECT target from uniball where target >= ? order by target"
+            sql = "SELECT target from reversi where target >= ? order by target"
 
         for (addr,) in self._sql.execute(sql, (target,)):
             yield addr
@@ -428,16 +430,16 @@ class DudyCore:
     def search_symbol(self, query: str) -> Iterator[str]:
         """Partial string search on symbol."""
         for (symbol,) in self._sql.execute(
-            "SELECT symbol FROM uniball where symbol like '%' || ? || '%'", (query,)
+            "SELECT symbol FROM reversi where symbol like '%' || ? || '%'", (query,)
         ):
             yield symbol
 
-    def all(self, matched: Optional[bool] = None) -> Iterator[Nummy]:
+    def all(self, matched: Optional[bool] = None) -> Iterator[ReversiThing]:
         # TODO: apart from the 'order by', this is identical to a search with no kwargs.
         # consolidate the two functions?
         query = " ".join(
             [
-                "SELECT source, target, symbol, kwstore FROM uniball",
+                "SELECT source, target, symbol, kwstore FROM reversi",
                 (
                     ""
                     if matched is None
@@ -447,7 +449,7 @@ class DudyCore:
             ]
         )
         for source, target, symbol, extras in self._sql.execute(query):
-            yield Nummy(self, source, target, symbol, extras)
+            yield ReversiThing(self, source, target, symbol, extras)
 
     def at(
         self,

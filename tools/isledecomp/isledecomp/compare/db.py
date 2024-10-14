@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Iterator, List, Optional
 from isledecomp.types import SymbolType
 from isledecomp.cvdump.demangler import get_vtordisp_name
-from .dudu import Nummy, DudyCore
+from .dudu import ReversiThing, ReversiDb
 
 
 @dataclass
@@ -38,22 +38,22 @@ class MatchInfo:
 logger = logging.getLogger(__name__)
 
 
-def nummy_to_matchinfo(nummy: Nummy) -> MatchInfo:
-    # todo: meh
-    ctype = nummy.get("type")
+def reversi_to_matchinfo(obj: ReversiThing) -> MatchInfo:
+    """Patch for existing code that depends on MatchInfo dataobj"""
+    ctype = obj.get("type")
     return MatchInfo(
         compare_type=SymbolType(ctype) if ctype is not None else None,
-        orig_addr=nummy.source,
-        recomp_addr=nummy.target,
-        name=nummy.get("name"),
-        size=nummy.get("size"),
+        orig_addr=obj.source,
+        recomp_addr=obj.target,
+        name=obj.get("name"),
+        size=obj.get("size"),
     )
 
 
 class CompareDb:
     # pylint: disable=too-many-public-methods
     def __init__(self):
-        self._core = DudyCore()
+        self._core = ReversiDb()
 
     def set_orig_symbol(
         self,
@@ -92,38 +92,38 @@ class CompareDb:
                 yield x.get("name")
 
     def get_all(self) -> Iterator[MatchInfo]:
-        for nummy in self._core.all():
-            yield nummy_to_matchinfo(nummy)
+        for obj in self._core.all():
+            yield reversi_to_matchinfo(obj)
 
     def get_matches(self) -> Iterator[MatchInfo]:
-        for nummy in self._core.all(matched=True):
-            yield nummy_to_matchinfo(nummy)
+        for obj in self._core.all(matched=True):
+            yield reversi_to_matchinfo(obj)
 
     def get_one_match(self, addr: int) -> Optional[MatchInfo]:
-        nummy = self._core.get(source=addr)
-        if nummy is None:
+        obj = self._core.get(source=addr)
+        if obj is None:
             return None
 
-        return nummy_to_matchinfo(nummy)
+        return reversi_to_matchinfo(obj)
 
     def get_by_orig(self, source: int, exact: bool = True) -> Optional[MatchInfo]:
-        nummy = self._core.get_covering(source=source)
-        if nummy is None or exact and nummy.source != source:
+        obj = self._core.get_covering(source=source)
+        if obj is None or exact and obj.source != source:
             return None
 
-        return nummy_to_matchinfo(nummy)
+        return reversi_to_matchinfo(obj)
 
     def get_by_recomp(self, target: int, exact: bool = True) -> Optional[MatchInfo]:
-        nummy = self._core.get_covering(target=target)
-        if nummy is None or exact and nummy.target != target:
+        obj = self._core.get_covering(target=target)
+        if obj is None or exact and obj.target != target:
             return None
 
-        return nummy_to_matchinfo(nummy)
+        return reversi_to_matchinfo(obj)
 
     def get_matches_by_type(self, compare_type: SymbolType) -> List[MatchInfo]:
         return [
-            nummy_to_matchinfo(nummy)
-            for nummy in self._core.search(type=compare_type, matched=True)
+            reversi_to_matchinfo(obj)
+            for obj in self._core.search(type=compare_type, matched=True)
         ]
 
     def set_pair(

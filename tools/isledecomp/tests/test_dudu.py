@@ -1,12 +1,12 @@
 import sqlite3
 import pytest
-from isledecomp.compare.dudu import DudyCore
+from isledecomp.compare.dudu import ReversiDb
 from isledecomp.compare.dudu import InvalidItemKeyError as BadKeyError
 
 
 @pytest.fixture(name="db")
-def fixture_db() -> DudyCore:
-    yield DudyCore()
+def fixture_db() -> ReversiDb:
+    yield ReversiDb()
 
 
 def test_uniques_immutable(db):
