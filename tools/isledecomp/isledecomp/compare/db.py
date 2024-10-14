@@ -319,12 +319,13 @@ class CompareDb:
         # has symbol: `?g_startupDelay@?1??Tick@IsleApp@@QAEXH@Z@4HA`
         # The function's decorated name is: `?Tick@IsleApp@@QAEXH@Z`
         if func.symbol is not None:
-            for obj in self._core.search_symbol(func.symbol):
-                if (
-                    name in obj.symbol
-                    and obj.get("type") is None
-                    or obj.get("type") == SymbolType.DATA
-                ):
+            for var_symbol in self._core.search_symbol(func.symbol):
+                if name not in var_symbol:
+                    continue
+
+                obj = self._core.get(symbol=var_symbol)
+
+                if not obj.matched and obj.get("type") in (None, SymbolType.DATA):
                     return self.set_pair(addr, obj.target, SymbolType.DATA)
 
         logger.error(

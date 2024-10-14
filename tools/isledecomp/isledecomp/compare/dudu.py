@@ -14,12 +14,6 @@ CREATE table uniball (
     matched int generated always as (source is not null and target is not null) virtual,
     kwstore text
 );
-
-CREATE view matched (uid, source, target, symbol, kwstore) as
-select uid, source, target, symbol, kwstore from uniball where source is not null and target is not null order by source nulls last;
-
-CREATE view unmatched (uid, source, target, symbol, kwstore) as
-select uid, source, target, symbol, kwstore from uniball where source is null or target is null order by source nulls last;
 """
 
 
@@ -253,6 +247,10 @@ class Nummy:
     def symbol(self) -> Optional[str]:
         return self._symbol
 
+    @property
+    def matched(self) -> bool:
+        return self._source is not None and self._target is not None
+
     def get(self, key: str) -> Any:
         return self._extras.get(key)
 
@@ -427,14 +425,12 @@ class DudyCore:
         for (addr,) in self._sql.execute(sql, (target,)):
             yield addr
 
-    def search_symbol(self, query: str, unmatched: bool = True) -> Iterator[Nummy]:
+    def search_symbol(self, query: str) -> Iterator[str]:
         """Partial string search on symbol."""
-        for source, target, symbol, extras in self._sql.execute(
-            f"""SELECT source, target, symbol, kwstore FROM {'unmatched' if unmatched else 'uniball'} u
-            where symbol like '%' || ? || '%'""",
-            (query,),
+        for (symbol,) in self._sql.execute(
+            "SELECT symbol FROM uniball where symbol like '%' || ? || '%'", (query,)
         ):
-            yield Nummy(self, source, target, symbol, extras)
+            yield symbol
 
     def all(self, matched: Optional[bool] = None) -> Iterator[Nummy]:
         # TODO: apart from the 'order by', this is identical to a search with no kwargs.
