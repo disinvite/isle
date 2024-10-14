@@ -299,35 +299,34 @@ class ReversiDb:
             is not None
         )
 
-    def get(
-        self,
-        source: Optional[int] = None,
-        target: Optional[int] = None,
-        symbol: Optional[str] = None,
-    ) -> Optional[ReversiThing]:
-        """This only returns an object; it does not create one"""
-        res = None
-
-        if source is not None:
-            res = self._sql.execute(
-                "SELECT source, target, symbol, kwstore from reversi where source = ?",
-                (source,),
-            ).fetchone()
-        elif target is not None:
-            res = self._sql.execute(
-                "SELECT source, target, symbol, kwstore from reversi where target = ?",
-                (target,),
-            ).fetchone()
-        elif symbol is not None:
-            res = self._sql.execute(
-                "SELECT source, target, symbol, kwstore from reversi where symbol = ?",
-                (symbol,),
-            ).fetchone()
-
+    def get_source(self, source: int) -> Optional[ReversiThing]:
+        res = self._sql.execute(
+            "SELECT source, target, symbol, kwstore from reversi where source = ?",
+            (source,),
+        ).fetchone()
         if res is None:
             return None
 
-        # TODO: hack
+        return ReversiThing(self, *res)
+
+    def get_target(self, target: int) -> Optional[ReversiThing]:
+        res = self._sql.execute(
+            "SELECT source, target, symbol, kwstore from reversi where target = ?",
+            (target,),
+        ).fetchone()
+        if res is None:
+            return None
+
+        return ReversiThing(self, *res)
+
+    def get_symbol(self, symbol: str) -> Optional[ReversiThing]:
+        res = self._sql.execute(
+            "SELECT source, target, symbol, kwstore from reversi where symbol = ?",
+            (symbol,),
+        ).fetchone()
+        if res is None:
+            return None
+
         return ReversiThing(self, *res)
 
     def get_covering(
@@ -450,12 +449,3 @@ class ReversiDb:
         )
         for source, target, symbol, extras in self._sql.execute(query):
             yield ReversiThing(self, source, target, symbol, extras)
-
-    def at(
-        self,
-        source: Optional[int] = None,
-        target: Optional[int] = None,
-        symbol: Optional[str] = None,
-    ):
-        """Generic `at` using optional args"""
-        raise NotImplementedError

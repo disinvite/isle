@@ -100,7 +100,7 @@ class CompareDb:
             yield reversi_to_matchinfo(obj)
 
     def get_one_match(self, addr: int) -> Optional[MatchInfo]:
-        obj = self._core.get(source=addr)
+        obj = self._core.get_source(addr)
         if obj is None:
             return None
 
@@ -153,7 +153,7 @@ class CompareDb:
         # TODO: meh
         self._core.at_target(recomp).set(source=orig)
 
-        n = self._core.get(target=recomp)
+        n = self._core.get_target(recomp)
         if n.get("type") is None:
             n.set(type=compare_type)
 
@@ -204,14 +204,14 @@ class CompareDb:
 
     def get_match_options(self, addr: int) -> Optional[dict[str, Any]]:
         """Todo: remove this. wonky API"""
-        n = self._core.get(source=addr)
+        n = self._core.get_source(addr)
         return n._extras or {}  # pylint: disable=protected-access
 
     def is_vtordisp(self, recomp_addr: int) -> bool:
         """Check whether this function is a vtordisp based on its
         decorated name. If its demangled name is missing the vtordisp
         indicator, correct that."""
-        func = self._core.get(target=recomp_addr)
+        func = self._core.get_target(recomp_addr)
 
         if func is None:
             return False
@@ -236,7 +236,7 @@ class CompareDb:
         """Name lookup"""
         match_decorate = compare_type != SymbolType.STRING and name.startswith("?")
         if match_decorate:
-            obj = self._core.get(symbol=name)
+            obj = self._core.get_symbol(name)
             if obj is not None and obj.source is None:
                 return obj.target
 
@@ -306,7 +306,7 @@ class CompareDb:
         """Matching a static function variable by combining the variable name
         with the decorated (mangled) name of its parent function."""
 
-        func = self._core.get(source=function_addr)
+        func = self._core.get_source(function_addr)
         if func is None:
             logger.error("No function for static variable: %s", name)
             return False
@@ -323,7 +323,7 @@ class CompareDb:
                 if name not in var_symbol:
                     continue
 
-                obj = self._core.get(symbol=var_symbol)
+                obj = self._core.get_symbol(var_symbol)
 
                 if not obj.matched and obj.get("type") in (None, SymbolType.DATA):
                     return self.set_pair(addr, obj.target, SymbolType.DATA)
