@@ -63,7 +63,7 @@ class CompareDb:
         size: Optional[int],
     ):
         # Ignore collisions here.
-        if self._core.orig_used(addr):
+        if self._core.at_source(addr).exists():
             return
 
         self._core.at_source(addr).set(type=compare_type, name=name, size=size)
@@ -78,10 +78,10 @@ class CompareDb:
     ):
         # Ignore collisions here. The same recomp address can have
         # multiple names (e.g. _strlwr and __strlwr)
-        # if self._core.recomp_used(addr):
+        # if self._core.at_target(addr).exists():
         #    return
 
-        self._core.at_target(addr).insert(
+        self._core.at_target(addr).set(
             symbol=decorated_name, type=compare_type, name=name, size=size
         )
 
@@ -129,7 +129,7 @@ class CompareDb:
     def set_pair(
         self, orig: int, recomp: int, compare_type: Optional[SymbolType] = None
     ) -> bool:
-        if self._core.orig_used(orig):
+        if self._core.at_source(orig).exists():
             logger.debug("Original address %s not unique!", hex(orig))
             return False
 
@@ -146,7 +146,7 @@ class CompareDb:
 
         The purpose here is to set matches found via some automated analysis
         but to not overwrite a match provided by the human operator."""
-        if self._core.orig_used(orig):
+        if self._core.at_source(orig).exists():
             # Probable and expected situation. Just ignore it.
             return False
 
@@ -170,7 +170,7 @@ class CompareDb:
         We are here because we have a match on the thunked function,
         but it is not thunked in the recomp build."""
 
-        if self._core.orig_used(addr):
+        if self._core.at_source(addr).exists():
             return False
 
         thunk_name = f"Thunk of '{name}'"
@@ -187,7 +187,7 @@ class CompareDb:
         to have full information from the PDB. We can use a regular function
         match later to pull in the orig address."""
 
-        if self._core.recomp_used(addr):
+        if self._core.at_target(addr).exists():
             return False
 
         thunk_name = f"Thunk of '{name}'"

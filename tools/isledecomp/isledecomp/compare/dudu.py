@@ -21,17 +21,13 @@ class InvalidItemKeyError(Exception):
     """Key used in search() or set() failed validation"""
 
 
-class MissingAnchorError(Exception):
-    """Tried to create an Anchor reference without any unique id"""
-
-
 class AnchorSource:
     # pylint: disable=unused-argument
     def __init__(self, sql: sqlite3.Connection, source: int) -> None:
         self._sql = sql
         self._source = source
 
-    def _exists(self) -> bool:
+    def exists(self) -> bool:
         return (
             self._sql.execute(
                 "SELECT 1 from reversi WHERE source = ?", (self._source,)
@@ -39,7 +35,7 @@ class AnchorSource:
             is not None
         )
 
-    def _insert(
+    def set(
         self,
         source: Optional[int] = None,
         target: Optional[int] = None,
@@ -47,40 +43,14 @@ class AnchorSource:
         **kwargs,
     ):
         self._sql.execute(
-            "INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?)",
+            """INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?)
+            ON CONFLICT(source) DO UPDATE SET
+            target = coalesce(target, excluded.target),
+            symbol = coalesce(symbol, excluded.symbol),
+            kwstore = json_patch(kwstore, excluded.kwstore)
+            """,
             (self._source, target, symbol, json.dumps(kwargs)),
         )
-
-    def _update(
-        self,
-        source: Optional[int] = None,
-        target: Optional[int] = None,
-        symbol: Optional[str] = None,
-        **kwargs,
-    ):
-        self._sql.execute(
-            "UPDATE reversi SET target = coalesce(target, ?), symbol = coalesce(symbol, ?), kwstore = json_patch(kwstore,?) where source = ?",
-            (target, symbol, json.dumps(kwargs), self._source),
-        )
-
-    def insert(
-        self,
-        source: Optional[int] = None,
-        target: Optional[int] = None,
-        symbol: Optional[str] = None,
-        **kwargs,
-    ):
-        self._sql.execute(
-            "INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?) ON CONFLICT(source) do nothing",
-            (self._source, target, symbol, json.dumps(kwargs)),
-        )
-
-    def set(self, **kwargs):
-        if not self._exists():
-            self._insert(**kwargs)
-            return
-
-        self._update(**kwargs)
 
 
 class AnchorTarget:
@@ -89,7 +59,7 @@ class AnchorTarget:
         self._sql = sql
         self._target = target
 
-    def _exists(self) -> bool:
+    def exists(self) -> bool:
         return (
             self._sql.execute(
                 "SELECT 1 from reversi WHERE target = ?", (self._target,)
@@ -97,7 +67,7 @@ class AnchorTarget:
             is not None
         )
 
-    def _insert(
+    def set(
         self,
         source: Optional[int] = None,
         target: Optional[int] = None,
@@ -105,40 +75,14 @@ class AnchorTarget:
         **kwargs,
     ):
         self._sql.execute(
-            "INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?)",
+            """INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?)
+            ON CONFLICT(target) DO UPDATE SET
+            source = coalesce(source, excluded.source),
+            symbol = coalesce(symbol, excluded.symbol),
+            kwstore = json_patch(kwstore, excluded.kwstore)
+            """,
             (source, self._target, symbol, json.dumps(kwargs)),
         )
-
-    def _update(
-        self,
-        source: Optional[int] = None,
-        target: Optional[int] = None,
-        symbol: Optional[str] = None,
-        **kwargs,
-    ):
-        self._sql.execute(
-            "UPDATE reversi SET source = coalesce(source, ?), symbol = coalesce(symbol, ?), kwstore = json_patch(kwstore,?) where target = ?",
-            (source, symbol, json.dumps(kwargs), self._target),
-        )
-
-    def insert(
-        self,
-        source: Optional[int] = None,
-        target: Optional[int] = None,
-        symbol: Optional[str] = None,
-        **kwargs,
-    ):
-        self._sql.execute(
-            "INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?) ON CONFLICT(target) do nothing",
-            (source, self._target, symbol, json.dumps(kwargs)),
-        )
-
-    def set(self, **kwargs):
-        if not self._exists():
-            self._insert(**kwargs)
-            return
-
-        self._update(**kwargs)
 
 
 class AnchorSymbol:
@@ -147,7 +91,7 @@ class AnchorSymbol:
         self._sql = sql
         self._symbol = symbol
 
-    def _exists(self) -> bool:
+    def exists(self) -> bool:
         return (
             self._sql.execute(
                 "SELECT 1 from reversi WHERE symbol = ?", (self._symbol,)
@@ -155,7 +99,7 @@ class AnchorSymbol:
             is not None
         )
 
-    def _insert(
+    def set(
         self,
         source: Optional[int] = None,
         target: Optional[int] = None,
@@ -163,40 +107,14 @@ class AnchorSymbol:
         **kwargs,
     ):
         self._sql.execute(
-            "INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?)",
+            """INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?)
+            ON CONFLICT(symbol) DO UPDATE SET
+            source = coalesce(source, excluded.source),
+            target = coalesce(target, excluded.target),
+            kwstore = json_patch(kwstore, excluded.kwstore)
+            """,
             (source, target, self._symbol, json.dumps(kwargs)),
         )
-
-    def _update(
-        self,
-        source: Optional[int] = None,
-        target: Optional[int] = None,
-        symbol: Optional[str] = None,
-        **kwargs,
-    ):
-        self._sql.execute(
-            "UPDATE reversi SET source = coalesce(source, ?), target = coalesce(target, ?), kwstore = json_patch(kwstore,?) where symbol = ?",
-            (source, target, json.dumps(kwargs), self._symbol),
-        )
-
-    def insert(
-        self,
-        source: Optional[int] = None,
-        target: Optional[int] = None,
-        symbol: Optional[str] = None,
-        **kwargs,
-    ):
-        self._sql.execute(
-            "INSERT into reversi (source, target, symbol, kwstore) values (?,?,?,?) ON CONFLICT(symbol) do nothing",
-            (source, target, self._symbol, json.dumps(kwargs)),
-        )
-
-    def set(self, **kwargs):
-        if not self._exists():
-            self._insert(**kwargs)
-            return
-
-        self._update(**kwargs)
 
 
 class ReversiThing:
@@ -276,22 +194,6 @@ class ReversiDb:
         for key, _ in kwargs.items():
             if not key.isascii() or not key.isidentifier():
                 raise InvalidItemKeyError(key)
-
-    def orig_used(self, addr: int) -> bool:
-        return (
-            self._sql.execute(
-                "SELECT 1 from reversi where source = ?", (addr,)
-            ).fetchone()
-            is not None
-        )
-
-    def recomp_used(self, addr: int) -> bool:
-        return (
-            self._sql.execute(
-                "SELECT 1 from reversi where target = ?", (addr,)
-            ).fetchone()
-            is not None
-        )
 
     def get_source(self, source: int) -> Optional[ReversiThing]:
         res = self._sql.execute(
