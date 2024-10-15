@@ -255,16 +255,10 @@ class ReversiThing:
         return self._extras.get(key)
 
     def set(self, **kwargs):
-        # pylint: disable=protected-access
-        # TODO: woof
-        if self._source is not None:
-            AnchorSource(self._backref._sql, self._source).set(**kwargs)
-        elif self._target is not None:
-            AnchorTarget(self._backref._sql, self._target).set(**kwargs)
-        elif self._symbol is not None:
-            AnchorSymbol(self._backref._sql, self._symbol).set(**kwargs)
-        else:
-            raise NotImplementedError
+        """Not implemented yet. Need to figure out how (or if) we will
+        handle concurrency for multiple objects in flight.
+        Would also need to update *this* object after calling set"""
+        raise NotImplementedError
 
 
 class ReversiDb:

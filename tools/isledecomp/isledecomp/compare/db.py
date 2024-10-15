@@ -150,12 +150,14 @@ class CompareDb:
             # Probable and expected situation. Just ignore it.
             return False
 
-        # TODO: meh
-        self._core.at_target(recomp).set(source=orig)
+        options = {"source": orig}
 
-        n = self._core.get_target(recomp)
-        if n.get("type") is None:
-            n.set(type=compare_type)
+        # Set type only if it is null
+        obj = self._core.get_target(recomp)
+        if obj is not None and obj.get("type") is None:
+            options["type"] = compare_type
+
+        self._core.at_target(recomp).set(**options)
 
         return True
 
@@ -227,7 +229,7 @@ class CompareDb:
         if new_name is None:
             return False
 
-        func.set(name=new_name)
+        self._core.at_target(recomp_addr).set(name=new_name)
         return True
 
     def _find_potential_match(
