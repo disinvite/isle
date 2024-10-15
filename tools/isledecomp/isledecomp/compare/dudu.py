@@ -52,6 +52,22 @@ class AnchorSource:
             (self._source, target, symbol, json.dumps(kwargs)),
         )
 
+    def patch(
+        self,
+        source: Optional[int] = None,
+        target: Optional[int] = None,
+        symbol: Optional[str] = None,
+        **kwargs,
+    ):
+        self._sql.execute(
+            """UPDATE reversi SET
+            target = coalesce(target, ?),
+            symbol = coalesce(symbol, ?),
+            kwstore = json_insert(kwstore, y.fullkey, y.value)
+            FROM (SELECT fullkey, value FROM json_each(?)) AS y""",
+            (target, symbol, json.dumps(kwargs)),
+        )
+
 
 class AnchorTarget:
     # pylint: disable=unused-argument
@@ -84,6 +100,22 @@ class AnchorTarget:
             (source, self._target, symbol, json.dumps(kwargs)),
         )
 
+    def patch(
+        self,
+        source: Optional[int] = None,
+        target: Optional[int] = None,
+        symbol: Optional[str] = None,
+        **kwargs,
+    ):
+        self._sql.execute(
+            """UPDATE reversi SET
+            source = coalesce(source, ?),
+            symbol = coalesce(symbol, ?),
+            kwstore = json_insert(kwstore, y.fullkey, y.value)
+            FROM (SELECT fullkey, value FROM json_each(?)) AS y""",
+            (source, symbol, json.dumps(kwargs)),
+        )
+
 
 class AnchorSymbol:
     # pylint: disable=unused-argument
@@ -114,6 +146,22 @@ class AnchorSymbol:
             kwstore = json_patch(kwstore, excluded.kwstore)
             """,
             (source, target, self._symbol, json.dumps(kwargs)),
+        )
+
+    def patch(
+        self,
+        source: Optional[int] = None,
+        target: Optional[int] = None,
+        symbol: Optional[str] = None,
+        **kwargs,
+    ):
+        self._sql.execute(
+            """UPDATE reversi SET
+            source = coalesce(source, ?),
+            target = coalesce(target, ?),
+            kwstore = json_insert(kwstore, y.fullkey, y.value)
+            FROM (SELECT fullkey, value FROM json_each(?)) AS y""",
+            (source, target, json.dumps(kwargs)),
         )
 
 

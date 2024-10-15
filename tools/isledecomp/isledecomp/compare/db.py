@@ -150,15 +150,7 @@ class CompareDb:
             # Probable and expected situation. Just ignore it.
             return False
 
-        options = {"source": orig}
-
-        # Set type only if it is null
-        obj = self._core.get_target(recomp)
-        if obj is not None and obj.get("type") is None:
-            options["type"] = compare_type
-
-        self._core.at_target(recomp).set(**options)
-
+        self._core.at_target(recomp).patch(source=orig, type=compare_type)
         return True
 
     def set_function_pair(self, orig: int, recomp: int) -> bool:

@@ -43,6 +43,19 @@ def test_fundamentals(db):
     assert db.get_target(500).matched is False
 
 
+def test_patch(db):
+    """Patch provides a soft update for non-unique fields.
+    i.e. do not overwrite an existing value."""
+
+    # Insert data
+    db.at_source(123).set(name="hello")
+    db.at_source(123).patch(name="howdy", test=5)
+
+    # Should update 'test' but not 'name'
+    assert db.get_source(123).get("name") == "hello"
+    assert db.get_source(123).get("test") == 5
+
+
 def test_uniques_immutable(db):
     """A unique column, once set, cannot be changed by calling set()"""
     # Establish link between source=123 and symbol="test"
