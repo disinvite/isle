@@ -64,8 +64,9 @@ class AnchorSource:
             target = coalesce(target, ?),
             symbol = coalesce(symbol, ?),
             kwstore = json_insert(kwstore, y.fullkey, y.value)
-            FROM (SELECT fullkey, value FROM json_each(?)) AS y""",
-            (target, symbol, json.dumps(kwargs)),
+            FROM (SELECT fullkey, value FROM json_each(?)) AS y
+            WHERE source = ?""",
+            (target, symbol, json.dumps(kwargs), self._source),
         )
 
 
@@ -112,8 +113,9 @@ class AnchorTarget:
             source = coalesce(source, ?),
             symbol = coalesce(symbol, ?),
             kwstore = json_insert(kwstore, y.fullkey, y.value)
-            FROM (SELECT fullkey, value FROM json_each(?)) AS y""",
-            (source, symbol, json.dumps(kwargs)),
+            FROM (SELECT fullkey, value FROM json_each(?)) AS y
+            WHERE target = ?""",
+            (source, symbol, json.dumps(kwargs), self._target),
         )
 
 
@@ -160,8 +162,9 @@ class AnchorSymbol:
             source = coalesce(source, ?),
             target = coalesce(target, ?),
             kwstore = json_insert(kwstore, y.fullkey, y.value)
-            FROM (SELECT fullkey, value FROM json_each(?)) AS y""",
-            (source, target, json.dumps(kwargs)),
+            FROM (SELECT fullkey, value FROM json_each(?)) AS y
+            WHERE symbol = ?""",
+            (source, target, json.dumps(kwargs), self._symbol),
         )
 
 
