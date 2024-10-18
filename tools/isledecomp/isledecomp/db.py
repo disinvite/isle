@@ -63,8 +63,7 @@ class AnchorSource:
             """UPDATE reccmp SET
             target = coalesce(target, ?),
             symbol = coalesce(symbol, ?),
-            kwstore = json_insert(kwstore, y.fullkey, y.value)
-            FROM (SELECT fullkey, value FROM json_each(?)) AS y
+            kwstore = json_patch(kwstore, json_patch(?, kwstore))
             WHERE source = ?""",
             (target, symbol, json.dumps(kwargs), self._source),
         )
@@ -112,8 +111,7 @@ class AnchorTarget:
             """UPDATE reccmp SET
             source = coalesce(source, ?),
             symbol = coalesce(symbol, ?),
-            kwstore = json_insert(kwstore, y.fullkey, y.value)
-            FROM (SELECT fullkey, value FROM json_each(?)) AS y
+            kwstore = json_patch(kwstore, json_patch(?, kwstore))
             WHERE target = ?""",
             (source, symbol, json.dumps(kwargs), self._target),
         )
@@ -161,8 +159,7 @@ class AnchorSymbol:
             """UPDATE reccmp SET
             source = coalesce(source, ?),
             target = coalesce(target, ?),
-            kwstore = json_insert(kwstore, y.fullkey, y.value)
-            FROM (SELECT fullkey, value FROM json_each(?)) AS y
+            kwstore = json_patch(kwstore, json_patch(?, kwstore))
             WHERE symbol = ?""",
             (source, target, json.dumps(kwargs), self._symbol),
         )
