@@ -213,14 +213,8 @@ class ReccmpThing:
     def matched(self) -> bool:
         return self._source is not None and self._target is not None
 
-    def get(self, key: str) -> Any:
-        return self._extras.get(key)
-
-    def set(self, **kwargs):
-        """Not implemented yet. Need to figure out how (or if) we will
-        handle concurrency for multiple objects in flight.
-        Would also need to update *this* object after calling set"""
-        raise NotImplementedError
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._extras.get(key, default)
 
 
 class ReccmpDb:
@@ -323,7 +317,7 @@ class ReccmpDb:
             f"json_extract(kwstore, '$.{optkey}')=?" for optkey, _ in kwargs.items()
         ]
         if matched is not None:
-            search_terms.append(f"matched = {'true' if matched else 'false'}")
+            search_terms.append(f"matched = {1 if matched else 0}")
 
         q_params = [v for _, v in kwargs.items()]
 
@@ -369,11 +363,7 @@ class ReccmpDb:
         query = " ".join(
             [
                 "SELECT source, target, symbol, kwstore FROM reccmp",
-                (
-                    ""
-                    if matched is None
-                    else f"where matched = {'true' if matched else 'false'}"
-                ),
+                ("" if matched is None else f"where matched = {1 if matched else 0}"),
                 "order by source nulls last",
             ]
         )

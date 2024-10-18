@@ -42,6 +42,15 @@ def test_fundamentals(db):
     assert db.get_source(100).matched is True
     assert db.get_target(500).matched is False
 
+    # Anchor will check whether the record exists
+    assert db.at_source(100).exists() is True
+    assert db.at_source(200).exists() is False
+
+    # get() supports default value, same as python dict
+    assert db.get_source(100).get("name", "hello") == "some_function"
+    assert db.get_source(100).get("test") is None
+    assert db.get_source(100).get("test", "hello") == "hello"
+
 
 def test_patch(db):
     """Patch provides a soft update for non-unique fields.
