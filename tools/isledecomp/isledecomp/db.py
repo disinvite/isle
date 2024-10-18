@@ -51,6 +51,7 @@ class AnchorSource:
             """,
             (self._source, target, symbol, json.dumps(kwargs)),
         )
+        return self
 
     def patch(
         self,
@@ -60,13 +61,14 @@ class AnchorSource:
         **kwargs,
     ):
         self._sql.execute(
-            """UPDATE reccmp SET
-            target = coalesce(target, ?),
-            symbol = coalesce(symbol, ?),
-            kwstore = json_patch(kwstore, json_patch(?, kwstore))
-            WHERE source = ?""",
-            (target, symbol, json.dumps(kwargs), self._source),
+            """INSERT into reccmp (source, target, symbol, kwstore) values (?,?,?,?)
+            ON CONFLICT(source) DO UPDATE SET
+            target = coalesce(target, excluded.target),
+            symbol = coalesce(symbol, excluded.symbol),
+            kwstore = json_patch(kwstore, json_patch(excluded.kwstore, kwstore))""",
+            (self._source, target, symbol, json.dumps(kwargs)),
         )
+        return self
 
 
 class AnchorTarget:
@@ -99,6 +101,7 @@ class AnchorTarget:
             """,
             (source, self._target, symbol, json.dumps(kwargs)),
         )
+        return self
 
     def patch(
         self,
@@ -108,13 +111,14 @@ class AnchorTarget:
         **kwargs,
     ):
         self._sql.execute(
-            """UPDATE reccmp SET
-            source = coalesce(source, ?),
-            symbol = coalesce(symbol, ?),
-            kwstore = json_patch(kwstore, json_patch(?, kwstore))
-            WHERE target = ?""",
-            (source, symbol, json.dumps(kwargs), self._target),
+            """INSERT into reccmp (source, target, symbol, kwstore) values (?,?,?,?)
+            ON CONFLICT(target) DO UPDATE SET
+            source = coalesce(source, excluded.source),
+            symbol = coalesce(symbol, excluded.symbol),
+            kwstore = json_patch(kwstore, json_patch(excluded.kwstore, kwstore))""",
+            (source, self._target, symbol, json.dumps(kwargs)),
         )
+        return self
 
 
 class AnchorSymbol:
@@ -147,6 +151,7 @@ class AnchorSymbol:
             """,
             (source, target, self._symbol, json.dumps(kwargs)),
         )
+        return self
 
     def patch(
         self,
@@ -156,13 +161,14 @@ class AnchorSymbol:
         **kwargs,
     ):
         self._sql.execute(
-            """UPDATE reccmp SET
-            source = coalesce(source, ?),
-            target = coalesce(target, ?),
-            kwstore = json_patch(kwstore, json_patch(?, kwstore))
-            WHERE symbol = ?""",
-            (source, target, json.dumps(kwargs), self._symbol),
+            """INSERT into reccmp (source, target, symbol, kwstore) values (?,?,?,?)
+            ON CONFLICT(symbol) DO UPDATE SET
+            source = coalesce(source, excluded.source),
+            target = coalesce(target, excluded.target),
+            kwstore = json_patch(kwstore, json_patch(excluded.kwstore, kwstore))""",
+            (source, target, self._symbol, json.dumps(kwargs)),
         )
+        return self
 
 
 class ReccmpThing:

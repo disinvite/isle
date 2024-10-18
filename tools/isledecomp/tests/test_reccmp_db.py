@@ -55,6 +55,22 @@ def test_patch(db):
     assert db.get_source(123).get("name") == "hello"
     assert db.get_source(123).get("test") == 5
 
+    # Can insert with patch()
+    db.at_target(555).patch(type=1)
+    assert db.get_target(555).get("type") == 1
+
+
+def test_chain_methods(db):
+    """Can chain calls to set() or patch()"""
+
+    # Name not changed by call to patch()
+    db.at_source(123).set(name="hello").patch(name="reset")
+    assert db.get_source(123).get("name") == "hello"
+
+    # Name overwritten by call to set()
+    db.at_target(555).patch(name="test").set(name="reset")
+    assert db.get_target(555).get("name") == "reset"
+
 
 def test_uniques_immutable(db):
     """A unique column, once set, cannot be changed by calling set()"""
