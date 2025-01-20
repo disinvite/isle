@@ -6,6 +6,7 @@
 class LegoCacheSoundManager;
 
 // VTABLE: LEGO1 0x100d6b10
+// VTABLE: BETA10 0x101bec30
 // SIZE 0x44
 class LegoSoundManager : public MxSoundManager {
 public:

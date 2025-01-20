@@ -7,28 +7,31 @@
 DECOMP_SIZE_ASSERT(LegoCacheSound, 0x88)
 
 // FUNCTION: LEGO1 0x100064d0
+// FUNCTION: BETA10 0x10066340
 LegoCacheSound::LegoCacheSound()
 {
 	Init();
 }
 
 // FUNCTION: LEGO1 0x10006630
+// FUNCTION: BETA10 0x100663f3
 LegoCacheSound::~LegoCacheSound()
 {
 	Destroy();
 }
 
 // FUNCTION: LEGO1 0x100066d0
+// FUNCTION: BETA10 0x10066498
 void LegoCacheSound::Init()
 {
 	m_dsBuffer = NULL;
 	m_data = NULL;
 	m_unk0x58 = FALSE;
 	memset(&m_wfx, 0, sizeof(m_wfx));
-	m_unk0x6a = FALSE;
-	m_unk0x70 = FALSE;
 	m_looping = TRUE;
+	m_unk0x6a = FALSE;
 	m_volume = 79;
+	m_unk0x70 = FALSE;
 	m_muted = FALSE;
 }
 
@@ -200,6 +203,7 @@ void LegoCacheSound::Stop()
 }
 
 // FUNCTION: LEGO1 0x10006be0
+// FUNCTION: BETA10 0x10066d23
 void LegoCacheSound::FUN_10006be0()
 {
 	if (!m_looping) {

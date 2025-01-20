@@ -7,6 +7,7 @@
 #include "mxstring.h"
 
 // VTABLE: LEGO1 0x100d4718
+// VTABLE: BETA10 0x101bb6f0
 // SIZE 0x88
 class LegoCacheSound : public MxCore {
 public:
@@ -38,6 +39,8 @@ public:
 	virtual void FUN_10006cd0(undefined4, undefined4); // vtable+0x1c
 
 	const MxString& GetUnknown0x48() const { return m_unk0x48; }
+
+	// FUNCTION: BETA10 0x10065890
 	const MxBool GetUnknown0x58() const { return m_unk0x58; }
 
 	LegoCacheSound* Clone();

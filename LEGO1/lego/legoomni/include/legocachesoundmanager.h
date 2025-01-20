@@ -46,9 +46,11 @@ typedef set<LegoCacheSoundEntry, Set100d6b4cComparator> Set100d6b4c;
 typedef list<LegoCacheSoundEntry> List100d6b4c;
 
 // VTABLE: LEGO1 0x100d6b4c
+// VTABLE: BETA10 0x101becac
 // SIZE 0x20
 class LegoCacheSoundManager {
 public:
+	// FUNCTION: BETA10 0x100d0a60
 	LegoCacheSoundManager() {}
 	~LegoCacheSoundManager();
 
