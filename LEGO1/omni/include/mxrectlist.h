@@ -7,10 +7,10 @@
 // VTABLE: LEGO1 0x100dc3f0
 // VTABLE: BETA10 0x101c1fb8
 // SIZE 0x18
-class MxRectList : public MxPtrList<MxRect32> {
+class MxRect32List : public MxPtrList<MxRect32> {
 public:
 	// FUNCTION: BETA10 0x1013b980
-	MxRectList(MxBool p_ownership = FALSE) : MxPtrList<MxRect32>(p_ownership) {}
+	MxRect32List(MxBool p_ownership = FALSE) : MxPtrList<MxRect32>(p_ownership) {}
 };
 
 // VTABLE: LEGO1 0x100dc438
@@ -23,10 +23,10 @@ public:
 
 // VTABLE: LEGO1 0x100dc420
 // VTABLE: BETA10 0x101c2018
-class MxRectListCursor : public MxPtrListCursor<MxRect32> {
+class MxRect32ListCursor : public MxPtrListCursor<MxRect32> {
 public:
 	// FUNCTION: BETA10 0x1013bf10
-	MxRectListCursor(MxRectList* p_list) : MxPtrListCursor<MxRect32>(p_list) {}
+	MxRect32ListCursor(MxRect32List* p_list) : MxPtrListCursor<MxRect32>(p_list) {}
 };
 
 // VTABLE: LEGO1 0x100dc3d8
@@ -67,7 +67,7 @@ public:
 
 // SYNTHETIC: LEGO1 0x100b3d80
 // SYNTHETIC: BETA10 0x1013bd50
-// MxRectList::`scalar deleting destructor'
+// MxRect32List::`scalar deleting destructor'
 
 // TEMPLATE: LEGO1 0x100b3df0
 // TEMPLATE: BETA10 0x1013bd90
@@ -87,11 +87,11 @@ public:
 
 // SYNTHETIC: LEGO1 0x100b3fd0
 // SYNTHETIC: BETA10 0x1013beb0
-// MxRectList::~MxRectList
+// MxRect32List::~MxRect32List
 
 // SYNTHETIC: LEGO1 0x100b4020
 // SYNTHETIC: BETA10 0x1013c0a0
-// MxRectListCursor::`scalar deleting destructor'
+// MxRect32ListCursor::`scalar deleting destructor'
 
 // TEMPLATE: LEGO1 0x100b4090
 // TEMPLATE: BETA10 0x1013c0e0
@@ -111,7 +111,7 @@ public:
 
 // SYNTHETIC: LEGO1 0x100b4210
 // SYNTHETIC: BETA10 0x1013c220
-// MxRectListCursor::~MxRectListCursor
+// MxRect32ListCursor::~MxRect32ListCursor
 
 // TEMPLATE: BETA10 0x1013ba20
 // MxPtrList<MxRect32>::MxPtrList<MxRect32>
