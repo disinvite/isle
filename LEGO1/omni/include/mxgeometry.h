@@ -210,10 +210,10 @@ public:
 	// FUNCTION: BETA10 0x10054d10
 	MxPoint32() {}
 
-	// FUNCTION: LEGO1 0x10012170
 	// FUNCTION: BETA10 0x10031a50
 	MxPoint32(const MxPoint32& p_p) : MxPoint<MxS32>(p_p) {}
 
+	// FUNCTION: LEGO1 0x10012170
 	// FUNCTION: BETA10 0x1006aa70
 	MxPoint32(MxS32 p_x, MxS32 p_y) : MxPoint<MxS32>(p_x, p_y) {}
 };
@@ -320,8 +320,7 @@ public:
 };
 
 // TEMPLATE: BETA10 0x10097ee0
-// MxRect<short>::MxRect<short>
-// todo
+// ??0?$MxRect@F@@QAE@XZ
 
 // TEMPLATE: BETA10 0x100981f0
 // MxRect<short>::SetLeft
@@ -392,6 +391,12 @@ public:
 	MxRect32ListCursor(MxRect32List* p_list) : MxPtrListCursor<MxRect32>(p_list) {}
 };
 
+// TEMPLATE: BETA10 0x10031800
+// ??0?$MxRect@H@@QAE@XZ
+
+// TEMPLATE: BETA10 0x10031860
+// ??0?$MxRect@H@@QAE@ABV?$MxPoint@H@@ABV?$MxSize@H@@@Z
+
 // TEMPLATE: BETA10 0x100319b0
 // MxRect<int>::operator=
 
@@ -400,6 +405,9 @@ public:
 
 // TEMPLATE: BETA10 0x100d80c0
 // MxRect<int>::GetHeight
+
+// TEMPLATE: BETA10 0x100d8ed0
+// ??0?$MxRect@H@@QAE@HHHH@Z
 
 // TEMPLATE: BETA10 0x100ec100
 // MxRect<int>::GetLeft
@@ -415,6 +423,9 @@ public:
 
 // TEMPLATE: BETA10 0x100ec1c0
 // MxRect<int>::operator+=
+
+// TEMPLATE: BETA10 0x1012de70
+// ??0?$MxRect@H@@QAE@ABV0@@Z
 
 // TEMPLATE: BETA10 0x1012dec0
 // MxRect<int>::operator&=

@@ -15,6 +15,7 @@
 void (*g_omniUserMessage)(const char*, MxS32) = NULL;
 
 // FUNCTION: LEGO1 0x100b6e10
+// FUNCTION: BETA10 0x10136970
 MxBool GetRectIntersection(
 	MxS32 p_rect1Width,
 	MxS32 p_rect1Height,
