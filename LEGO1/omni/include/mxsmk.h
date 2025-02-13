@@ -2,7 +2,7 @@
 #define MXSMK_H
 
 #include "decomp.h"
-#include "mxrectlist.h"
+#include "mxgeometry.h"
 #include "mxtypes.h"
 
 #include <smack.h>

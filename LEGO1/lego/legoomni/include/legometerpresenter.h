@@ -1,7 +1,7 @@
 #ifndef LEGOMETERPRESENTER_H
 #define LEGOMETERPRESENTER_H
 
-#include "mxrect16.h"
+#include "mxgeometry.h"
 #include "mxstillpresenter.h"
 #include "mxstring.h"
 

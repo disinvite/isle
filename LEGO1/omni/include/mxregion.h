@@ -3,7 +3,7 @@
 
 #include "decomp.h"
 #include "mxcore.h"
-#include "mxrect32.h"
+#include "mxgeometry.h"
 #include "mxregionlist.h"
 
 // VTABLE: LEGO1 0x100dcae8

@@ -6,7 +6,7 @@
 #include "legostate.h"
 #include "legoworld.h"
 #include "misc.h"
-#include "mxrect32.h"
+#include "mxgeometry.h"
 #include "radio.h"
 
 class MxNotificationParam;

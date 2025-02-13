@@ -6,8 +6,8 @@
 #include "mxdsfile.h"
 #include "mxdsmultiaction.h"
 #include "mxdsobject.h"
+#include "mxgeometry.h"
 #include "mxpresenterlist.h"
-#include "mxrect32.h"
 
 #include <assert.h>
 
