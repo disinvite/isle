@@ -88,7 +88,7 @@ void MxVideoManager::UpdateRegion()
 {
 	if (m_region->VTable0x20() == FALSE) {
 		MxRect32 rect(m_region->GetRect());
-		rect.Intersect(m_videoParam.GetRect());
+		rect &= m_videoParam.GetRect();
 
 		m_displaySurface
 			->Display(rect.GetLeft(), rect.GetTop(), rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight());

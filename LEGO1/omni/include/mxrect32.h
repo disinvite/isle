@@ -1,127 +1,81 @@
 #ifndef MXRECT32_H
 #define MXRECT32_H
 
+#include "mxgeometry.h"
 #include "mxpoint32.h"
 #include "mxsize32.h"
 
-// SIZE 0x10
-class MxRect32 {
+class MxRect32 : public MxRect<MxS32> {
 public:
+	// FUNCTION: BETA10 0x1012df70
 	MxRect32() {}
-	MxRect32(MxS32 p_left, MxS32 p_top, MxS32 p_right, MxS32 p_bottom) { CopyFrom(p_left, p_top, p_right, p_bottom); }
-	MxRect32(const MxPoint32& p_point, const MxSize32& p_size) { CopyFrom(p_point, p_size); }
-	MxRect32(const MxRect32& p_a, const MxRect32& p_b)
-	{
-		m_left = Max(p_a.m_left, p_b.m_left);
-		m_top = Max(p_a.m_top, p_b.m_top);
-		m_right = Min(p_a.m_right, p_b.m_right);
-		m_bottom = Min(p_a.m_bottom, p_b.m_bottom);
-	}
 
-	MxRect32(const MxRect32& p_rect) { CopyFrom(p_rect); }
+	// FUNCTION: BETA10 0x1012de40
+	MxRect32(const MxRect32& p_r) : MxRect<MxS32>(p_r) {}
 
-	MxRect32& operator=(const MxRect32& p_rect)
-	{
-		CopyFrom(p_rect);
-		return *this;
-	}
+	// FUNCTION: BETA10 0x100d8e90
+	MxRect32(MxS32 p_l, MxS32 p_t, MxS32 p_r, MxS32 p_b) : MxRect<MxS32>(p_l, p_t, p_r, p_b) {}
 
-	void Intersect(const MxRect32& p_rect)
-	{
-		m_left = Max(p_rect.m_left, m_left);
-		m_top = Max(p_rect.m_top, m_top);
-		m_right = Min(p_rect.m_right, m_right);
-		m_bottom = Min(p_rect.m_bottom, m_bottom);
-	}
-
-	void SetPoint(const MxPoint32& p_point)
-	{
-		this->m_left = p_point.GetX();
-		this->m_top = p_point.GetY();
-	}
-
-	void AddPoint(const MxPoint32& p_point)
-	{
-		this->m_left += p_point.GetX();
-		this->m_top += p_point.GetY();
-		this->m_right += p_point.GetX();
-		this->m_bottom += p_point.GetY();
-	}
-
-	void SubtractPoint(const MxPoint32& p_point)
-	{
-		this->m_left -= p_point.GetX();
-		this->m_top -= p_point.GetY();
-		this->m_right -= p_point.GetX();
-		this->m_bottom -= p_point.GetY();
-	}
-
-	void UpdateBounds(const MxRect32& p_rect)
-	{
-		m_left = Min(m_left, p_rect.m_left);
-		m_top = Min(m_top, p_rect.m_top);
-		m_right = Max(m_right, p_rect.m_right);
-		m_bottom = Max(m_bottom, p_rect.m_bottom);
-	}
-
-	MxBool IsValid() const { return m_left < m_right && m_top < m_bottom; }
-
-	MxBool IntersectsWith(const MxRect32& p_rect) const
-	{
-		return m_left < p_rect.m_right && p_rect.m_left < m_right && m_top < p_rect.m_bottom && p_rect.m_top < m_bottom;
-	}
-
-	MxS32 GetWidth() const { return (m_right - m_left) + 1; }
-	MxS32 GetHeight() const { return (m_bottom - m_top) + 1; }
-
-	MxPoint32 GetPoint() const { return MxPoint32(this->m_left, this->m_top); }
-	MxSize32 GetSize() const { return MxSize32(this->m_right, this->m_bottom); }
-
-	MxS32 GetLeft() const { return m_left; }
-	MxS32 GetTop() const { return m_top; }
-	MxS32 GetRight() const { return m_right; }
-	MxS32 GetBottom() const { return m_bottom; }
-
-	void SetLeft(MxS32 p_left) { m_left = p_left; }
-	void SetTop(MxS32 p_top) { m_top = p_top; }
-	void SetRight(MxS32 p_right) { m_right = p_right; }
-	void SetBottom(MxS32 p_bottom) { m_bottom = p_bottom; }
-
-private:
-	void CopyFrom(MxS32 p_left, MxS32 p_top, MxS32 p_right, MxS32 p_bottom)
-	{
-		this->m_left = p_left;
-		this->m_top = p_top;
-		this->m_right = p_right;
-		this->m_bottom = p_bottom;
-	}
-
-	void CopyFrom(const MxRect32& p_rect)
-	{
-		this->m_left = p_rect.m_left;
-		this->m_top = p_rect.m_top;
-		this->m_right = p_rect.m_right;
-		this->m_bottom = p_rect.m_bottom;
-	}
-
-	// The address might also be the constructor that calls CopyFrom
-	// FUNCTION: LEGO1 0x100b6fc0
-	MxRect32* CopyFrom(const MxPoint32& p_point, const MxSize32& p_size)
-	{
-		this->m_left = p_point.GetX();
-		this->m_top = p_point.GetY();
-		this->m_right = p_size.GetWidth() + p_point.GetX() - 1;
-		this->m_bottom = p_size.GetHeight() + p_point.GetY() - 1;
-		return this;
-	}
-
-	static MxS32 Min(MxS32 p_a, MxS32 p_b) { return p_a <= p_b ? p_a : p_b; }
-	static MxS32 Max(MxS32 p_a, MxS32 p_b) { return p_a <= p_b ? p_b : p_a; }
-
-	MxS32 m_left;   // 0x00
-	MxS32 m_top;    // 0x04
-	MxS32 m_right;  // 0x08
-	MxS32 m_bottom; // 0x0c
+	// FUNCTION: BETA10 0x10137060
+	MxRect32(MxPoint32& p_p, MxSize32& p_s) : MxRect<MxS32>(p_p, p_s) {}
 };
+
+// TEMPLATE: BETA10 0x100319b0
+// MxRect<int>::operator=
+
+// TEMPLATE: BETA10 0x100d8090
+// MxRect<int>::GetWidth
+
+// TEMPLATE: BETA10 0x100d80c0
+// MxRect<int>::GetHeight
+
+// TEMPLATE: BETA10 0x100ec100
+// MxRect<int>::GetLeft
+
+// TEMPLATE: BETA10 0x100ec130
+// MxRect<int>::GetTop
+
+// TEMPLATE: BETA10 0x100ec160
+// MxRect<int>::GetRight
+
+// TEMPLATE: BETA10 0x100ec190
+// MxRect<int>::GetBottom
+
+// TEMPLATE: BETA10 0x100ec1c0
+// MxRect<int>::operator+=
+
+// TEMPLATE: BETA10 0x1012dec0
+// MxRect<int>::operator&=
+
+// SYNTHETIC: LEGO1 0x100b6fc0
+// SYNTHETIC: BETA10 0x1012dfa0
+// MxRect32::operator=
+
+// TEMPLATE: BETA10 0x10031d30
+// MxRect<int>::Contains
+
+// TEMPLATE: BETA10 0x10137090
+// MxRect<int>::Intersects
+
+// TEMPLATE: BETA10 0x10137100
+// MxRect<int>::operator-=
+
+// TEMPLATE: BETA10 0x1014b320
+// MxRect<int>::operator|=
+
+// TEMPLATE: BETA10 0x1014b2d0
+// MxRect<int>::Empty
+
+// TEMPLATE: BETA10 0x1014bd80
+// MxRect<int>::SetLeft
+
+// TEMPLATE: BETA10 0x1014b270
+// MxRect<int>::SetTop
+
+// TEMPLATE: BETA10 0x1014bda0
+// MxRect<int>::SetRight
+
+// TEMPLATE: BETA10 0x1014b2a0
+// MxRect<int>::SetBottom
 
 #endif // MXRECT32_H

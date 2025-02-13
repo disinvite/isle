@@ -148,7 +148,7 @@ MxRect32* MxRegionCursor::VTable0x24(MxRect32& p_rect)
 
 		if (topBottom->IntersectsWith(p_rect) && leftRight->IntersectsWith(p_rect)) {
 			UpdateRect(leftRight->GetLeft(), topBottom->GetTop(), leftRight->GetRight(), topBottom->GetBottom());
-			m_rect->Intersect(p_rect);
+			*m_rect &= p_rect;
 		}
 		else {
 			ProcessRectOverlapAscending(p_rect);
@@ -173,7 +173,7 @@ MxRect32* MxRegionCursor::VTable0x2c(MxRect32& p_rect)
 
 		if (topBottom->IntersectsWith(p_rect) && leftRight->IntersectsWith(p_rect)) {
 			UpdateRect(leftRight->GetLeft(), topBottom->GetTop(), leftRight->GetRight(), topBottom->GetBottom());
-			m_rect->Intersect(p_rect);
+			*m_rect &= p_rect;
 		}
 		else {
 			ProcessOverlapWithRect(p_rect);
@@ -251,7 +251,7 @@ void MxRegionCursor::ProcessRectOverlapAscending(MxRect32& p_rect)
 						leftRight->GetRight(),
 						topBottom->GetBottom()
 					);
-					m_rect->Intersect(p_rect);
+					*m_rect &= p_rect;
 					return;
 				}
 			}
@@ -287,7 +287,7 @@ void MxRegionCursor::ProcessOverlapWithRect(MxRect32& p_rect)
 						leftRight->GetRight(),
 						topBottom->GetBottom()
 					);
-					m_rect->Intersect(p_rect);
+					*m_rect &= p_rect;
 					return;
 				}
 			}

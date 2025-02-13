@@ -85,7 +85,7 @@ void MxSmkPresenter::LoadFrame(MxStreamChunk* p_chunk)
 
 	while (cursor.Next(rect)) {
 		invalidateRect = *rect;
-		invalidateRect.AddPoint(GetLocation());
+		invalidateRect += GetLocation();
 		MVideoManager()->InvalidateRect(invalidateRect);
 	}
 }

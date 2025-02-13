@@ -45,7 +45,7 @@ void MxRegion::VTable0x18(MxRect32& p_rect)
 	MxRegionTopBottomListCursor cursor(m_list);
 	MxRegionTopBottom* topBottom;
 
-	while (rect.IsValid() && cursor.Next(topBottom)) {
+	while (!rect.Empty() && cursor.Next(topBottom)) {
 		if (topBottom->GetTop() >= rect.GetBottom()) {
 			MxRegionTopBottom* newTopBottom = new MxRegionTopBottom(rect);
 			cursor.Prepend(newTopBottom);
@@ -81,18 +81,18 @@ void MxRegion::VTable0x18(MxRect32& p_rect)
 		}
 	}
 
-	if (rect.IsValid()) {
+	if (!rect.Empty()) {
 		MxRegionTopBottom* newTopBottom = new MxRegionTopBottom(rect);
 		m_list->Append(newTopBottom);
 	}
 
-	m_rect.UpdateBounds(p_rect);
+	m_rect |= p_rect;
 }
 
 // FUNCTION: LEGO1 0x100c3e20
 MxBool MxRegion::VTable0x1c(MxRect32& p_rect)
 {
-	if (!m_rect.IntersectsWith(p_rect)) {
+	if (!m_rect.Intersects(p_rect)) {
 		return FALSE;
 	}
 
