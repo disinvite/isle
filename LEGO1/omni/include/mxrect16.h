@@ -1,47 +1,61 @@
 #ifndef MXRECT16_H
 #define MXRECT16_H
 
+#include "mxgeometry.h"
 #include "mxtypes.h"
 
-// SIZE 0x08
-struct MxRect16 {
-	// FUNCTION: BETA10 0x10097ee0
-	MxRect16() {}
-
-	// FUNCTION: BETA10 0x100981f0
-	void SetLeft(MxS16 p_left) { m_left = p_left; }
-
-	// FUNCTION: BETA10 0x10098220
-	void SetTop(MxS16 p_top) { m_top = p_top; }
-
-	// FUNCTION: BETA10 0x10098250
-	void SetRight(MxS16 p_right) { m_right = p_right; }
-
-	// FUNCTION: BETA10 0x10098280
-	void SetBottom(MxS16 p_bottom) { m_bottom = p_bottom; }
-
-	// FUNCTION: BETA10 0x10098300
-	MxS16 GetLeft() const { return m_left; }
-
-	// FUNCTION: BETA10 0x10098330
-	MxS16 GetTop() const { return m_top; }
-
-	// There is no GetRight()
-
-	// FUNCTION: BETA10 0x10098360
-	MxS16 GetBottom() const { return m_bottom; }
-
-	// FUNCTION: BETA10 0x10098390
-	MxS16 GetWidth() const { return m_right - m_left + 1; }
-
-	// FUNCTION: BETA10 0x100983c0
-	MxS16 GetHeight() const { return m_bottom - m_top + 1; }
-
-private:
-	MxS16 m_left;   // 0x00
-	MxS16 m_top;    // 0x02
-	MxS16 m_right;  // 0x04
-	MxS16 m_bottom; // 0x06
+class MxPoint16 : public MxPoint<MxS16> {
+public:
+	MxPoint16() {}
+	MxPoint16(const MxPoint16& p_p) : MxPoint<MxS16>(p_p) {}
+	MxPoint16(MxS16 p_x, MxS16 p_y) : MxPoint<MxS16>(p_x, p_y) {}
 };
+
+class MxSize16 : public MxSize<MxS16> {
+public:
+	MxSize16() {}
+	MxSize16(const MxSize16& p_s) : MxSize<MxS16>(p_s) {}
+	MxSize16(MxS16 p_width, MxS16 p_height) : MxSize<MxS16>(p_width, p_height) {}
+};
+
+class MxRect16 : public MxRect<MxS16> {
+public:
+	// FUNCTION: BETA10 0x10097eb0
+	MxRect16() {}
+	MxRect16(const MxRect16& p_r) : MxRect<MxS16>(p_r) {}
+	MxRect16(MxS16 p_l, MxS16 p_t, MxS16 p_r, MxS16 p_b) : MxRect<MxS16>(p_l, p_t, p_r, p_b) {}
+	MxRect16(MxPoint16& p_p, MxSize16& p_s) : MxRect<MxS16>(p_p, p_s) {}
+};
+
+// TEMPLATE: BETA10 0x10097ee0
+// MxRect<short>::MxRect<short>
+// todo
+
+// TEMPLATE: BETA10 0x100981f0
+// MxRect<short>::SetLeft
+
+// TEMPLATE: BETA10 0x10098220
+// MxRect<short>::SetTop
+
+// TEMPLATE: BETA10 0x10098250
+// MxRect<short>::SetRight
+
+// TEMPLATE: BETA10 0x10098280
+// MxRect<short>::SetBottom
+
+// TEMPLATE: BETA10 0x10098300
+// MxRect<short>::GetLeft
+
+// TEMPLATE: BETA10 0x10098330
+// MxRect<short>::GetTop
+
+// TEMPLATE: BETA10 0x10098360
+// MxRect<short>::GetBottom
+
+// TEMPLATE: BETA10 0x10098390
+// MxRect<short>::GetWidth
+
+// TEMPLATE: BETA10 0x100983c0
+// MxRect<short>::GetHeight
 
 #endif // MXRECT16_H
