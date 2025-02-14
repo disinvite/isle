@@ -244,10 +244,10 @@ public:
 // ??0?$MxPoint@H@@QAE@XZ
 
 // TEMPLATE: BETA10 0x10142c90
-// MxPoint32::SetX
+// MxPoint<int>::SetX
 
 // TEMPLATE: BETA10 0x10142cb0
-// MxPoint32::SetY
+// MxPoint<int>::SetY
 
 /******************************** MxSize16 **********************************/
 
@@ -362,6 +362,7 @@ public:
 	// FUNCTION: BETA10 0x100d8e90
 	MxRect32(MxS32 p_l, MxS32 p_t, MxS32 p_r, MxS32 p_b) : MxRect<MxS32>(p_l, p_t, p_r, p_b) {}
 
+	// FUNCTION: LEGO1 0x100b6fc0
 	// FUNCTION: BETA10 0x10137060
 	MxRect32(MxPoint32& p_p, MxSize32& p_s) : MxRect<MxS32>(p_p, p_s) {}
 };
@@ -430,7 +431,6 @@ public:
 // TEMPLATE: BETA10 0x1012dec0
 // MxRect<int>::operator&=
 
-// SYNTHETIC: LEGO1 0x100b6fc0
 // SYNTHETIC: BETA10 0x1012dfa0
 // MxRect32::operator=
 
