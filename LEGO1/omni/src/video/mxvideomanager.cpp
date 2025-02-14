@@ -84,6 +84,7 @@ void MxVideoManager::Destroy(MxBool p_fromDestructor)
 }
 
 // FUNCTION: LEGO1 0x100be3e0
+// FUNCTION: BETA10 0x1012cdaa
 void MxVideoManager::UpdateRegion()
 {
 	if (m_region->VTable0x20() == FALSE) {
