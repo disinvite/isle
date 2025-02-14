@@ -300,13 +300,7 @@ void MxVideoPresenter::PutFrame()
 {
 	MxDisplaySurface* displaySurface = MVideoManager()->GetDisplaySurface();
 	MxRegion* region = MVideoManager()->GetRegion();
-#ifdef COMPAT_MODE
-	MxPoint32 zeroPoint(0, 0);
-	MxSize32 size(GetWidth(), GetHeight());
-	MxRect32 rect(zeroPoint, size);
-#else
 	MxRect32 rect(MxPoint32(0, 0), MxSize32(GetWidth(), GetHeight()));
-#endif
 	rect += GetLocation();
 	LPDIRECTDRAWSURFACE ddSurface = displaySurface->GetDirectDrawSurface2();
 

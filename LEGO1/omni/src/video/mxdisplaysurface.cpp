@@ -848,18 +848,8 @@ void MxDisplaySurface::Display(MxS32 p_left, MxS32 p_top, MxS32 p_left2, MxS32 p
 			p_left2 += m_videoParam.GetRect().GetLeft() + point.GetX();
 			p_top2 += m_videoParam.GetRect().GetTop() + point.GetY();
 
-#ifdef COMPAT_MODE
-			MxPoint32 aPt(p_left, p_top);
-			MxSize32 aSize(p_width + 1, p_height + 1);
-			MxRect32 a(aPt, aSize);
-
-			MxPoint32 bPt(p_left2, p_top2);
-			MxSize32 bSize(p_width + 1, p_height + 1);
-			MxRect32 b(bPt, bSize);
-#else
 			MxRect32 a(MxPoint32(p_left, p_top), MxSize32(p_width + 1, p_height + 1));
 			MxRect32 b(MxPoint32(p_left2, p_top2), MxSize32(p_width + 1, p_height + 1));
-#endif
 
 			DDBLTFX data;
 			memset(&data, 0, sizeof(data));

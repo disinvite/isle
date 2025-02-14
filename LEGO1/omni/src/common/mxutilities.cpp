@@ -29,23 +29,11 @@ MxBool GetRectIntersection(
 	MxS32* p_height
 )
 {
-#ifdef COMPAT_MODE
-	MxPoint32 zeroPoint(0, 0);
-	MxSize32 rect1Size(p_rect1Width, p_rect1Height);
-	MxSize32 rect2Size(p_rect2Width, p_rect2Height);
-
-	MxPoint32 rect1Origin(*p_rect1Left, *p_rect1Top);
-	MxRect32 rect1(zeroPoint, rect1Size);
-
-	MxPoint32 rect2Origin(*p_rect2Left, *p_rect2Top);
-	MxRect32 rect2(zeroPoint, rect2Size);
-#else
 	MxPoint32 rect1Origin(*p_rect1Left, *p_rect1Top);
 	MxRect32 rect1(MxPoint32(0, 0), MxSize32(p_rect1Width, p_rect1Height));
 
 	MxPoint32 rect2Origin(*p_rect2Left, *p_rect2Top);
 	MxRect32 rect2(MxPoint32(0, 0), MxSize32(p_rect2Width, p_rect2Height));
-#endif
 
 	MxRect32 rect(0, 0, *p_width, *p_height);
 	rect += rect1Origin;
