@@ -81,7 +81,7 @@ struct InfocenterMapEntry {
 
 	MxStillPresenter* m_destCtl; // 0x00
 	undefined4 m_unk0x04;        // 0x04
-	MxRect32 m_area;             // 0x08
+	MxRect<MxS32> m_area;        // 0x08
 };
 
 // VTABLE: LEGO1 0x100d9338
