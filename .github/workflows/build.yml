@@ -10,6 +10,8 @@ jobs:
   prepare-tool-cache:
     runs-on: windows-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
 
@@ -78,6 +80,7 @@ jobs:
 
   build:
     name: 'MSVC 4.20'
+    needs: [fetch-deps, prepare-tool-cache]
     runs-on: windows-latest
     strategy:
       matrix:
