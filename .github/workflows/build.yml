@@ -7,6 +7,23 @@ jobs:
     name: Download original binaries
     uses: ./.github/workflows/legobin.yml
 
+  prepare-tool-cache:
+    runs-on: windows-latest
+    steps:
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          cache: 'pip'
+          python-version: '3.12'
+
+      - name: Install python packages
+        shell: bash
+        run: |
+          pip install -r tools/requirements.txt
+
+
   build-current-toolchain:
     name: Current ${{ matrix.toolchain.name }}
     runs-on: windows-latest
@@ -62,6 +79,9 @@ jobs:
   build:
     name: 'MSVC 4.20'
     runs-on: windows-latest
+    strategy:
+      matrix:
+        instance: [0, 1, 2, 3]
 
     steps:
     - uses: actions/checkout@v4
