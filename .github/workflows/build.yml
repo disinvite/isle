@@ -25,6 +25,18 @@ jobs:
         run: |
           pip install -r tools/requirements.txt
 
+      - name: Cache cmake
+        uses: actions/cache@v4
+        with:
+          path: ${{runner.tool_cache}}\cmake\
+          key: tool-cmake
+
+      - name: Cache python
+        uses: actions/cache@v4
+        with:
+          path: ${{env.pythonLocation}}
+          key: python-${{hashFiles('tools/requirements.txt')}}
+
 
   build-current-toolchain:
     name: Current ${{ matrix.toolchain.name }}
@@ -94,6 +106,12 @@ jobs:
         repository: itsmattkc/msvc420
         path: msvc420
 
+    - name: Restore cmake cache
+      uses: actions/cache@v4
+      with:
+        path: ${{runner.tool_cache}}\cmake\
+        key: tool-cmake
+
     - name: Setup cmake
       uses: jwlawson/actions-setup-cmake@v2
       with:
@@ -147,7 +165,15 @@ jobs:
         path: legobin
         key: legobin
 
+    - name: Use python cache
+      id: python-cache
+      uses: actions/cache@v4
+      with:
+        path: ${{env.pythonLocation}}
+        key: python-${{hashFiles('tools/requirements.txt')}}
+
     - name: Install python packages
+      if: steps.python-cache.output.cache-hit != 'true'
       shell: bash
       run: |
         pip install -r tools/requirements.txt
