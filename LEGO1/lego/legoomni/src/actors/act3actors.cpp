@@ -246,26 +246,26 @@ void Act3Cop::ParseAction(char* p_extra)
 
 			Mx4DPointFloat* boundary0x14 = boundary->GetUnknown0x14();
 
-			if (point.Dot(point, *boundary0x14) + boundary0x14->index_operator(3) <= 0.001 &&
-				point.Dot(point, *boundary0x14) + boundary0x14->index_operator(3) >= -0.001) {
-				continue;
+			if (point.Dot(point, *boundary0x14) + boundary0x14->index_operator(3) > 0.001 ||
+				point.Dot(point, *boundary0x14) + boundary0x14->index_operator(3) < -0.001) {
+
+				g_copDest[i].m_unk0x08[1] =
+					-(boundary0x14->index_operator(3) + boundary0x14->index_operator(0) * point[0] +
+					  boundary0x14->index_operator(2) * point[2]) /
+					boundary0x14->index_operator(1);
+
+				MxTrace(
+					"Act3 cop destination %d (%g, %g, %g) is not on plane of boundary %s...adjusting to (%g, %g, %g)\n",
+					i,
+					point[0],
+					point[1],
+					point[2],
+					boundary->GetName(),
+					point[0],
+					g_copDest[i].m_unk0x08[1],
+					point[2]
+				);
 			}
-
-			g_copDest[i].m_unk0x08[1] = -(boundary0x14->index_operator(3) + boundary0x14->index_operator(0) * point[0] +
-										  boundary0x14->index_operator(2) * point[2]) /
-										boundary0x14->index_operator(1);
-
-			MxTrace(
-				"Act3 cop destination %d (%g, %g, %g) is not on plane of boundary %s...adjusting to (%g, %g, %g)\n",
-				i,
-				point[0],
-				point[1],
-				point[2],
-				boundary->GetName(),
-				point[0],
-				g_copDest[i].m_unk0x08[1],
-				point[2]
-			);
 		}
 	}
 

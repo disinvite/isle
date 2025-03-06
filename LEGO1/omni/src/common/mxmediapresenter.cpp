@@ -198,6 +198,7 @@ void MxMediaPresenter::StreamingTickle()
 }
 
 // FUNCTION: LEGO1 0x100b5e10
+// FUNCTION: BETA10 0x10136597
 void MxMediaPresenter::RepeatingTickle()
 {
 	if (IsEnabled() && !m_currentChunk) {

@@ -140,6 +140,7 @@ void MxCompositeMediaPresenter::StartingTickle()
 }
 
 // FUNCTION: LEGO1 0x10074470
+// FUNCTION: BETA10 0x100ea404
 MxResult MxCompositeMediaPresenter::Tickle()
 {
 	AUTOLOCK(m_criticalSection);

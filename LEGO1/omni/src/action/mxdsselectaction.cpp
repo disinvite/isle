@@ -86,6 +86,7 @@ MxU32 MxDSSelectAction::GetSizeOnDisk()
 // FUNCTION: BETA10 0x1015aa30
 void MxDSSelectAction::Deserialize(MxU8*& p_source, MxS16 p_unk0x24)
 {
+	MxDSObject* object = NULL;
 	MxString string;
 	MxDSAction::Deserialize(p_source, p_unk0x24);
 
@@ -94,16 +95,16 @@ void MxDSSelectAction::Deserialize(MxU8*& p_source, MxS16 p_unk0x24)
 
 	this->m_unk0x9c = (char*) p_source;
 
-	if (!strnicmp(this->m_unk0x9c.GetData(), "RANDOM_", strlen("RANDOM_"))) {
+	if (strnicmp(this->m_unk0x9c.GetData(), "RANDOM_", strlen("RANDOM_"))) {
+		string = VariableTable()->GetVariable((char*) p_source);
+	}
+	else {
 		char buffer[10];
 		MxS16 value = atoi(&this->m_unk0x9c.GetData()[strlen("RANDOM_")]);
 
 		srand(Timer()->GetTime());
-		MxS32 random = rand() % value;
-		string = itoa((MxS16) random, buffer, 10);
-	}
-	else {
-		string = VariableTable()->GetVariable((char*) p_source);
+		MxS16 random = rand() % value;
+		string = itoa(random, buffer, 10);
 	}
 
 	p_source += strlen((char*) p_source) + 1;
@@ -129,13 +130,13 @@ void MxDSSelectAction::Deserialize(MxU8*& p_source, MxS16 p_unk0x24)
 			MxU32 extraFlag = *(MxU32*) (p_source + 4) & 1;
 			p_source += 8;
 
-			MxDSAction* action = (MxDSAction*) DeserializeDSObjectDispatch(p_source, p_unk0x24);
+			object = DeserializeDSObjectDispatch(p_source, p_unk0x24);
 
 			if (index == i) {
-				this->m_actions->Append(action);
+				this->m_actions->Append((MxDSAction*) object);
 			}
 			else {
-				delete action;
+				delete object;
 			}
 
 			p_source += extraFlag;

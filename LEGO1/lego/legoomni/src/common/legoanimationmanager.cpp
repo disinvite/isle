@@ -20,6 +20,7 @@
 #include "legoworld.h"
 #include "misc.h"
 #include "mxbackgroundaudiomanager.h"
+#include "mxdebug.h"
 #include "mxmisc.h"
 #include "mxnotificationmanager.h"
 #include "mxticklemanager.h"
@@ -2082,6 +2083,7 @@ MxBool LegoAnimationManager::FUN_10062e20(LegoROI* p_roi, LegoAnimPresenter* p_p
 		}
 
 		if (characterId == -1) {
+			MxTrace("no info slot\n");
 			return FALSE;
 		}
 
@@ -2094,10 +2096,12 @@ MxBool LegoAnimationManager::FUN_10062e20(LegoROI* p_roi, LegoAnimPresenter* p_p
 			}
 
 			if (i == (MxS32) sizeOfArray(m_extras)) {
+				MxTrace("no room in m_extras\n");
 				return FALSE;
 			}
 		}
 		else {
+			MxTrace("already in list: %s\n", name);
 			inExtras = TRUE;
 
 			for (i = 0; i < (MxS32) sizeOfArray(m_extras); i++) {
@@ -2107,6 +2111,7 @@ MxBool LegoAnimationManager::FUN_10062e20(LegoROI* p_roi, LegoAnimPresenter* p_p
 			}
 
 			if (i == (MxS32) sizeOfArray(m_extras)) {
+				MxTrace("can't find roi in m_extras\n");
 				return FALSE;
 			}
 		}
@@ -2128,6 +2133,7 @@ MxBool LegoAnimationManager::FUN_10062e20(LegoROI* p_roi, LegoAnimPresenter* p_p
 				m_extras[i].m_roi = NULL;
 				g_characters[characterId].m_unk0x07 = FALSE;
 				g_characters[characterId].m_inExtras = FALSE;
+				MxTrace("AnimMan:no boundary: %s\n", name);
 				return FALSE;
 			}
 
@@ -2140,6 +2146,7 @@ MxBool LegoAnimationManager::FUN_10062e20(LegoROI* p_roi, LegoAnimPresenter* p_p
 		}
 
 		if (GameState()->GetCurrentAct() != LegoGameState::e_act1 && !strcmp(name, "brickstr")) {
+			MxTrace("brickster not put on path (!act1)\n");
 			return FALSE;
 		}
 
@@ -2186,10 +2193,25 @@ MxBool LegoAnimationManager::FUN_10062e20(LegoROI* p_roi, LegoAnimPresenter* p_p
 			}
 
 			result = world->PlaceActor(actor, p_presenter, position, direction);
+
+			if (result == SUCCESS) {
+				MxTrace(
+					"AnimMan: Extra %s added at %f %f %f (tot: %d)\n",
+					name,
+					position[0],
+					position[1],
+					position[2],
+					m_unk0x414 + 1
+				);
+			}
 		}
 
 		if (result != SUCCESS && g_characters[characterId].m_unk0x07) {
 			result = world->PlaceActor(actor);
+
+			if (result == SUCCESS) {
+				MxTrace("AnimMan: Extra %s added at old location (tot: %d)\n", name, m_unk0x414 + 1);
+			}
 		}
 
 		g_characters[characterId].m_unk0x07 = FALSE;
@@ -2197,6 +2219,7 @@ MxBool LegoAnimationManager::FUN_10062e20(LegoROI* p_roi, LegoAnimPresenter* p_p
 		if (result != SUCCESS) {
 			m_extras[i].m_roi = NULL;
 			g_characters[characterId].m_inExtras = FALSE;
+			MxTrace("AnimMan:PlaceActor failed: %s\n", name);
 		}
 		else {
 			m_extras[i].m_characterId = characterId;
@@ -2208,6 +2231,9 @@ MxBool LegoAnimationManager::FUN_10062e20(LegoROI* p_roi, LegoAnimPresenter* p_p
 			m_unk0x414++;
 			return TRUE;
 		}
+	}
+	else {
+		MxTrace("no actor: %s\n", name);
 	}
 
 	return FALSE;
