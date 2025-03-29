@@ -131,6 +131,9 @@ jobs:
 
     - name: Detect binaries
       run: |
+        pwd
+        ls -l legobin
+        ls -l build
         reccmp-project detect --what original   --search-path legobin
         reccmp-project detect --what recompiled --search-path build
 
