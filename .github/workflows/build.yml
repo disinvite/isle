@@ -129,6 +129,11 @@ jobs:
       run: |
         pip install -r tools/requirements.txt
 
+    - name: Try The Wine
+      shell: bash
+      run: |
+        sudo apt install wine
+
     - name: Detect binaries
       run: |
         pwd
