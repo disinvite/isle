@@ -132,7 +132,7 @@ jobs:
     - name: Try The Wine
       shell: bash
       run: |
-        sudo apt install wine
+        sudo dpkg --add-architecture i386 && apt update && apt install wine wine32:i386
 
     - name: Detect binaries
       run: |
