@@ -103,7 +103,7 @@ jobs:
   verify:
     name: Verify decomp
     needs: [build, fetch-deps]
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@main
 
