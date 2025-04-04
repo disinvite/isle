@@ -18,6 +18,7 @@
 // SIZE 0x18
 class LegoROIList : public MxPtrList<LegoROI> {
 public:
+	// FUNCTION: BETA10 0x10056f40
 	LegoROIList(MxBool p_ownership = FALSE) : MxPtrList<LegoROI>(p_ownership) {}
 
 	// FUNCTION: LEGO1 0x1005f360

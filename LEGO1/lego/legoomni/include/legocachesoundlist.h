@@ -18,7 +18,6 @@
 // SIZE 0x18
 class LegoCacheSoundList : public MxPtrList<LegoCacheSound> {
 public:
-	// FUNCTION: BETA10 0x10056f40
 	LegoCacheSoundList(MxBool p_ownership = FALSE) : MxPtrList<LegoCacheSound>(p_ownership) {}
 
 	// FUNCTION: LEGO1 0x1001e650
