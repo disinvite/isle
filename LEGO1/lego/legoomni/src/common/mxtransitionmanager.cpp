@@ -513,12 +513,12 @@ void MxTransitionManager::SubmitCopyRect(LPDDSURFACEDESC p_ddsc)
 	const MxU8* src = (const MxU8*) m_copyBuffer;
 
 	MxS32 copyPitch;
-	copyPitch = ((m_copyRect.right - m_copyRect.left) + 1) * bytesPerPixel;
+	copyPitch = m_copyRect.GetWidth() * bytesPerPixel;
 
 	MxS32 y;
-	dst = (MxU8*) p_ddsc->lpSurface + (p_ddsc->lPitch * m_copyRect.top) + (bytesPerPixel * m_copyRect.left);
+	dst = (MxU8*) p_ddsc->lpSurface + (p_ddsc->lPitch * m_copyRect.GetTop()) + (bytesPerPixel * m_copyRect.GetLeft());
 
-	for (y = 0; y < m_copyRect.bottom - m_copyRect.top + 1; ++y) {
+	for (y = 0; y < m_copyRect.GetHeight(); ++y) {
 		memcpy(dst, src, copyPitch);
 		src += copyPitch;
 		dst += p_ddsc->lPitch;
@@ -544,21 +544,21 @@ void MxTransitionManager::SetupCopyRect(LPDDSURFACEDESC p_ddsc)
 	if (m_waitIndicator->GetCurrentTickleState() >= MxPresenter::e_streaming) {
 		// Setup the copy rect
 		MxU32 copyPitch = (p_ddsc->ddpfPixelFormat.dwRGBBitCount / 8) *
-						  (m_copyRect.right - m_copyRect.left + 1); // This uses m_copyRect, seemingly erroneously
+						  m_copyRect.GetWidth(); // This uses m_copyRect, seemingly erroneously
 		MxU32 bytesPerPixel = p_ddsc->ddpfPixelFormat.dwRGBBitCount / 8;
 
-		m_copyRect.left = m_waitIndicator->GetLocation().GetX();
-		m_copyRect.top = m_waitIndicator->GetLocation().GetY();
+		m_copyRect.SetLeft(m_waitIndicator->GetLocation().GetX());
+		m_copyRect.SetTop(m_waitIndicator->GetLocation().GetY());
 
 		MxS32 height = m_waitIndicator->GetHeight();
 		MxS32 width = m_waitIndicator->GetWidth();
 
-		m_copyRect.right = m_copyRect.left + width - 1;
-		m_copyRect.bottom = m_copyRect.top + height - 1;
+		m_copyRect.SetRight(m_copyRect.GetLeft() + width - 1);
+		m_copyRect.SetBottom(m_copyRect.GetTop() + height - 1);
 
 		// Allocate the copy buffer
-		const MxU8* src =
-			(const MxU8*) p_ddsc->lpSurface + m_copyRect.top * p_ddsc->lPitch + bytesPerPixel * m_copyRect.left;
+		const MxU8* src = (const MxU8*) p_ddsc->lpSurface + m_copyRect.GetTop() * p_ddsc->lPitch +
+						  bytesPerPixel * m_copyRect.GetLeft();
 
 		m_copyBuffer = new MxU8[bytesPerPixel * width * height];
 		if (!m_copyBuffer) {
@@ -568,7 +568,7 @@ void MxTransitionManager::SetupCopyRect(LPDDSURFACEDESC p_ddsc)
 		// Copy into the copy buffer
 		MxU8* dst = m_copyBuffer;
 
-		for (MxS32 i = 0; i < (m_copyRect.bottom - m_copyRect.top + 1); i++) {
+		for (MxS32 i = 0; i < m_copyRect.GetHeight(); i++) {
 			memcpy(dst, src, copyPitch);
 			src += p_ddsc->lPitch;
 			dst += copyPitch;

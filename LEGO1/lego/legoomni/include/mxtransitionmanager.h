@@ -3,6 +3,7 @@
 
 #include "decomp.h"
 #include "mxcore.h"
+#include "mxgeometry.h"
 
 #include <ddraw.h>
 
@@ -65,7 +66,7 @@ private:
 	void SetupCopyRect(LPDDSURFACEDESC p_ddsc);
 
 	MxVideoPresenter* m_waitIndicator; // 0x08
-	RECT m_copyRect;                   // 0x0c
+	MxRect32 m_copyRect;               // 0x0c
 	MxU8* m_copyBuffer;                // 0x1c
 	FlagBitfield m_copyFlags;          // 0x20
 	undefined4 m_unk0x24;              // 0x24
