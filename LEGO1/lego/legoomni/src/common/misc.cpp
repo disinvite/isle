@@ -198,8 +198,10 @@ MxDSAction& GetCurrentAction()
 }
 
 // FUNCTION: LEGO1 0x100158f0
+// FUNCTION: BETA10 0x100e4eb4
 void SetCurrentWorld(LegoWorld* p_world)
 {
+	assert(LegoOmni::GetInstance());
 	LegoOmni::GetInstance()->SetCurrentWorld(p_world);
 }
 

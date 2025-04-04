@@ -28,6 +28,7 @@ LegoCacheSoundManager::~LegoCacheSoundManager()
 }
 
 // FUNCTION: LEGO1 0x1003d050
+// FUNCTION: BETA10 0x100652f0
 MxResult LegoCacheSoundManager::Tickle()
 {
 #ifdef COMPAT_MODE
@@ -78,6 +79,7 @@ LegoCacheSound* LegoCacheSoundManager::FindSoundByKey(const char* p_key)
 }
 
 // FUNCTION: LEGO1 0x1003d290
+// FUNCTION: BETA10 0x100654db
 LegoCacheSound* LegoCacheSoundManager::ManageSoundEntry(LegoCacheSound* p_sound)
 {
 	Set100d6b4c::iterator it = m_set.find(LegoCacheSoundEntry(p_sound));

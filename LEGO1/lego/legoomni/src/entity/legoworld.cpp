@@ -55,6 +55,7 @@ LegoWorld::~LegoWorld()
 }
 
 // FUNCTION: LEGO1 0x1001e0b0
+// FUNCTION: BETA10 0x100d9815
 MxResult LegoWorld::Create(MxDSAction& p_dsAction)
 {
 	MxEntity::Create(p_dsAction);

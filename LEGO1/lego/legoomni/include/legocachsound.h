@@ -39,6 +39,8 @@ public:
 	virtual void FUN_10006cd0(undefined4, undefined4); // vtable+0x1c
 
 	const MxString& GetUnknown0x48() const { return m_unk0x48; }
+
+	// FUNCTION: BETA10 0x10065890
 	const MxBool GetUnknown0x58() const { return m_unk0x58; }
 
 	LegoCacheSound* Clone();
