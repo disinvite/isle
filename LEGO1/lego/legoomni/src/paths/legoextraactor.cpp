@@ -12,18 +12,23 @@
 DECOMP_SIZE_ASSERT(LegoExtraActor, 0x1dc)
 
 // GLOBAL: LEGO1 0x100f31d0
+// GLOBAL: BETA10 0x101ed0f4
 LegoWorld* g_unk0x100f31d0 = NULL;
 
 // GLOBAL: LEGO1 0x100f31d4
+// GLOBAL: BETA10 0x101ed0f8
 LegoLocomotionAnimPresenter* m_assAnimP = NULL;
 
 // GLOBAL: LEGO1 0x100f31d8
+// GLOBAL: BETA10 0x101ed0fc
 LegoLocomotionAnimPresenter* m_disAnimP = NULL;
 
 // GLOBAL: LEGO1 0x100f31dc
+// GLOBAL: BETA10 0x101ed100
 MxS32 g_unk0x100f31dc = 0;
 
 // GLOBAL: LEGO1 0x10104c18
+// GLOBAL: BETA10 0x1020f4a0
 Mx3DPointFloat g_unk0x10104c18 = Mx3DPointFloat(0.0f, 2.5f, 0.0f);
 
 // FUNCTION: LEGO1 0x1002a500
@@ -154,30 +159,34 @@ MxResult LegoExtraActor::FUN_1002aae0()
 	return SUCCESS;
 }
 
+// FUNCTION: BETA10 0x10082400
 inline void LegoExtraActor::FUN_1002ad8a()
 {
 	LegoWorld* w = CurrentWorld();
+	assert(w);
 
 	if (g_unk0x100f31d0 != w) {
 		g_unk0x100f31d0 = w;
 		m_assAnimP = (LegoLocomotionAnimPresenter*) w->Find("LegoAnimPresenter", "BNsAss01");
+		assert(m_assAnimP);
+
 		m_disAnimP = (LegoLocomotionAnimPresenter*) w->Find("LegoAnimPresenter", "BNsDis01");
+		assert(m_disAnimP);
 	}
 
 	if (!m_assAnim) {
-		MxS32 index = 0;
 		m_assAnimP->FUN_1006d680(this, -20.0f);
-
 		for (MxS32 i = 0; i < m_animMaps.size(); i++) {
 			if (m_animMaps[i]->GetUnknown0x00() == -20.0f) {
 				m_assAnim = new LegoAnimActorStruct(*m_animMaps[i]);
 				break;
 			}
 		}
+
+		assert(m_assAnim);
 	}
 
 	if (!m_disAnim) {
-		MxS32 index = 0;
 		m_disAnimP->FUN_1006d680(this, -21.0f);
 
 		for (MxS32 i = 0; i < m_animMaps.size(); i++) {
@@ -186,6 +195,8 @@ inline void LegoExtraActor::FUN_1002ad8a()
 				break;
 			}
 		}
+
+		assert(m_disAnim);
 	}
 }
 
@@ -272,6 +283,7 @@ MxResult LegoExtraActor::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 }
 
 // FUNCTION: LEGO1 0x1002b290
+// FUNCTION: BETA10 0x10081783
 MxResult LegoExtraActor::VTable0x9c()
 {
 	LegoPathBoundary* oldBoundary = m_boundary;
