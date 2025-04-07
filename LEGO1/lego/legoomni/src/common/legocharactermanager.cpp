@@ -481,7 +481,7 @@ LegoROI* LegoCharacterManager::CreateActorROI(const char* p_key)
 		info->m_move = pepper->m_move;
 		info->m_mood = pepper->m_mood;
 
-		for (i = 0; i < sizeOfArray(info->m_parts); i++) {
+		for (i = 0; i < (MxS32) sizeOfArray(info->m_parts); i++) {
 			info->m_parts[i] = pepper->m_parts[i];
 		}
 	}
@@ -489,24 +489,18 @@ LegoROI* LegoCharacterManager::CreateActorROI(const char* p_key)
 	roi = new LegoROI(renderer);
 	roi->SetName(p_key);
 
-	boundingSphere.Center()[0] = g_topActorLOD.m_boundingSphere[0];
-	boundingSphere.Center()[1] = g_topActorLOD.m_boundingSphere[1];
-	boundingSphere.Center()[2] = g_topActorLOD.m_boundingSphere[2];
+	SET3(boundingSphere.Center(), g_topActorLOD.m_boundingSphere);
 	boundingSphere.Radius() = g_topActorLOD.m_boundingSphere[3];
 	roi->SetBoundingSphere(boundingSphere);
 
-	boundingBox.Min()[0] = g_topActorLOD.m_boundingBox[0];
-	boundingBox.Min()[1] = g_topActorLOD.m_boundingBox[1];
-	boundingBox.Min()[2] = g_topActorLOD.m_boundingBox[2];
-	boundingBox.Max()[0] = g_topActorLOD.m_boundingBox[3];
-	boundingBox.Max()[1] = g_topActorLOD.m_boundingBox[4];
-	boundingBox.Max()[2] = g_topActorLOD.m_boundingBox[5];
+	SET3(boundingBox.Min(), &g_topActorLOD.m_boundingBox[0]);
+	SET3(boundingBox.Max(), &g_topActorLOD.m_boundingBox[3]);
 	roi->SetUnknown0x80(boundingBox);
 
 	comp = new CompoundObject();
 	roi->SetComp(comp);
 
-	for (i = 0; i < sizeOfArray(g_actorLODs); i++) {
+	for (i = 0; i < (MxS32) sizeOfArray(g_actorLODs); i++) {
 		char lodName[256];
 		LegoActorInfo::Part& part = info->m_parts[i];
 
@@ -519,9 +513,19 @@ LegoROI* LegoCharacterManager::CreateActorROI(const char* p_key)
 		}
 
 		ViewLODList* lodList = lodManager->Lookup(parentName);
+#ifdef _DEBUG
+		if (lodList == NULL) {
+			char buf[256];
+			sprintf(buf, "Missing character part LOD: %s", parentName);
+			OmniError(buf, 0);
+			continue;
+		}
+#endif
+
 		MxS32 lodSize = lodList->Size();
 		sprintf(lodName, "%s%d", p_key, i);
 		ViewLODList* dupLodList = lodManager->Create(lodName, lodSize);
+		assert(dupLodList);
 
 		for (MxS32 j = 0; j < lodSize; j++) {
 			LegoLOD* lod = (LegoLOD*) (*lodList)[j];
@@ -532,28 +536,22 @@ LegoROI* LegoCharacterManager::CreateActorROI(const char* p_key)
 		lodList->Release();
 		lodList = dupLodList;
 
-		LegoROI* childROI = new LegoROI(renderer, lodList);
+		LegoROI* childRoi = new LegoROI(renderer, lodList);
 		lodList->Release();
 
-		assert(childROI);
-		childROI->SetName(g_actorLODs[i].m_name);
-		childROI->SetParentROI(roi);
+		assert(childRoi);
+		childRoi->SetName(g_actorLODs[i].m_name);
+		childRoi->SetParentROI(roi);
 
 		BoundingSphere childBoundingSphere;
-		childBoundingSphere.Center()[0] = g_actorLODs[i].m_boundingSphere[0];
-		childBoundingSphere.Center()[1] = g_actorLODs[i].m_boundingSphere[1];
-		childBoundingSphere.Center()[2] = g_actorLODs[i].m_boundingSphere[2];
+		SET3(childBoundingSphere.Center(), g_actorLODs[i].m_boundingSphere);
 		childBoundingSphere.Radius() = g_actorLODs[i].m_boundingSphere[3];
-		childROI->SetBoundingSphere(childBoundingSphere);
+		childRoi->SetBoundingSphere(childBoundingSphere);
 
 		BoundingBox childBoundingBox;
-		childBoundingBox.Min()[0] = g_actorLODs[i].m_boundingBox[0];
-		childBoundingBox.Min()[1] = g_actorLODs[i].m_boundingBox[1];
-		childBoundingBox.Min()[2] = g_actorLODs[i].m_boundingBox[2];
-		childBoundingBox.Max()[0] = g_actorLODs[i].m_boundingBox[3];
-		childBoundingBox.Max()[1] = g_actorLODs[i].m_boundingBox[4];
-		childBoundingBox.Max()[2] = g_actorLODs[i].m_boundingBox[5];
-		childROI->SetUnknown0x80(childBoundingBox);
+		SET3(childBoundingBox.Min(), &g_actorLODs[i].m_boundingBox[0]);
+		SET3(childBoundingBox.Max(), &g_actorLODs[i].m_boundingBox[3]);
+		childRoi->SetUnknown0x80(childBoundingBox);
 
 		CalcLocalTransform(
 			Mx3DPointFloat(g_actorLODs[i].m_position),
@@ -561,25 +559,25 @@ LegoROI* LegoCharacterManager::CreateActorROI(const char* p_key)
 			Mx3DPointFloat(g_actorLODs[i].m_up),
 			mat
 		);
-		childROI->WrappedSetLocalTransform(mat);
+		childRoi->WrappedSetLocalTransform(mat);
 
 		if (g_actorLODs[i].m_flags & LegoActorLOD::c_flag1 && (i != 0 || part.m_unk0x00[part.m_unk0x08] != 0)) {
 
-			LegoTextureInfo* textureInfo = textureContainer->Get(part.m_unk0x10[part.m_unk0x0c[part.m_unk0x14]]);
-			assert(textureInfo);
+			LegoTextureInfo* texture = textureContainer->Get(part.m_unk0x10[part.m_unk0x0c[part.m_unk0x14]]);
+			assert(texture);
 
-			if (textureInfo != NULL) {
-				childROI->FUN_100a9210(textureInfo);
-				childROI->FUN_100a9170(1.0F, 1.0F, 1.0F, 0.0F);
+			if (texture != NULL) {
+				childRoi->FUN_100a9210(texture);
+				childRoi->FUN_100a9170(1.0F, 1.0F, 1.0F, 0.0F);
 			}
 		}
 		else if (g_actorLODs[i].m_flags & LegoActorLOD::c_flag2 || (i == 0 && part.m_unk0x00[part.m_unk0x08] == 0)) {
 			LegoFloat red, green, blue, alpha;
-			childROI->FUN_100a9bf0(part.m_unk0x10[part.m_unk0x0c[part.m_unk0x14]], red, green, blue, alpha);
-			childROI->FUN_100a9170(red, green, blue, alpha);
+			childRoi->FUN_100a9bf0(part.m_unk0x10[part.m_unk0x0c[part.m_unk0x14]], red, green, blue, alpha);
+			childRoi->FUN_100a9170(red, green, blue, alpha);
 		}
 
-		comp->push_back(childROI);
+		comp->push_back(childRoi);
 	}
 
 	CalcLocalTransform(
