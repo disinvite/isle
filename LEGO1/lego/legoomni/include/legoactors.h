@@ -46,7 +46,6 @@ struct LegoActorLOD {
 };
 
 enum LegoActorLODs {
-	c_topLOD,
 	c_bodyLOD,
 	c_infohatLOD,
 	c_infogronLOD,
@@ -73,6 +72,7 @@ enum LegoActorParts {
 };
 
 extern LegoActorInfo g_actorInfoInit[66];
-extern LegoActorLOD g_actorLODs[11];
+extern LegoActorLOD g_topActorLOD;
+extern LegoActorLOD g_actorLODs[10];
 
 #endif // LEGOACTORS_H

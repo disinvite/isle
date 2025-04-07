@@ -7,9 +7,14 @@ DECOMP_SIZE_ASSERT(LegoActorLOD, 0x58)
 // Unclear whether g_actorLODs[0] (top) is its own global, see: LegoCharacterManager::CreateActorROI
 
 // GLOBAL: LEGO1 0x100da3b0
+// GLOBAL: BETA10 0x101bba60
+LegoActorLOD g_topActorLOD = {"top",      "top",      0,       0.000267f, 0.780808f, -0.01906f, 0.951612f, -0.461166f,
+							  -0.002794f, -0.299442f, 0.4617f, 1.56441f,  0.261321f, 0.0f,      0.0f,      0.0f,
+							  0.0f,       0.0f,       1.0f,    0.0f,      1.0f,      0.0f};
+
+// GLOBAL: LEGO1 0x100da408
+// GLOBAL: BETA10 0x101bbab8
 LegoActorLOD g_actorLODs[] = {
-	{"top",    "top",     0,    0.000267f, 0.780808f, -0.01906f, 0.951612f, -0.461166f, -0.002794f, -0.299442f, 0.4617f,
-	 1.56441f, 0.261321f, 0.0f, 0.0f,      0.0f,      0.0f,      0.0f,      1.0f,       0.0f,       1.0f,       0.0f},
 	{"body",      "body",     LegoActorLOD::c_flag1,
 	 0.00158332f, 0.401828f,  -0.00048697f,
 	 0.408071f,   -0.287507f, 0.150419f,
