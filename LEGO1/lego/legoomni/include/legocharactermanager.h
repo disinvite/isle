@@ -80,6 +80,7 @@ public:
 	LegoExtraActor* GetExtraActor(const char* p_name);
 	LegoActorInfo* GetActorInfo(const char* p_name);
 	LegoActorInfo* GetActorInfo(LegoROI* p_roi);
+	MxBool Beta1007608b(LegoROI* p_roi);
 	MxBool SwitchColor(LegoROI* p_roi, LegoROI* p_targetROI);
 	MxBool SwitchVariant(LegoROI* p_roi);
 	MxBool SwitchSound(LegoROI* p_roi);

@@ -810,6 +810,7 @@ void LegoROI::FUN_100a9d30(ROIHandler p_func)
 }
 
 // FUNCTION: LEGO1 0x100a9d40
+// FUNCTION: BETA10 0x1018bf32
 void LegoROI::SetName(const LegoChar* p_name)
 {
 	if (m_name != NULL) {

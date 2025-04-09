@@ -52,6 +52,7 @@ MxU32 g_unk0x100fc4ec = 2;
 MxU32 g_unk0x100fc4f0 = 0;
 
 // GLOBAL: LEGO1 0x10104f20
+// GLOBAL: BETA10 0x1020a2f0
 LegoActorInfo g_actorInfo[66];
 
 // FUNCTION: LEGO1 0x10082a20
@@ -741,6 +742,42 @@ LegoROI* LegoCharacterManager::FindChildROI(LegoROI* p_roi, const char* p_name)
 	return NULL;
 }
 
+// FUNCTION: BETA10 0x1007608b
+MxBool LegoCharacterManager::Beta1007608b(LegoROI* p_roi)
+{
+	const LegoChar* name = p_roi->GetName();
+	MxS32 i;
+
+	for (i = 0; i < sizeOfArray(g_actorInfo); i++) {
+		if (!strcmpi(g_actorInfo[i].m_name, name)) {
+			break;
+		}
+	}
+
+	if (i > sizeOfArray(g_actorInfo)) {
+		return FALSE;
+	}
+
+	LegoActorInfo& info = g_actorInfo[i];
+	LegoActorInfo& init = g_actorInfoInit[i];
+
+	MxS32 parts[6] = {c_infohatPart, c_infogronPart, c_armlftPart, c_armrtPart, c_leglftPart, c_legrtPart};
+
+	for (MxU32 j = 0; j < 6; j++) {
+		MxS32 partIndex = parts[j];
+		LegoActorInfo::Part& part = info.m_parts[partIndex];
+		LegoActorInfo::Part& initPart = init.m_parts[partIndex];
+		part.m_unk0x14 = initPart.m_unk0x14;
+
+		LegoFloat red, green, blue, alpha;
+		LegoROI::FUN_100a9bf0(part.m_unk0x10[part.m_unk0x0c[part.m_unk0x14]], red, green, blue, alpha);
+		LegoROI* targetRoi = FindChildROI(p_roi, g_actorLODs[partIndex].m_name);
+		targetRoi->FUN_100a9170(red, green, blue, alpha);
+	}
+
+	return TRUE;
+}
+
 // FUNCTION: LEGO1 0x10084d50
 // FUNCTION: BETA10 0x10076223
 MxBool LegoCharacterManager::SwitchColor(LegoROI* p_roi, LegoROI* p_targetROI)
@@ -757,18 +794,25 @@ MxBool LegoCharacterManager::SwitchColor(LegoROI* p_roi, LegoROI* p_targetROI)
 
 	assert(partIndex < numParts);
 
+#ifdef BETA10
+	if (partIndex == 0) {
+		return Beta1007608b(p_roi);
+	}
+#endif
+
 	MxBool findChild = TRUE;
-	if (partIndex == 6) {
-		partIndex = 4;
+
+	if (partIndex == c_clawlftPart) {
+		partIndex = c_armlftPart;
 	}
-	else if (partIndex == 7) {
-		partIndex = 5;
+	else if (partIndex == c_clawrtPart) {
+		partIndex = c_armrtPart;
 	}
-	else if (partIndex == 3) {
-		partIndex = 1;
+	else if (partIndex == c_headPart) {
+		partIndex = c_infohatPart;
 	}
-	else if (partIndex == 0) {
-		partIndex = 2;
+	else if (partIndex == c_bodyPart) {
+		partIndex = c_infogronPart;
 	}
 	else {
 		findChild = FALSE;
