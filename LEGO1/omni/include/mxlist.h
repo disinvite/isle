@@ -231,25 +231,14 @@ inline void MxListCursor<T>::Destroy()
 template <class T>
 inline MxBool MxListCursor<T>::Next()
 {
-	if (!m_match) {
-		m_match = m_list->m_first;
-	}
-	else {
-		m_match = m_match->GetNext();
-	}
-
+	m_match = m_match ? m_match->GetNext() : m_list->m_first;
 	return m_match != NULL;
 }
 
 template <class T>
 inline MxBool MxListCursor<T>::Next(T& p_obj)
 {
-	if (!m_match) {
-		m_match = m_list->m_first;
-	}
-	else {
-		m_match = m_match->GetNext();
-	}
+	m_match = m_match ? m_match->GetNext() : m_list->m_first;
 
 	if (m_match) {
 		p_obj = m_match->GetValue();
@@ -261,25 +250,14 @@ inline MxBool MxListCursor<T>::Next(T& p_obj)
 template <class T>
 inline MxBool MxListCursor<T>::Prev()
 {
-	if (!m_match) {
-		m_match = m_list->m_last;
-	}
-	else {
-		m_match = m_match->GetPrev();
-	}
-
+	m_match = m_match ? m_match->GetPrev() : m_list->m_last;
 	return m_match != NULL;
 }
 
 template <class T>
 inline MxBool MxListCursor<T>::Prev(T& p_obj)
 {
-	if (!m_match) {
-		m_match = m_list->m_last;
-	}
-	else {
-		m_match = m_match->GetPrev();
-	}
+	m_match = m_match ? m_match->GetPrev() : m_list->m_last;
 
 	if (m_match) {
 		p_obj = m_match->GetValue();
