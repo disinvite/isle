@@ -410,8 +410,9 @@ LegoROI* LegoOmni::FindROI(const char* p_name)
 	const CompoundObject& rois =
 		((LegoVideoManager*) m_videoManager)->Get3DManager()->GetLego3DView()->GetViewManager()->GetROIs();
 
+	CompoundObject::const_iterator it;
 	if (p_name != NULL && *p_name != '\0' && rois.size() > 0) {
-		for (CompoundObject::const_iterator it = rois.begin(); it != rois.end(); it++) {
+		for (it = rois.begin(); it != rois.end(); it++) {
 			LegoROI* roi = (LegoROI*) *it;
 			const char* name = roi->GetName();
 

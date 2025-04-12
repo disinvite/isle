@@ -351,6 +351,7 @@ LegoChar* LegoAnimPresenter::FUN_100697c0(const LegoChar* p_und1, const LegoChar
 }
 
 // FUNCTION: LEGO1 0x100698b0
+// FUNCTION: BETA10 0x1004f704
 LegoBool LegoAnimPresenter::FUN_100698b0(const CompoundObject& p_rois, const LegoChar* p_und2)
 {
 	LegoBool result = FALSE;
@@ -362,8 +363,9 @@ LegoBool LegoAnimPresenter::FUN_100698b0(const CompoundObject& p_rois, const Leg
 		str = tmp;
 	}
 
+	CompoundObject::const_iterator it;
 	if (str != NULL && *str != '\0' && p_rois.size() > 0) {
-		for (CompoundObject::const_iterator it = p_rois.begin(); it != p_rois.end(); it++) {
+		for (it = p_rois.begin(); it != p_rois.end(); it++) {
 			LegoROI* roi = (LegoROI*) *it;
 			const char* name = roi->GetName();
 
