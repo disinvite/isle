@@ -1,4 +1,3 @@
-
 #include "legolod.h"
 
 #include "legoroi.h"
@@ -7,25 +6,35 @@
 #include "shape/legomesh.h"
 #include "tgl/d3drm/impl.h"
 
+#include <assert.h>
+
 DECOMP_SIZE_ASSERT(LODObject, 0x04)
 DECOMP_SIZE_ASSERT(ViewLOD, 0x0c)
 DECOMP_SIZE_ASSERT(LegoLOD, 0x20)
 DECOMP_SIZE_ASSERT(LegoLOD::Mesh, 0x08)
 
 // GLOBAL: LEGO1 0x101013d4
+// GLOBAL: BETA10 0x10207230
 LPDIRECT3DRMMATERIAL g_unk0x101013d4 = NULL;
 
 // GLOBAL: LEGO1 0x101013dc
 const char* g_unk0x101013dc = "inh";
 
-inline IDirect3DRM2* GetD3DRM(Tgl::Renderer* pRenderer);
+inline BOOL LegoLODGetD3DRM(IDirect3DRM2*& p_d3drm, Tgl::Renderer* p_tglRenderer);
 inline BOOL GetMeshData(IDirect3DRMMesh*& mesh, D3DRMGROUPINDEX& index, Tgl::Mesh* pMesh);
 
 // FUNCTION: LEGO1 0x100aa380
+// FUNCTION: BETA10 0x1018ce90
 LegoLOD::LegoLOD(Tgl::Renderer* p_renderer) : ViewLOD(p_renderer)
 {
 	if (g_unk0x101013d4 == NULL) {
-		GetD3DRM(p_renderer)->CreateMaterial(10.0, &g_unk0x101013d4);
+		IDirect3DRM2* d3drm = NULL;
+		assert((p_renderer != NULL));
+
+		LegoLODGetD3DRM(d3drm, p_renderer);
+		if (d3drm->CreateMaterial(10.0, &g_unk0x101013d4)) {
+			assert(0);
+		}
 	}
 
 	m_melems = NULL;
@@ -36,6 +45,7 @@ LegoLOD::LegoLOD(Tgl::Renderer* p_renderer) : ViewLOD(p_renderer)
 }
 
 // FUNCTION: LEGO1 0x100aa450
+// FUNCTION: BETA10 0x1018d017
 LegoLOD::~LegoLOD()
 {
 	if (m_numMeshes && m_melems != NULL) {
@@ -53,6 +63,7 @@ LegoLOD::~LegoLOD()
 }
 
 // FUNCTION: LEGO1 0x100aa510
+// FUNCTION: BETA10 0x1018d15d
 LegoResult LegoLOD::Read(Tgl::Renderer* p_renderer, LegoTextureContainer* p_textureContainer, LegoStorage* p_storage)
 {
 	float(*normals)[3] = NULL;
@@ -303,12 +314,14 @@ done:
 }
 
 // FUNCTION: LEGO1 0x100aabb0
+// FUNCTION: BETA10 0x1018e02a
 LegoLOD* LegoLOD::Clone(Tgl::Renderer* p_renderer)
 {
 	LegoLOD* dupLod = new LegoLOD(p_renderer);
 
 	dupLod->m_meshBuilder = m_meshBuilder->Clone();
 	dupLod->m_melems = new Mesh[m_numMeshes];
+	assert(dupLod->m_melems);
 
 	for (LegoU32 i = 0; i < m_numMeshes; i++) {
 		dupLod->m_melems[i].m_tglMesh = m_melems[i].m_tglMesh->ShallowClone(dupLod->m_meshBuilder);
@@ -395,14 +408,21 @@ void LegoLOD::FUN_100aae60()
 	m_unk0x1c = 0;
 }
 
+// FUNCTION: BETA10 0x1018dfc4
 inline BOOL GetMeshData(IDirect3DRMMesh*& mesh, D3DRMGROUPINDEX& index, Tgl::Mesh* pMesh)
 {
-	mesh = ((TglImpl::MeshImpl*) pMesh)->ImplementationData()->groupMesh;
-	index = ((TglImpl::MeshImpl*) pMesh)->ImplementationData()->groupIndex;
+	assert(pMesh);
+	TglImpl::MeshImpl* impl = (TglImpl::MeshImpl*) pMesh;
+	mesh = impl->ImplementationData()->groupMesh;
+	index = impl->ImplementationData()->groupIndex;
 	return FALSE;
 }
 
-inline IDirect3DRM2* GetD3DRM(Tgl::Renderer* pRenderer)
+// FUNCTION: BETA10 0x1018cfc5
+inline BOOL LegoLODGetD3DRM(IDirect3DRM2*& p_d3drm, Tgl::Renderer* p_tglRenderer)
 {
-	return ((TglImpl::RendererImpl*) pRenderer)->ImplementationData();
+	assert(p_tglRenderer);
+	TglImpl::RendererImpl* renderer = (TglImpl::RendererImpl*) p_tglRenderer;
+	p_d3drm = renderer->ImplementationData();
+	return FALSE;
 }
