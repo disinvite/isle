@@ -15,10 +15,20 @@
 // SIZE 0x28
 class BoundingBox {
 public:
+	// FUNCTION: BETA10 0x10174c30
 	const Vector3& Min() const { return min; }
+
+	// FUNCTION: BETA10 0x1004a7a0
 	Vector3& Min() { return min; }
+
+	// FUNCTION: BETA10 0x10174c50
 	const Vector3& Max() const { return max; }
+
+	// FUNCTION: BETA10 0x1004a7c0
 	Vector3& Max() { return max; }
+
+	// SYNTHETIC: BETA10 0x1004a7f0
+	// BoundingBox::BoundingBox
 
 private:
 	Mx3DPointFloat min; // 0x00
@@ -31,10 +41,25 @@ private:
 // SIZE 0x18
 class BoundingSphere {
 public:
+	// FUNCTION: BETA10 0x100d55a0
 	const Vector3& Center() const { return center; }
+
+	// FUNCTION: BETA10 0x1001fac0
 	Vector3& Center() { return center; }
+
+	// FUNCTION: BETA10 0x1001fd30
 	const float& Radius() const { return radius; }
+
+	// FUNCTION: BETA10 0x1001fae0
 	float& Radius() { return radius; }
+
+	// SYNTHETIC: BETA10 0x1001fc50
+	// ??0BoundingSphere@@QAE@XZ
+	// (void constructor)
+
+	// SYNTHETIC: BETA10 0x1003c990
+	// ??0BoundingSphere@@QAE@ABV0@@Z
+	// (copy constructor)
 
 	// SYNTHETIC: BETA10 0x1001fb90
 	// BoundingSphere::operator=
@@ -106,12 +131,17 @@ public:
 	virtual const BoundingBox& GetWorldBoundingBox() const = 0;       // vtable+0x0c
 	virtual const BoundingSphere& GetWorldBoundingSphere() const = 0; // vtable+0x10
 
+	// FUNCTION: BETA10 0x10174cd0
 	const LODListBase* GetLODs() const { return lods; }
+
+	// FUNCTION: BETA10 0x1007b610
 	const LODObject* GetLOD(int i) const
 	{
-		assert(lods);
+		assert(lods && (i < lods->Size()));
 		return (*lods)[i];
 	}
+
+	// FUNCTION: BETA10 0x1005c430
 	int GetLODCount() const { return lods ? lods->Size() : 0; }
 
 	// FUNCTION: BETA10 0x10027110

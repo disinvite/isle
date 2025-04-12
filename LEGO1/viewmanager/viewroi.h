@@ -13,9 +13,11 @@
 */
 
 // VTABLE: LEGO1 0x100dbe70
+// VTABLE: BETA10 0x101c3908
 // SIZE 0xe4
 class ViewROI : public OrientableROI {
 public:
+	// FUNCTION: BETA10 0x1018c5e0
 	ViewROI(Tgl::Renderer* pRenderer, ViewLODList* lodList)
 	{
 		SetLODList(lodList);
@@ -24,6 +26,7 @@ public:
 	}
 
 	// FUNCTION: LEGO1 0x100a9e20
+	// FUNCTION: BETA10 0x1018c680
 	~ViewROI() override
 	{
 		// SetLODList() will decrease refCount of LODList
@@ -31,6 +34,7 @@ public:
 		delete geometry;
 	}
 
+	// FUNCTION: BETA10 0x1007b540
 	void SetLODList(ViewLODList* lodList)
 	{
 		// ??? inherently type unsafe - kind of... because, now, ROI
@@ -56,7 +60,10 @@ public:
 	virtual Tgl::Group* GetGeometry();                           // vtable+0x30
 	virtual const Tgl::Group* GetGeometry() const;               // vtable+0x34
 
+	// FUNCTION: BETA10 0x1007b5e0
 	int GetUnknown0xe0() { return m_unk0xe0; }
+
+	// FUNCTION: BETA10 0x10174f50
 	void SetUnknown0xe0(int p_unk0xe0) { m_unk0xe0 = p_unk0xe0; }
 
 	static undefined SetUnk101013d8(undefined p_flag);
@@ -69,6 +76,7 @@ protected:
 };
 
 // SYNTHETIC: LEGO1 0x100aa250
+// SYNTHETIC: BETA10 0x1018cb60
 // ViewROI::`scalar deleting destructor'
 
 #endif // VIEWROI_H
