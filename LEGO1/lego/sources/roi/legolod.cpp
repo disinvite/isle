@@ -350,6 +350,7 @@ LegoResult LegoLOD::FUN_100aacb0(LegoFloat p_red, LegoFloat p_green, LegoFloat p
 }
 
 // FUNCTION: LEGO1 0x100aad00
+// FUNCTION: BETA10 0x1018e241
 LegoResult LegoLOD::FUN_100aad00(LegoTextureInfo* p_textureInfo)
 {
 	for (LegoU32 i = m_unk0x1c; i < m_numMeshes; i++) {
@@ -364,6 +365,7 @@ LegoResult LegoLOD::FUN_100aad00(LegoTextureInfo* p_textureInfo)
 }
 
 // FUNCTION: LEGO1 0x100aad70
+// FUNCTION: BETA10 0x1018e32c
 LegoResult LegoLOD::FUN_100aad70(LegoTextureInfo* p_textureInfo)
 {
 	for (LegoU32 i = m_unk0x1c; i < m_numMeshes; i++) {

@@ -507,6 +507,7 @@ LegoResult LegoROI::FUN_100a9170(LegoFloat p_red, LegoFloat p_green, LegoFloat p
 }
 
 // FUNCTION: LEGO1 0x100a9210
+// FUNCTION: BETA10 0x1018af25
 LegoResult LegoROI::FUN_100a9210(LegoTextureInfo* p_textureInfo)
 {
 	LegoResult result = SUCCESS;

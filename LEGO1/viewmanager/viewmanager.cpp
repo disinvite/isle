@@ -522,14 +522,22 @@ float ViewManager::ProjectedSize(const BoundingSphere& p_bounding_sphere)
 }
 
 // FUNCTION: LEGO1 0x100a6e00
+// FUNCTION: BETA10 0x10173bd0
 ViewROI* ViewManager::Pick(Tgl::View* p_view, unsigned long x, unsigned long y)
 {
 	LPDIRECT3DRMPICKEDARRAY picked = NULL;
 	ViewROI* result = NULL;
-	TglImpl::ViewImpl* view = (TglImpl::ViewImpl*) p_view;
-	IDirect3DRMViewport* d3drm = view->ImplementationData();
 
-	if (d3drm->Pick(x, y, &picked) != D3DRM_OK) {
+	assert(p_view);
+
+	TglImpl::ViewImpl* cast = (TglImpl::ViewImpl*) p_view;
+	assert(cast);
+
+	IDirect3DRMViewport* v = cast->ImplementationData();
+	assert(v);
+
+	if (v->Pick(x, y, &picked) != D3DRM_OK) {
+		assert(0);
 		return NULL;
 	}
 
@@ -539,7 +547,10 @@ ViewROI* ViewManager::Pick(Tgl::View* p_view, unsigned long x, unsigned long y)
 			LPDIRECT3DRMFRAMEARRAY frameArray;
 			D3DRMPICKDESC desc;
 
-			if (picked->GetPick(0, &visual, &frameArray, &desc) == D3DRM_OK) {
+			if (picked->GetPick(0, &visual, &frameArray, &desc) != D3DRM_OK) {
+				assert(0);
+			}
+			else {
 				if (frameArray != NULL) {
 					int size = frameArray->GetSize();
 
@@ -572,12 +583,17 @@ ViewROI* ViewManager::Pick(Tgl::View* p_view, unsigned long x, unsigned long y)
 	return result;
 }
 
+// FUNCTION: BETA10 0x10174570
 inline void SetAppData(ViewROI* p_roi, LPD3DRM_APPDATA data)
 {
-	IDirect3DRMFrame2* frame = NULL;
+	IDirect3DRMFrame2* f = NULL;
 
-	if (GetFrame(frame, p_roi->GetGeometry()) == 0) {
-		frame->SetAppData(data);
+	if (GetFrame(f, p_roi->GetGeometry()) == 0) {
+		assert(f);
+		if (f->SetAppData(data)) {
+			assert(0);
+			return;
+		}
 	}
 }
 
