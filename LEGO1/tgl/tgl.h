@@ -304,11 +304,9 @@ public:
 };
 
 // VTABLE: LEGO1 0x100dbbb0
+// VTABLE: BETA10 0x101c3360
 class Mesh : public Object {
 public:
-	// SYNTHETIC: LEGO1 0x100a3e10
-	// Tgl::Mesh::~Mesh
-
 	virtual Result SetColor(float r, float g, float b, float a) = 0;
 	virtual Result SetTexture(const Texture*) = 0;
 	virtual Result GetTexture(Texture*&) = 0;
@@ -322,7 +320,15 @@ public:
 	// Just get another Group pointing to the same underlying data
 	virtual Mesh* ShallowClone(MeshBuilder*) = 0;
 
+	// SYNTHETIC: BETA10 0x1016fad0
+	// Tgl::Mesh::Mesh
+
+	// SYNTHETIC: LEGO1 0x100a3e10
+	// SYNTHETIC: BETA10 0x1016fb40
+	// Tgl::Mesh::~Mesh
+
 	// SYNTHETIC: LEGO1 0x100a3e60
+	// SYNTHETIC: BETA10 0x1016fbe0
 	// Tgl::Mesh::`scalar deleting destructor'
 };
 
