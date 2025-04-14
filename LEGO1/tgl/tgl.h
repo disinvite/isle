@@ -81,6 +81,7 @@ enum Result {
 	Success = 1
 };
 
+// FUNCTION: BETA10 0x10169c60
 inline int Succeeded(Result result)
 {
 	return (result == Success);
@@ -99,18 +100,25 @@ class Texture;
 class MeshBuilder;
 
 // VTABLE: LEGO1 0x100db980
+// VTABLE: BETA10 0x101c3148
 class Object {
 public:
 	// FUNCTION: LEGO1 0x100a2240
+	// FUNCTION: BETA10 0x10169c90
 	virtual ~Object() {}
 
 	virtual void* ImplementationDataPtr() = 0;
 
+	// SYNTHETIC: BETA10 0x10169b50
+	// Tgl::Object::Object
+
 	// SYNTHETIC: LEGO1 0x100a2250
+	// SYNTHETIC: BETA10 0x10169cb0
 	// Tgl::Object::`scalar deleting destructor'
 };
 
 // VTABLE: LEGO1 0x100db948
+// VTABLE: BETA10 0x101c3110
 class Renderer : public Object {
 public:
 	// vtable+0x08
@@ -147,16 +155,22 @@ public:
 	// vtable+0x30
 	virtual Result SetTextureDefaultColorCount(unsigned long) = 0;
 
+	// SYNTHETIC: BETA10 0x10169ae0
+	// Tgl::Renderer::Renderer
+
 	// SYNTHETIC: LEGO1 0x100a1770
+	// SYNTHETIC: BETA10 0x10169b80
 	// Tgl::Renderer::~Renderer
 
 	// SYNTHETIC: LEGO1 0x100a17c0
+	// SYNTHETIC: BETA10 0x10169be0
 	// Tgl::Renderer::`scalar deleting destructor'
 };
 
 Renderer* CreateRenderer();
 
 // VTABLE: LEGO1 0x100db9b8
+// VTABLE: BETA10 0x101c32b0
 class Device : public Object {
 public:
 	// vtable+0x08
@@ -174,14 +188,20 @@ public:
 	virtual void HandleActivate(WORD) = 0;
 	virtual void HandlePaint(HDC) = 0;
 
+	// SYNTHETIC: BETA10 0x1016b740
+	// Tgl::Device::Device
+
 	// SYNTHETIC: LEGO1 0x100a2350
+	// SYNTHETIC: BETA10 0x1016b7b0
 	// Tgl::Device::~Device
 
 	// SYNTHETIC: LEGO1 0x100a28e0
+	// SYNTHETIC: BETA10 0x1016bbc0
 	// Tgl::Device::`scalar deleting destructor'
 };
 
 // VTABLE: LEGO1 0x100dba28
+// VTABLE: BETA10 0x101c32e0
 class View : public Object {
 public:
 	virtual Result Add(const Light*) = 0;
@@ -234,35 +254,52 @@ public:
 		int& rPickedGroupCount
 	) = 0;
 
+	// SYNTHETIC: BETA10 0x1016b850
+	// Tgl::View::View
+
 	// SYNTHETIC: LEGO1 0x100a2430
+	// SYNTHETIC: BETA10 0x1016b8c0
 	// Tgl::View::~View
 
 	// SYNTHETIC: LEGO1 0x100a2950
+	// SYNTHETIC: BETA10 0x1016bc00
 	// Tgl::View::`scalar deleting destructor'
 };
 
 // VTABLE: LEGO1 0x100dbae8
+// VTABLE: BETA10 0x101c3320
 class Camera : public Object {
 public:
 	virtual Result SetTransformation(FloatMatrix4&) = 0;
 
+	// SYNTHETIC: BETA10 0x1016b960
+	// Tgl::Camera::Camera
+
 	// SYNTHETIC: LEGO1 0x100a25f0
+	// SYNTHETIC: BETA10 0x1016b9d0
 	// Tgl::Camera::~Camera
 
 	// SYNTHETIC: LEGO1 0x100a2a30
+	// SYNTHETIC: BETA10 0x1016bc40
 	// Tgl::Camera::`scalar deleting destructor'
 };
 
 // VTABLE: LEGO1 0x100dbb08
+// VTABLE: BETA10 0x101c32a0
 class Light : public Object {
 public:
 	virtual Result SetTransformation(FloatMatrix4&) = 0;
 	virtual Result SetColor(float r, float g, float b) = 0;
 
+	// SYNTHETIC: BETA10 0x1016b630
+	// Tgl::Light::Light
+
 	// SYNTHETIC: LEGO1 0x100a26d0
+	// SYNTHETIC: BETA10 0x1016b6a0
 	// Tgl::Light::~Light
 
 	// SYNTHETIC: LEGO1 0x100a2aa0
+	// SYNTHETIC: BETA10 0x1016bb80
 	// Tgl::Light::`scalar deleting destructor'
 };
 
@@ -290,6 +327,7 @@ public:
 };
 
 // VTABLE: LEGO1 0x100dbaa0
+// VTABLE: BETA10 0x101c3188
 class Group : public Object {
 public:
 	virtual Result SetTransformation(FloatMatrix4&) = 0;
@@ -307,10 +345,15 @@ public:
 	// to have been replaced by something else in the shipped code.
 	virtual Result Bounds(D3DVECTOR*, D3DVECTOR*) = 0;
 
+	// SYNTHETIC: BETA10 0x1016a300
+	// Tgl::Group::Group
+
 	// SYNTHETIC: LEGO1 0x100a2510
+	// SYNTHETIC: BETA10 0x1016a370
 	// Tgl::Group::~Group
 
 	// SYNTHETIC: LEGO1 0x100a29c0
+	// SYNTHETIC: BETA10 0x1016a3d0
 	// Tgl::Group::`scalar deleting destructor'
 };
 
@@ -318,6 +361,7 @@ public:
 // was not in the leaked Tgl code. My suspicion is that it's
 // some kind of builder class for creating meshes.
 // VTABLE: LEGO1 0x100dbb30
+// VTABLE: BETA10 0x101c3330
 class MeshBuilder : public Object {
 public:
 	virtual Mesh* CreateMesh(
@@ -333,14 +377,20 @@ public:
 	virtual Result GetBoundingBox(float min[3], float max[3]) const = 0;
 	virtual MeshBuilder* Clone() = 0;
 
+	// SYNTHETIC: BETA10 0x1016ba70
+	// Tgl::MeshBuilder::MeshBuilder
+
 	// SYNTHETIC: LEGO1 0x100a27b0
+	// SYNTHETIC: BETA10 0x1016bae0
 	// Tgl::MeshBuilder::~MeshBuilder
 
 	// SYNTHETIC: LEGO1 0x100a2b10
+	// SYNTHETIC: BETA10 0x1016bc80
 	// Tgl::MeshBuilder::`scalar deleting destructor'
 };
 
 // VTABLE: LEGO1 0x100dbb68
+// VTABLE: BETA10 0x101c3280
 class Texture : public Object {
 public:
 	// vtable+0x08
@@ -359,10 +409,15 @@ public:
 	) = 0;
 	virtual Result SetPalette(int entryCount, PaletteEntry* pEntries) = 0;
 
+	// SYNTHETIC: BETA10 0x1016b520
+	// Tgl::Texture::Texture
+
 	// SYNTHETIC: LEGO1 0x100a2890
+	// SYNTHETIC: BETA10 0x1016b590
 	// Tgl::Texture::~Texture
 
 	// SYNTHETIC: LEGO1 0x100a2b80
+	// SYNTHETIC: BETA10 0x1016bb40
 	// Tgl::Texture::`scalar deleting destructor'
 };
 
