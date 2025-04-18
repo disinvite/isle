@@ -14,7 +14,8 @@
 #endif
 
 struct LegoPathActorSetCompare {
-	MxU32 operator()(const LegoPathActor* p_lhs, const LegoPathActor* p_rhs) const
+	// FUNCTION: BETA10 0x10020540
+	MxU32 operator()(LegoPathActor* const& p_lhs, LegoPathActor* const& p_rhs) const
 	{
 		return (COMPARE_POINTER_TYPE) p_lhs < (COMPARE_POINTER_TYPE) p_rhs;
 	}

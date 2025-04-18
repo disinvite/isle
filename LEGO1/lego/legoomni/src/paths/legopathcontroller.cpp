@@ -373,10 +373,12 @@ void LegoPathController::FUN_10046970()
 	for (LegoPathActorSet::iterator itpa = lpas.begin(); itpa != lpas.end(); itpa++) {
 		LegoPathActor* actor = *itpa;
 
-		if (m_actors.find(actor) != m_actors.end()) {
-			if (!((MxU8) actor->GetActorState() & LegoPathActor::c_disabled)) {
-				actor->Animate(time);
-			}
+		if (m_actors.find(actor) == m_actors.end()) {
+			continue;
+		}
+
+		if (!((MxU8) actor->GetActorState() & LegoPathActor::c_disabled)) {
+			actor->Animate(time);
 		}
 	}
 }

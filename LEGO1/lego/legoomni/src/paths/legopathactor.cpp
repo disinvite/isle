@@ -474,15 +474,21 @@ MxU32 LegoPathActor::VTable0x6c(
 		if (plpas.find(*itpa) != plpas.end()) {
 			LegoPathActor* actor = *itpa;
 
-			if (this != actor && !(actor->GetActorState() & LegoPathActor::c_noCollide)) {
-				LegoROI* roi = actor->GetROI();
+			if (this == actor) {
+				continue;
+			}
 
-				if (roi != NULL && (roi->GetVisibility() || actor->GetCameraFlag())) {
-					if (roi->FUN_100a9410(p_v1, p_v2, p_f1, p_f2, p_v3, m_collideBox && actor->m_collideBox)) {
-						HitActor(actor, TRUE);
-						actor->HitActor(this, FALSE);
-						return 2;
-					}
+			if (actor->GetActorState() & LegoPathActor::c_noCollide) {
+				continue;
+			}
+
+			LegoROI* roi = actor->GetROI();
+
+			if (roi != NULL && (roi->GetVisibility() || actor->GetCameraFlag())) {
+				if (roi->FUN_100a9410(p_v1, p_v2, p_f1, p_f2, p_v3, m_collideBox && actor->m_collideBox)) {
+					HitActor(actor, TRUE);
+					actor->HitActor(this, FALSE);
+					return 2;
 				}
 			}
 		}
