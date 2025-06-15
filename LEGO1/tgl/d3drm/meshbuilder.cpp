@@ -15,6 +15,7 @@ void* MeshBuilderImpl::ImplementationDataPtr()
 }
 
 // FUNCTION: LEGO1 0x100a3840
+// FUNCTION: BETA10 0x1016ca40
 Mesh* MeshBuilderImpl::CreateMesh(
 	unsigned long faceCount,
 	unsigned long vertexCount,
@@ -26,6 +27,8 @@ Mesh* MeshBuilderImpl::CreateMesh(
 	ShadingModel shadingModel
 )
 {
+	assert(m_data);
+
 	MeshImpl* pMeshImpl = new MeshImpl;
 	if (CreateMeshImpl(
 			pMeshImpl,
@@ -45,20 +48,22 @@ Mesh* MeshBuilderImpl::CreateMesh(
 	return pMeshImpl;
 }
 
+// FUNCTION: BETA10 0x1016fef0
 inline Result CreateMesh(
 	IDirect3DRMMesh* pD3DRM,
 	unsigned long faceCount,
 	unsigned long vertexCount,
-	float (*pPositions)[3],
-	float (*pNormals)[3],
-	float (*pTextureCoordinates)[2],
+	float(*pPositions),
+	float(*pNormals),
+	float(*pTextureCoordinates),
 	unsigned long (*pFaceIndices)[3],
 	unsigned long (*pTextureIndices)[3],
 	ShadingModel shadingModel,
 	MeshImpl::MeshDataType& rpMesh
 )
 {
-	unsigned long* faceIndices = (unsigned long*) pFaceIndices;
+	int unused[2];
+	unsigned short* faceIndices = (unsigned short*) pFaceIndices;
 	D3DRMGROUPINDEX groupIndex = 0;
 	int count = faceCount * 3;
 	int index = 0;
@@ -72,29 +77,32 @@ inline Result CreateMesh(
 	rpMesh->groupMesh = pD3DRM;
 
 	for (int i = 0; i < count; i++) {
-		if ((*((unsigned short*) &faceIndices[i] + 1) >> 0x0f) & 0x01) {
-			unsigned long j = *(unsigned short*) &faceIndices[i];
-			vertices[index].position.x = pPositions[j][0];
-			vertices[index].position.y = pPositions[j][1];
-			vertices[index].position.z = pPositions[j][2];
-			j = *((unsigned short*) &faceIndices[i] + 1) & MAXSHORT;
-			vertices[index].normal.x = pNormals[j][0];
-			vertices[index].normal.y = pNormals[j][1];
-			vertices[index].normal.z = pNormals[j][2];
+		if (((faceIndices[2 * i + 1]) >> 0x0f) & 0x01) {
+			unsigned long j = 3 * faceIndices[2 * i];
+			vertices[index].position.x = pPositions[j];
+			vertices[index].position.y = pPositions[j + 1];
+			vertices[index].position.z = pPositions[j + 2];
+
+			j = 3 * (faceIndices[2 * i + 1] & MAXSHORT);
+			vertices[index].normal.x = pNormals[j];
+			vertices[index].normal.y = pNormals[j + 1];
+			vertices[index].normal.z = pNormals[j + 2];
 
 			if (pTextureIndices != NULL && pTextureCoordinates != NULL) {
-				j = ((unsigned long*) pTextureIndices)[i];
-				vertices[index].tu = pTextureCoordinates[j][0];
-				vertices[index].tv = pTextureCoordinates[j][1];
+				j = 2 * ((unsigned long*) pTextureIndices)[i];
+				vertices[index].tu = pTextureCoordinates[j];
+				vertices[index].tv = pTextureCoordinates[j + 1];
 			}
 
 			fData[i] = index;
 			index++;
 		}
 		else {
-			fData[i] = *(unsigned short*) &faceIndices[i];
+			fData[i] = faceIndices[2 * i];
 		}
 	}
+
+	assert(index == (int) vertexCount);
 
 	Result result;
 	result = ResultVal(pD3DRM->AddGroup(vertexCount, faceCount, 3, fData, &groupIndex));
@@ -112,6 +120,7 @@ inline Result CreateMesh(
 	}
 	else {
 		result = MeshSetTextureMappingMode(rpMesh, PerspectiveCorrect);
+		assert(Succeeded(result));
 	}
 
 	if (fData != NULL) {
@@ -125,6 +134,7 @@ inline Result CreateMesh(
 	return result;
 }
 
+// FUNCTION: BETA10 0x1016fe40
 inline Result MeshBuilderImpl::CreateMeshImpl(
 	MeshImpl* pMeshImpl,
 	unsigned long faceCount,
@@ -137,13 +147,16 @@ inline Result MeshBuilderImpl::CreateMeshImpl(
 	ShadingModel shadingModel
 )
 {
+	assert(m_data);
+	assert(!pMeshImpl->ImplementationData());
+
 	return ::CreateMesh(
 		m_data,
 		faceCount,
 		vertexCount,
-		pPositions,
-		pNormals,
-		pTextureCoordinates,
+		reinterpret_cast<float*>(pPositions),
+		reinterpret_cast<float*>(pNormals),
+		reinterpret_cast<float*>(pTextureCoordinates),
 		pFaceIndices,
 		pTextureIndices,
 		shadingModel,
