@@ -62,7 +62,6 @@ inline Result CreateMesh(
 	MeshImpl::MeshDataType& rpMesh
 )
 {
-	int unused[2];
 	unsigned short* faceIndices = (unsigned short*) p_faceIndices;
 	D3DRMGROUPINDEX groupIndex = 0;
 	int faceCount = p_numFaces * 3;
@@ -83,15 +82,15 @@ inline Result CreateMesh(
 			vertices[count].position.y = p_positions[j + 1];
 			vertices[count].position.z = p_positions[j + 2];
 
-			j = 3 * (faceIndices[2 * i + 1] & MAXSHORT);
-			vertices[count].normal.x = p_normals[j];
-			vertices[count].normal.y = p_normals[j + 1];
-			vertices[count].normal.z = p_normals[j + 2];
+			int k = 3 * (faceIndices[2 * i + 1] & MAXSHORT);
+			vertices[count].normal.x = p_normals[k];
+			vertices[count].normal.y = p_normals[k + 1];
+			vertices[count].normal.z = p_normals[k + 2];
 
 			if (p_textureIndices != NULL && p_textureCoordinates != NULL) {
-				j = 2 * ((unsigned long*) p_textureIndices)[i];
-				vertices[count].tu = p_textureCoordinates[j];
-				vertices[count].tv = p_textureCoordinates[j + 1];
+				int kk = 2 * ((unsigned long*) p_textureIndices)[i];
+				vertices[count].tu = p_textureCoordinates[kk];
+				vertices[count].tv = p_textureCoordinates[kk + 1];
 			}
 
 			fData[i] = count;
