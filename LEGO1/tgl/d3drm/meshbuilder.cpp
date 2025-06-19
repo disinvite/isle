@@ -108,7 +108,7 @@ inline Result CreateMesh(
 
 	if (Succeeded(result)) {
 		rpMesh->groupIndex = groupIndex;
-		result = ResultVal(pD3DRM->SetVertices(groupIndex, 0, p_numVertices, vertices));
+		result = ResultVal(pD3DRM->SetVertices(groupIndex, 0, count, vertices));
 	}
 
 	if (!Succeeded(result)) {
