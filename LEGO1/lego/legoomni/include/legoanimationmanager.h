@@ -194,6 +194,7 @@ public:
 	MxResult FUN_10064670(Vector3* p_position);
 	MxResult FUN_10064740(Vector3* p_position);
 	MxResult FUN_10064880(const char* p_name, MxS32 p_unk0x0c, MxS32 p_unk0x10);
+	void SetExtraSpeed(MxU32 p_option);
 	MxBool FUN_10064ee0(MxU32 p_objectId);
 
 	static void configureLegoAnimationManager(MxS32 p_legoAnimationManagerConfig);

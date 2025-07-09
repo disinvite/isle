@@ -59,6 +59,7 @@ public:
 	void Restart();
 	inline void FUN_1002ad8a();
 
+	// FUNCTION: BETA10 0x1004a310
 	void SetUnknown0x0c(undefined p_unk0x0c) { m_unk0x0c = p_unk0x0c; }
 
 	// SYNTHETIC: LEGO1 0x1002b760
