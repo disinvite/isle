@@ -780,14 +780,16 @@ LegoBool LegoROI::GetRGBAColor(const LegoChar* p_name, float& p_red, float& p_gr
 		return FALSE;
 	}
 
+	const LegoChar* name;
 	char p_updatedName[32];
-	if (g_colorOverride) {
-		if (g_colorOverride(p_name, p_updatedName, sizeof(p_updatedName))) {
-			p_name = p_updatedName;
-		}
+	if (g_colorOverride && g_colorOverride(p_name, p_updatedName, sizeof(p_updatedName))) {
+		name = p_updatedName;
+	}
+	else {
+		name = p_name;
 	}
 
-	return ColorAliasLookup(p_name, p_red, p_green, p_blue, p_alpha);
+	return ColorAliasLookup(name, p_red, p_green, p_blue, p_alpha);
 }
 
 // FUNCTION: LEGO1 0x100a9c50
@@ -808,6 +810,7 @@ LegoBool LegoROI::ColorAliasLookup(const LegoChar* p_param, float& p_red, float&
 }
 
 // FUNCTION: LEGO1 0x100a9cf0
+// FUNCTION: BETA10 0x1018bead
 LegoBool LegoROI::GetPaletteEntries(const LegoChar* p_name, unsigned char* paletteEntries, LegoU32 p_numEntries)
 {
 	if (p_name == NULL) {
@@ -818,8 +821,10 @@ LegoBool LegoROI::GetPaletteEntries(const LegoChar* p_name, unsigned char* palet
 	if (g_textureHandler != NULL) {
 		return g_textureHandler(p_name, paletteEntries, p_numEntries);
 	}
+	else {
+		paletteEntries[0] = '\0';
+	}
 
-	paletteEntries[0] = '\0';
 	return FALSE;
 }
 

@@ -17,6 +17,7 @@ public:
 		c_hasMesh = 0x10
 	};
 
+	// FUNCTION: BETA10 0x1018e570
 	ViewLOD(Tgl::Renderer* pRenderer) : m_meshBuilder(NULL), m_flags(3) {}
 	~ViewLOD() override;
 
@@ -29,7 +30,11 @@ public:
 	Tgl::MeshBuilder* GetMeshBuilder() { return m_meshBuilder; }
 	const Tgl::MeshBuilder* GetMeshBuilder() const { return m_meshBuilder; }
 	unsigned int GetFlags() { return m_flags; }
+
+	// FUNCTION: BETA10 0x1018e600
 	unsigned char SkipReadingData() { return m_flags & 0xffffff04; }
+
+	// FUNCTION: BETA10 0x100acf30
 	unsigned char IsExtraLOD() { return m_flags & 0xffffff08; }
 
 	void SetFlag(unsigned char p_flag) { m_flags |= p_flag; }
