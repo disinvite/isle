@@ -2473,39 +2473,52 @@ MxBool LegoAnimationManager::FUN_10063b90(LegoWorld* p_world, LegoExtraActor* p_
 // FUNCTION: BETA10 0x10045034
 void LegoAnimationManager::FUN_10063d10()
 {
-	if (CurrentWorld() != NULL) {
-		MxLong time = Timer()->GetTime();
+	LegoWorld* world = CurrentWorld();
+	if (world == NULL) {
+		return;
+	}
+	MxLong time = Timer()->GetTime();
 
-		for (MxS32 i = 0; i < (MxS32) sizeOfArray(m_extras); i++) {
-			LegoROI* roi = m_extras[i].m_roi;
+	for (MxS32 i = 0; i < (MxS32) sizeOfArray(m_extras); i++) {
+		LegoROI* roi = m_extras[i].m_roi;
 
-			if (roi != NULL) {
-				if (m_extras[i].m_unk0x0c && g_characters[m_extras[i].m_characterId].m_unk0x0c >= 0 &&
-					g_characters[m_extras[i].m_characterId].m_unk0x0c < time - m_extras[i].m_unk0x08) {
+		if (roi != NULL) {
+			if (m_extras[i].m_unk0x0c && g_characters[m_extras[i].m_characterId].m_unk0x0c >= 0 &&
+				g_characters[m_extras[i].m_characterId].m_unk0x0c < time - m_extras[i].m_unk0x08) {
 
-					m_extras[i].m_unk0x0c = FALSE;
+				m_extras[i].m_unk0x0c = FALSE;
 
-					LegoExtraActor* actor = CharacterManager()->GetExtraActor(roi->GetName());
-					if (actor != NULL) {
-						float speed = m_extras[i].m_speed;
+				const char* roiName = roi->GetName();
+				LegoExtraActor* actor = CharacterManager()->GetExtraActor(roiName);
+				if (actor != NULL) {
+					float speed = m_extras[i].m_speed;
 
-						if (speed < 0.0f) {
-							if (m_extras[i].m_unk0x14) {
-								speed = ((float) (rand() * 1.5) / RAND_MAX) + 0.9;
-							}
-							else {
-								speed = ((float) (rand() * 1.4) / RAND_MAX) + 0.6;
-							}
+					if (speed < 0.0f) {
+						if (m_extras[i].m_unk0x14) {
+							speed = ((float) (rand() * 1.5) / RAND_MAX) + 0.9;
+						}
+						else {
+							speed = ((float) (rand() * 1.4) / RAND_MAX) + 0.6;
 						}
 
-						actor->SetWorldSpeed(speed);
+#ifdef BETA10
+						if (g_extraSpeedMin) {
+							speed = m_extras[i].m_unk0x14 ? 0.9 : 0.6;
+						}
+						else if (g_extraSpeedMax) {
+							speed = m_extras[i].m_unk0x14 ? 2.4 : 2.0;
+						}
+#endif
 					}
+
+					actor->SetWorldSpeed(speed);
+					MxTrace("%s speed: %f\n", roiName, speed);
 				}
-				else {
-					LegoExtraActor* actor = CharacterManager()->GetExtraActor(roi->GetName());
-					if (actor != NULL) {
-						actor->Restart();
-					}
+			}
+			else {
+				LegoExtraActor* actor = CharacterManager()->GetExtraActor(roi->GetName());
+				if (actor != NULL) {
+					actor->Restart();
 				}
 			}
 		}
