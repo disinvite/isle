@@ -11,7 +11,7 @@ class LegoDeviceEnumerate;
 struct Direct3DDeviceInfo;
 struct MxDriver;
 
-#define currentConfigApp ((CConfigApp*) afxCurrentWinApp)
+#define currentConfigApp ((CConfigApp*) AfxGetApp())
 
 // VTABLE: CONFIG 0x00406040
 // VTABLE: CONFIGD 0x0040c0a0
