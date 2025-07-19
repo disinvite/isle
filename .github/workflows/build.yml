@@ -198,6 +198,22 @@ jobs:
         reccmp-reccmp --target ISLE --diff ISLEPROGRESS-old.json || echo "Current master not found"
         reccmp-reccmp --target LEGO1 --diff LEGO1PROGRESS-old.json || echo "Current master not found"
 
+    - name: Summarize BETA10 Accuracy
+      shell: bash
+      run: |
+        reccmp-reccmp --target BETA10 --json BETA10PROGRESS.json
+
+    - name: Compare BETA10
+      shell: bash
+      env:
+        RELEASE_URL: https://github.com/isledecomp/isle/releases/download/continuous
+      run: |
+        # Download the current master state
+        curl -fLSs -o BETA10PROGRESS-old.json $RELEASE_URL/BETA10PROGRESS.json || echo "" >BETA10PROGRESS-old.json
+
+        # Compare with current master
+        reccmp-reccmp --target BETA10 --diff BETA10PROGRESS-old.json || echo "Current master not found"
+
     - name: Test Exports
       shell: bash
       run: |
@@ -225,6 +241,7 @@ jobs:
           CONFIGPROGRESS*
           ISLEPROGRESS*
           LEGO1PROGRESS*
+          BETA10PROGRESS*
 
   upload:
     name: Upload artifacts
@@ -254,9 +271,11 @@ jobs:
           build/CONFIG.EXE \
           build/ISLE.EXE \
           build/LEGO1.DLL \
+          build/BETA10.DLL \
           CONFIGPROGRESS* \
           ISLEPROGRESS* \
-          LEGO1PROGRESS*
+          LEGO1PROGRESS* \
+          BETA10PROGRESS*
 
         curl -X POST -F key=$UPLOAD_KEY -F 'file=@CONFIGPROGRESS.SVG' https://legoisland.org/progress/
         curl -X POST -F key=$UPLOAD_KEY -F 'file=@ISLEPROGRESS.SVG' https://legoisland.org/progress/
