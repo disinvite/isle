@@ -132,7 +132,7 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@main
       with:
-        name: Win32
+        name: Win32-beta
         path: |
           build/BETA10.DLL
           build/BETA10.PDB
@@ -151,6 +151,11 @@ jobs:
     - uses: actions/download-artifact@main
       with:
        name: Win32
+       path: build
+
+    - uses: actions/download-artifact@main
+      with:
+       name: Win32-beta
        path: build
 
     - name: Restore cached original binaries
