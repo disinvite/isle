@@ -28,7 +28,10 @@ public:
 
 	Tgl::MeshBuilder* GetMeshBuilder() { return m_meshBuilder; }
 	const Tgl::MeshBuilder* GetMeshBuilder() const { return m_meshBuilder; }
+
+	// FUNCTION: BETA10 0x10174e30
 	unsigned int GetFlags() { return m_flags; }
+
 	unsigned char SkipReadingData() { return m_flags & 0xffffff04; }
 	unsigned char IsExtraLOD() { return m_flags & 0xffffff08; }
 

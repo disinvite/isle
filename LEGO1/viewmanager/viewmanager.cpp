@@ -105,7 +105,7 @@ void ViewManager::Remove(ViewROI* p_roi)
 			const CompoundObject* comp = p_roi->GetComp();
 
 			if (comp != NULL) {
-				for (CompoundObject::const_iterator it = comp->begin(); !(it == comp->end()); it++) {
+				for (CompoundObject::const_iterator it = comp->begin(); it != comp->end(); ++it) {
 					if (((ViewROI*) *it)->GetLodLevel() >= 0) {
 						RemoveROIDetailFromScene((ViewROI*) *it);
 					}
@@ -136,7 +136,7 @@ void ViewManager::RemoveAll(ViewROI* p_roi)
 		const CompoundObject* comp = p_roi->GetComp();
 
 		if (comp != NULL) {
-			for (CompoundObject::const_iterator it = comp->begin(); !(it == comp->end()); it++) {
+			for (CompoundObject::const_iterator it = comp->begin(); it != comp->end(); ++it) {
 				if ((ViewROI*) *it != NULL) {
 					RemoveAll((ViewROI*) *it);
 				}
@@ -256,7 +256,7 @@ inline void ViewManager::ManageVisibilityAndDetailRecursively(ViewROI* p_from, i
 			}
 
 			if (comp != NULL) {
-				for (CompoundObject::const_iterator it = comp->begin(); it != comp->end(); it++) {
+				for (CompoundObject::const_iterator it = comp->begin(); it != comp->end(); ++it) {
 					ManageVisibilityAndDetailRecursively((ViewROI*) *it, p_lodLevel);
 				}
 			}
@@ -269,7 +269,7 @@ inline void ViewManager::ManageVisibilityAndDetailRecursively(ViewROI* p_from, i
 		else {
 			p_from->SetLodLevel(ViewROI::c_lodLevelUnset);
 
-			for (CompoundObject::const_iterator it = comp->begin(); it != comp->end(); it++) {
+			for (CompoundObject::const_iterator it = comp->begin(); it != comp->end(); ++it) {
 				ManageVisibilityAndDetailRecursively((ViewROI*) *it, p_lodLevel);
 			}
 		}

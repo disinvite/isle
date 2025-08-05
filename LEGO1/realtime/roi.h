@@ -125,12 +125,17 @@ public:
 	virtual const BoundingBox& GetWorldBoundingBox() const = 0;       // vtable+0x0c
 	virtual const BoundingSphere& GetWorldBoundingSphere() const = 0; // vtable+0x10
 
+	// FUNCTION: BETA10 0x10174cd0
 	const LODListBase* GetLODs() const { return lods; }
+
+	// FUNCTION: BETA10 0x1007b610
 	const LODObject* GetLOD(int i) const
 	{
-		assert(lods);
+		assert(lods && (i < lods->Size()));
 		return (*lods)[i];
 	}
+
+	// FUNCTION: BETA10 0x1005c430
 	int GetLODCount() const { return lods ? lods->Size() : 0; }
 
 	// FUNCTION: BETA10 0x10027110

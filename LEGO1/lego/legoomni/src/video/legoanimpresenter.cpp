@@ -1586,7 +1586,7 @@ void LegoHideAnimPresenter::FUN_1006dc10()
 	m_boundaryMap = new LegoPathBoundary*[anims.size() + 1];
 	m_boundaryMap[0] = NULL;
 
-	for (LegoHideAnimStructMap::iterator it = anims.begin(); !(it == anims.end()); it++) {
+	for (LegoHideAnimStructMap::iterator it = anims.begin(); !(it == anims.end()); ++it) {
 		m_boundaryMap[(*it).second.m_index] = (*it).second.m_boundary;
 		delete[] const_cast<char*>((*it).first);
 	}

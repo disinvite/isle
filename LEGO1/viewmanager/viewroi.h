@@ -65,7 +65,10 @@ public:
 	virtual Tgl::Group* GetGeometry();                                           // vtable+0x30
 	virtual const Tgl::Group* GetGeometry() const;                               // vtable+0x34
 
+	// FUNCTION: BETA10 0x1007b5e0
 	int GetLodLevel() { return m_lodLevel; }
+
+	// FUNCTION: BETA10 0x10174f50
 	void SetLodLevel(int p_lodLevel) { m_lodLevel = p_lodLevel; }
 
 	static unsigned char SetLightSupport(unsigned char p_lightSupport);
