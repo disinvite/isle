@@ -31,8 +31,10 @@ public:
 	// FUNCTION: BETA10 0x10174de0
 	int NVerts() const override { return NumPolys() * 2; } // vtable+0x08
 
-	Tgl::MeshBuilder* GetMeshBuilder() { return m_meshBuilder; }
+	// FUNCTION: BETA10 0x1007b720
 	const Tgl::MeshBuilder* GetMeshBuilder() const { return m_meshBuilder; }
+
+	// FUNCTION: BETA10 0x10174e30
 	unsigned int GetFlags() { return m_flags; }
 
 	// FUNCTION: BETA10 0x1018e600

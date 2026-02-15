@@ -1273,32 +1273,43 @@ void LegoLoopingAnimPresenter::PutFrame()
 
 	if (m_ptAtCamROI != NULL && m_currentWorld != NULL && m_currentWorld->GetCameraController() != NULL) {
 		for (MxS32 i = 0; i < m_ptAtCamCount; i++) {
-			if (m_ptAtCamROI[i] != NULL) {
-				MxMatrix mat(m_ptAtCamROI[i]->GetLocal2World());
-
-				Vector3 pos(mat[0]);
-				Vector3 dir(mat[1]);
-				Vector3 up(mat[2]);
-				Vector3 und(mat[3]);
-
-				float possqr = sqrt(pos.LenSquared());
-				float dirsqr = sqrt(dir.LenSquared());
-				float upsqr = sqrt(up.LenSquared());
-
-				up = und;
-
-				up -= m_currentWorld->GetCameraController()->GetWorldLocation();
-				dir /= dirsqr;
-				pos.EqualsCross(dir, up);
-				pos.Unitize();
-				up.EqualsCross(pos, dir);
-				pos *= possqr;
-				dir *= dirsqr;
-				up *= upsqr;
-
-				m_ptAtCamROI[i]->SetLocal2World(mat);
-				m_ptAtCamROI[i]->WrappedUpdateWorldData();
+			if (m_ptAtCamROI[i] == NULL) {
+				continue;
 			}
+
+			MxMatrix mat(m_ptAtCamROI[i]->GetLocal2World());
+
+			Vector3 pos(mat[0]);
+			Vector3 dir(mat[1]);
+			Vector3 up(mat[2]);
+			Vector3 und(mat[3]);
+
+			// LINE: BETA10 0x10052543
+			float possqr = sqrt(pos.LenSquared());
+			// LINE: BETA10 0x1005255c
+			float dirsqr = sqrt(dir.LenSquared());
+			// LINE: BETA10 0x10052575
+			float upsqr = sqrt(up.LenSquared());
+
+			up = und;
+
+			up -= m_currentWorld->GetCameraController()->GetWorldLocation();
+			dir /= dirsqr;
+			// LINE: BETA10 0x100525d0
+			pos.EqualsCross(dir, up);
+			// LINE: BETA10 0x100525e0
+			pos.Unitize();
+			// LINE: BETA10 0x100525e8
+			up.EqualsCross(pos, dir);
+			// LINE: BETA10 0x100525f8
+			pos *= possqr;
+			// LINE: BETA10 0x10052605
+			dir *= dirsqr;
+			// LINE: BETA10 0x10052612
+			up *= upsqr;
+
+			m_ptAtCamROI[i]->SetLocal2World(mat);
+			m_ptAtCamROI[i]->WrappedUpdateWorldData();
 		}
 	}
 }

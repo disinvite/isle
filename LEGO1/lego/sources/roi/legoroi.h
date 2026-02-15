@@ -89,13 +89,19 @@ public:
 	// FUNCTION: BETA10 0x10015180
 	LegoEntity* GetEntity() { return m_entity; }
 
+	// FUNCTION: BETA10 0x1001fb60
 	BoundingSphere& GetBoundingSphere() { return m_sphere; }
 
 	// FUNCTION: BETA10 0x10013400
 	void SetEntity(LegoEntity* p_entity) { m_entity = p_entity; }
 
+	// FUNCTION: BETA10 0x1007b490
 	void SetComp(CompoundObject* p_comp) { comp = p_comp; }
+
+	// FUNCTION: BETA10 0x1001fb10
 	void SetBoundingSphere(const BoundingSphere& p_sphere) { m_sphere = m_world_bounding_sphere = p_sphere; }
+
+	// FUNCTION: BETA10 0x1007b420
 	void SetBoundingBox(const BoundingBox& p_box) { m_bounding_box = p_box; }
 
 	// SYNTHETIC: LEGO1 0x100a82b0

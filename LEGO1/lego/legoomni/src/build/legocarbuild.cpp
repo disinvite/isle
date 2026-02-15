@@ -286,6 +286,7 @@ void LegoCarBuild::InitPresenters()
 }
 
 // FUNCTION: LEGO1 0x10022f00
+// FUNCTION: BETA10 0x1006b7e7
 void LegoCarBuild::DisplaySelectedPart()
 {
 	if (m_selectedPart) {
@@ -892,12 +893,12 @@ MxLong LegoCarBuild::HandleButtonUp(MxLong p_x, MxLong p_y)
 	MxLong result = 0;
 
 	switch (m_clickState) {
-	case e_returning:
-		ResetSelectedPart();
-		result = 1;
-		break;
 	case e_selecting:
 		DisplaySelectedPart();
+		result = 1;
+		break;
+	case e_returning:
+		ResetSelectedPart();
 		result = 1;
 		break;
 	case e_dragging:

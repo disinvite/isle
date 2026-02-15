@@ -14,6 +14,7 @@ public:
 	static void UpdateMaxLOD();
 	static void SetUserMaxLOD(float);
 
+	// FUNCTION: BETA10 0x10174d90
 	static float GetUserMaxLodPower() { return g_userMaxLodPower; }
 };
 

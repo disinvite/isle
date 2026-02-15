@@ -1042,6 +1042,7 @@ LegoROI* LegoCharacterManager::CreateAutoROI(const char* p_name, const char* p_l
 }
 
 // FUNCTION: LEGO1 0x10085870
+// FUNCTION: BETA10 0x10076d64
 MxResult LegoCharacterManager::UpdateBoundingSphereAndBox(LegoROI* p_roi)
 {
 	MxResult result = FAILURE;
@@ -1051,35 +1052,38 @@ MxResult LegoCharacterManager::UpdateBoundingSphereAndBox(LegoROI* p_roi)
 
 	const Tgl::MeshBuilder* meshBuilder = ((ViewLOD*) p_roi->GetLOD(0))->GetMeshBuilder();
 
-	if (meshBuilder != NULL) {
-		float min[3], max[3];
-
-		FILLVEC3(min, 88888.0);
-		FILLVEC3(max, -88888.0);
-		meshBuilder->GetBoundingBox(min, max);
-
-		float center[3];
-		center[0] = (min[0] + max[0]) / 2.0f;
-		center[1] = (min[1] + max[1]) / 2.0f;
-		center[2] = (min[2] + max[2]) / 2.0f;
-		SET3(boundingSphere.Center(), center);
-
-		float radius[3];
-		VMV3(radius, max, min);
-		boundingSphere.Radius() = sqrt(NORMSQRD3(radius)) / 2.0;
-
-		p_roi->SetBoundingSphere(boundingSphere);
-
-		SET3(boundingBox.Min(), min);
-		SET3(boundingBox.Max(), max);
-
-		p_roi->SetBoundingBox(boundingBox);
-
-		p_roi->WrappedUpdateWorldData();
-
-		result = SUCCESS;
+	if (meshBuilder == NULL) {
+		goto end;
 	}
 
+	float min[3], max[3];
+
+	min[0] = min[1] = min[2] = 88888.0;
+	max[0] = max[1] = max[2] = -88888.0;
+	meshBuilder->GetBoundingBox(min, max);
+
+	float center[3];
+	center[0] = (min[0] + max[0]) / 2.0f;
+	center[1] = (min[1] + max[1]) / 2.0f;
+	center[2] = (min[2] + max[2]) / 2.0f;
+	SET3(boundingSphere.Center(), center);
+
+	float radius[3];
+	VMV3(radius, max, min);
+	boundingSphere.Radius() = sqrt(NORMSQRD3(radius)) / 2.0;
+
+	p_roi->SetBoundingSphere(boundingSphere);
+
+	SET3(boundingBox.Min(), min);
+	SET3(boundingBox.Max(), max);
+
+	p_roi->SetBoundingBox(boundingBox);
+
+	p_roi->WrappedUpdateWorldData();
+
+	result = SUCCESS;
+
+end:
 	return result;
 }
 
