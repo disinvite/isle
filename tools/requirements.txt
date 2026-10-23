@@ -1,4 +1,4 @@
-reccmp @ git+https://github.com/isledecomp/reccmp
+reccmp
 clang==16.*
 capstone==5.0.9
 pefile==2024.8.26
